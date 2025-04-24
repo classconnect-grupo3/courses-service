@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    restart: always
+    ports:
+      - "${DB_PORT}:${DB_PORT}"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${DB_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${DB_PASSWORD}
+      - MONGO_INITDB_DATABASE=${DB_NAME}
+    env_file:
+      - ./src/.env.dev
+
+  app:
+    build: .
+    container_name: courses-service
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongodb
+    environment:
+      - MONGO_URI=mongodb://${DB_USERNAME}:${DB_PASSWORD}@mongodb:${DB_PORT}/${DB_NAME}
+    env_file:
+      - ./src/.env.dev
+
+volumes:
+  mongodb_data:
