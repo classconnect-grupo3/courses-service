@@ -5,10 +5,20 @@ services:
     restart: always
     env_file:
       - ./src/.env.dev
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+      - MONGO_INITDB_DATABASE=courses_db
     ports:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
+      - ./src/database/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+    logging:
+      driver: "none"
+    command: mongod --quiet
+    networks:
+      - courses-network
 
   app:
     build: .
@@ -16,10 +26,18 @@ services:
     restart: always
     env_file:
       - ./src/.env.dev
+    environment:
+      - DB_URI=mongodb://admin:password@mongodb:27017/courses_db?authSource=admin
     ports:
       - "9090:9090"
     depends_on:
       - mongodb
+    networks:
+      - courses-network
 
 volumes:
   mongodb_data:
+
+networks:
+  courses-network:
+    driver: bridge
