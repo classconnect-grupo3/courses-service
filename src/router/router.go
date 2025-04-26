@@ -41,4 +41,7 @@ func NewRouter(config *config.Config) *gin.Engine {
 
 func initializeRoutes(r *gin.Engine, controller *controller.CoursesController) {
 	r.GET("/courses", controller.GetCourses)
+	r.POST("/course", controller.CreateCourse)
+	r.GET("/course/:id", controller.GetCourseById)
+	r.DELETE("/course/:id", controller.DeleteCourse)
 }

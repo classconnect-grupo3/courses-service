@@ -29,3 +29,34 @@ func (r *CourseRepository) GetCourses() ([]*model.Course, error) {
 	}
 	return courses, nil
 }
+
+func (r *CourseRepository) CreateCourse(course model.Course) (*model.Course, error) {
+	collection := r.db.Database(r.dbName).Collection("courses")
+
+	_, err := collection.InsertOne(context.TODO(), course)
+	if err != nil {
+		return nil, err
+	}
+	return &course, nil
+}
+
+func (r *CourseRepository) GetCourseById(id string) (*model.Course, error) {
+	collection := r.db.Database(r.dbName).Collection("courses")
+
+	var course model.Course
+	err := collection.FindOne(context.TODO(), bson.M{"id": id}).Decode(&course)
+	if err != nil {
+		return nil, err
+	}
+	return &course, nil
+}
+
+func (r *CourseRepository) DeleteCourse(id string) error {
+	collection := r.db.Database(r.dbName).Collection("courses")
+
+	_, err := collection.DeleteOne(context.TODO(), bson.M{"id": id})
+	if err != nil {
+		return err
+	}
+	return nil
+}

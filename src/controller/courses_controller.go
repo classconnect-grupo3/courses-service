@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"courses-service/src/model"
 	"courses-service/src/service"
 
 	"github.com/gin-gonic/gin"
@@ -29,3 +30,49 @@ func (c *CoursesController) GetCourses(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, courses)
 }
 
+func (c *CoursesController) CreateCourse(ctx *gin.Context) {
+	slog.Debug("Creating course")
+	var course model.Course
+	if err := ctx.ShouldBindJSON(&course); err != nil {
+		slog.Error("Error binding JSON", "error", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	createdCourse, err := c.service.CreateCourse(course)
+	if err != nil {
+		slog.Error("Error creating course", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	slog.Debug("Course created", "course", createdCourse)
+	ctx.JSON(http.StatusCreated, createdCourse)
+}
+
+func (c *CoursesController) GetCourseById(ctx *gin.Context) {
+	slog.Debug("Getting course by ID")
+	id := ctx.Param("id")
+
+	course, err := c.service.GetCourseById(id)
+	if err != nil {
+		slog.Error("Error getting course by ID", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	slog.Debug("Course retrieved", "course", course)
+	ctx.JSON(http.StatusOK, course)
+}
+
+func (c *CoursesController) DeleteCourse(ctx *gin.Context) {
+	slog.Debug("Deleting course")
+	id := ctx.Param("id")
+
+	err := c.service.DeleteCourse(id)
+	if err != nil {
+		slog.Error("Error deleting course", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	slog.Debug("Course deleted", "id", id)
+	ctx.JSON(http.StatusOK, gin.H{"message": "Course deleted successfully"})
+}
