@@ -12,9 +12,9 @@ import (
 )
 
 func createRouterFromConfig(config *config.Config) *gin.Engine {
-	// if config.Environment == "production" {
-	// 	gin.SetMode(gin.ReleaseMode)
-	// }
+	if config.Environment == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
 	gin.SetMode(gin.DebugMode)
 
@@ -41,7 +41,9 @@ func NewRouter(config *config.Config) *gin.Engine {
 
 func initializeRoutes(r *gin.Engine, controller *controller.CoursesController) {
 	r.GET("/courses", controller.GetCourses)
-	r.POST("/course", controller.CreateCourse)
-	r.GET("/course/:id", controller.GetCourseById)
-	r.DELETE("/course/:id", controller.DeleteCourse)
+	r.POST("/courses", controller.CreateCourse)
+	r.GET("/courses/:id", controller.GetCourseById)
+	r.DELETE("/courses/:id", controller.DeleteCourse)
+	r.GET("/courses/teacher/:teacherId", controller.GetCourseByTeacherId)
+	r.GET("/courses/title/:title", controller.GetCourseByTitle)
 }
