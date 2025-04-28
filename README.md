@@ -6,8 +6,11 @@ This is a Go-based microservice for managing courses. It provides endpoints to c
 ## Project Structure
 - `src/`: Contains the source code of the project.
   - `model/`: Defines the data models (e.g., `Course`).
+  - `schemas/`: Defines the request and response schemas (e.g., `CourseRequest` and `CourseResponse`).
+  - `router/`: Contains the HTTP router (e.g., `router.go`).
+  - `controller/`: Contains the HTTP controller (e.g., `CourseController`).
+  - `service/`: Contains the business logic (e.g., `CourseService`).
   - `repository/`: Implements data access logic (e.g., `CourseRepository`).
-  - `handler/`: Contains HTTP handlers for the API endpoints.
   - `main.go`: Entry point of the application.
 
 ## Setup with Docker
