@@ -19,7 +19,7 @@ func (s *CourseService) GetCourses() ([]*model.Course, error) {
 }
 
 func (s *CourseService) CreateCourse(course schemas.CreateCourseRequest) (*model.Course, error) {
-	return s.courseRepository.CreateCourse(course.Title, course.Description, course.TeacherID, course.Capacity)
+	return s.courseRepository.CreateCourse(course)
 }
 
 func (s *CourseService) GetCourseById(id string) (*model.Course, error) {
