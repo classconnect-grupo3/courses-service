@@ -15,15 +15,16 @@ services:
       - mongodb_data:/data/db
     networks:
       - courses-network
+    command: mongod --quiet
 
   app:
-    build: .
-    container_name: courses-service
-    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: courses-service-test
+    restart: "no"
     env_file:
       - ./src/.env.test
-    ports:
-      - "9090:9090"
     depends_on:
       - mongodb
     networks:
