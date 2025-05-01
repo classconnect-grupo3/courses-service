@@ -26,6 +26,13 @@ func (m *MockCourseRepository) GetCourses() ([]*model.Course, error) {
 }
 
 func (m *MockCourseRepository) GetCourseById(id string) (*model.Course, error) {
+	if id == "123e4567-e89b-12d3-a456-426614174000" {
+		return &model.Course{
+			ID:          primitive.NewObjectID(),
+			Title:       "Test Course",
+			Description: "Test Description",
+		}, nil
+	}
 	return nil, nil
 }
 
@@ -34,10 +41,32 @@ func (m *MockCourseRepository) DeleteCourse(id string) error {
 }
 
 func (m *MockCourseRepository) GetCourseByTeacherId(teacherId string) ([]*model.Course, error) {
+	if teacherId == "123e4567-e89b-12d3-a456-426614174000" {
+		return []*model.Course{
+			{
+				ID:          primitive.NewObjectID(),
+				Title:       "Test Course",
+				Description: "Test Description",
+				TeacherUUID: "123e4567-e89b-12d3-a456-426614174000",
+				Capacity:    10,
+			},
+		}, nil
+	}
 	return []*model.Course{}, nil
 }
 
 func (m *MockCourseRepository) GetCourseByTitle(title string) ([]*model.Course, error) {
+	if title == "Test Course" {
+		return []*model.Course{
+			{
+				ID:          primitive.NewObjectID(),
+				Title:       "Test Course",
+				Description: "Test Description",
+				TeacherUUID: "123e4567-e89b-12d3-a456-426614174000",
+				Capacity:    10,
+			},
+		}, nil
+	}
 	return []*model.Course{}, nil
 }
 
@@ -54,5 +83,122 @@ func TestCreateCourseWithInvalidCapacity(t *testing.T) {
 	}
 	if course != nil {
 		t.Errorf("Expected nil, got %v", course)
+	}
+}
+
+func TestCreateCourseWithValidCapacity(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{})
+	_, err := courseService.CreateCourse(schemas.CreateCourseRequest{
+		Title:       "Test Course",
+		Description: "Test Description",
+		TeacherID:   "123e4567-e89b-12d3-a456-426614174000",
+		Capacity:    10,
+	})
+	if err != nil {
+		t.Errorf("Expected nil, got %v", err)
+	}
+}
+
+func TestGetCourseById(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{})
+	course, err := courseService.GetCourseById("123e4567-e89b-12d3-a456-426614174000")
+	if err != nil {
+		t.Errorf("Expected nil, got %v", err)
+	}
+	if course == nil {
+		t.Errorf("Expected course, got nil")
+	}
+}
+
+func TestGetCourseByIdWithNonExistentId(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{})
+	course, err := courseService.GetCourseById("123e4567-e89b-12d3-a456-426614174001")
+	if err != nil {
+		t.Errorf("Expected nil, got %v", err)
+	}
+	if course != nil {
+		t.Errorf("Expected nil, got %v", course)
+	}
+}
+
+func TestGetCourseByIdWithEmptyId(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{})
+	course, err := courseService.GetCourseById("")
+	if err == nil {
+		t.Errorf("Expected error, got nil")
+	}
+	if course != nil {
+		t.Errorf("Expected nil, got %v", course)
+	}
+}
+
+func TestGetCourseByTeacherId(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{})
+	courses, err := courseService.GetCourseByTeacherId("123e4567-e89b-12d3-a456-426614174000")
+	if err != nil {
+		t.Errorf("Expected nil, got %v", err)
+	}
+	if len(courses) != 1 {
+		t.Errorf("Expected 1 course, got %v", len(courses))
+	}
+}
+
+func TestGetCourseByTeacherIdWithNonExistentId(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{})
+	courses, err := courseService.GetCourseByTeacherId("123e4567-e89b-12d3-a456-426614174001")
+	if err != nil {
+		t.Errorf("Expected nil, got %v", err)
+	}
+	if len(courses) != 0 {
+		t.Errorf("Expected 0 courses, got %v", len(courses))
+	}
+}
+
+func TestGetCourseByTeacherIdWithEmptyId(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{})
+	courses, err := courseService.GetCourseByTeacherId("")
+	if err == nil {
+		t.Errorf("Expected error, got nil")
+	}
+	if len(courses) != 0 {
+		t.Errorf("Expected 0 courses, got %v", len(courses))
+	}
+}
+
+func TestGetCourseByTitle(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{})
+	courses, err := courseService.GetCourseByTitle("Test Course")
+	if err != nil {
+		t.Errorf("Expected nil, got %v", err)
+	}
+	if len(courses) != 1 {
+		t.Errorf("Expected 1 course, got %v", len(courses))
+	}
+}
+
+func TestGetCourseByTitleWithNonExistentTitle(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{})
+	courses, err := courseService.GetCourseByTitle("Non Existent Title")
+	if err != nil {
+		t.Errorf("Expected nil, got %v", err)
+	}
+	if len(courses) != 0 {
+		t.Errorf("Expected 0 courses, got %v", len(courses))
+	}
+}
+
+func TestDeleteCourse(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{})
+	err := courseService.DeleteCourse("123e4567-e89b-12d3-a456-426614174000")
+	if err != nil {
+		t.Errorf("Expected nil, got %v", err)
+	}
+}
+
+func TestDeleteCourseWithEmptyId(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{})
+	err := courseService.DeleteCourse("")
+	if err == nil {
+		t.Errorf("Expected error, got nil")
 	}
 }
