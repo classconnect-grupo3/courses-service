@@ -1,5 +1,5 @@
 # Version must be a string, not a number
-version: "v2"
+version: "latest"
 
 run:
   timeout: 5m
