@@ -17,7 +17,7 @@ services:
       - courses-network
     command: mongod --quiet
 
-  app:
+  app-test:
     build:
       context: .
       dockerfile: Dockerfile.test
