@@ -1,28 +1,35 @@
-version: 2
+# Version must be a string, not a number
+version: "2"
 
 run:
   timeout: 5m
   tests: false
+  # skip-dirs is a valid property for the run section
   skip-dirs:
     - vendor
 
+# linters-settings section for linter configurations
+linters-settings:
   misspell:
     locale: US
 
 issues:
+  # These settings are now properly placed in the issues section
   exclude-use-default: false
-  # Podés usar estas expresiones regulares para ignorar mensajes específicos
   exclude:
     - "should have comment or be unexported"
-    - "error return value .* is not checked"  # (si querés ignorarlo globalmente, no recomendado)
+    - "error return value .* is not checked"
   
-  # Agrupar errores similares
+  # Grouping settings
   group-by: source
+  
+  # Severity levels for different linters
   severity:
     errcheck: warning
     staticcheck: warning
     govet: error
 
+# Output configuration
 output:
   format: colored-line-number
   sort-results: true
