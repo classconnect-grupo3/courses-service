@@ -6,6 +6,7 @@ import (
 	"courses-service/src/tests/testutil"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -30,17 +31,11 @@ func TestCreateCourse(t *testing.T) {
 
 	// Test creating a course
 	createdCourse, err := courseRepository.CreateCourse(course)
-	if err != nil {
-		t.Fatalf("Error creating course: %v", err)
-	}
+	assert.NoError(t, err)
 
 	// Verify the course was created
-	if createdCourse.ID.IsZero() {
-		t.Error("Expected course to have an ID but got zero ID")
-	}
-	if createdCourse.Title != course.Title {
-		t.Errorf("Expected title %s but got %s", course.Title, createdCourse.Title)
-	}
+	assert.False(t, createdCourse.ID.IsZero())
+	assert.Equal(t, course.Title, createdCourse.Title)
 }
 
 func TestGetCourseByTitle(t *testing.T) {
@@ -59,17 +54,10 @@ func TestGetCourseByTitle(t *testing.T) {
 	courseRepository.CreateCourse(course)
 
 	gotCourse, err := courseRepository.GetCourseByTitle(course.Title)
-	if err != nil {
-		t.Fatalf("Error getting course: %v", err)
-	}
+	assert.NoError(t, err)
 
-	if len(gotCourse) == 0 {
-		t.Error("Expected course but got empty array")
-	}
-
-	if gotCourse[0].Title != course.Title {
-		t.Errorf("Expected title %s but got %s", course.Title, gotCourse[0].Title)
-	}
+	assert.NotEmpty(t, gotCourse)
+	assert.Equal(t, course.Title, gotCourse[0].Title)
 }
 
 func TestGetCourseByTitleNotFound(t *testing.T) {
@@ -80,13 +68,9 @@ func TestGetCourseByTitleNotFound(t *testing.T) {
 	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
 
 	gotCourse, err := courseRepository.GetCourseByTitle("Non-existent course")
-	if err != nil {
-		t.Fatalf("Error getting course: %v", err)
-	}
+	assert.NoError(t, err)
 
-	if len(gotCourse) != 0 {
-		t.Error("Expected empty array but got courses")
-	}
+	assert.Empty(t, gotCourse)
 }
 
 func TestGetCourseByTeacherId(t *testing.T) {
@@ -105,17 +89,10 @@ func TestGetCourseByTeacherId(t *testing.T) {
 	courseRepository.CreateCourse(course)
 
 	gotCourse, err := courseRepository.GetCourseByTeacherId(course.TeacherUUID)
-	if err != nil {
-		t.Fatalf("Error getting course: %v", err)
-	}
+	assert.NoError(t, err)
 
-	if len(gotCourse) == 0 {
-		t.Error("Expected course but got empty array")
-	}
-
-	if gotCourse[0].TeacherUUID != course.TeacherUUID {
-		t.Errorf("Expected teacher UUID %s but got %s", course.TeacherUUID, gotCourse[0].TeacherUUID)
-	}
+	assert.NotEmpty(t, gotCourse)
+	assert.Equal(t, course.TeacherUUID, gotCourse[0].TeacherUUID)
 }
 
 func TestGetCourseByTeacherIdNotFound(t *testing.T) {
@@ -126,13 +103,9 @@ func TestGetCourseByTeacherIdNotFound(t *testing.T) {
 	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
 
 	gotCourse, err := courseRepository.GetCourseByTeacherId("Non-existent teacher UUID")
-	if err != nil {
-		t.Fatalf("Error getting course: %v", err)
-	}
+	assert.NoError(t, err)
 
-	if len(gotCourse) != 0 {
-		t.Error("Expected empty array but got courses")
-	}
+	assert.Empty(t, gotCourse)
 }
 
 func TestGetCourseById(t *testing.T) {
@@ -154,22 +127,13 @@ func TestGetCourseById(t *testing.T) {
 	}
 
 	createdCourse, err := courseRepository.CreateCourse(course)
-	if err != nil {
-		t.Fatalf("Error creating course: %v", err)
-	}
+	assert.NoError(t, err)
 
 	gotCourse, err := courseRepository.GetCourseById(createdCourse.ID.Hex())
-	if err != nil {
-		t.Fatalf("Error getting course: %v", err)
-	}
+	assert.NoError(t, err)
 
-	if gotCourse.ID != createdCourse.ID {
-		t.Errorf("Expected course ID %s but got %s", createdCourse.ID.Hex(), gotCourse.ID.Hex())
-	}
-
-	if gotCourse.Title != course.Title {
-		t.Errorf("Expected title %s but got %s", course.Title, gotCourse.Title)
-	}
+	assert.Equal(t, createdCourse.ID, gotCourse.ID)
+	assert.Equal(t, course.Title, gotCourse.Title)
 }
 
 func TestGetCourseByIdNotFound(t *testing.T) {
@@ -180,13 +144,9 @@ func TestGetCourseByIdNotFound(t *testing.T) {
 	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
 
 	gotCourse, err := courseRepository.GetCourseById("663463666666666666666666")
-	if err == nil {
-		t.Fatalf("Expected error but got nil")
-	}
+	assert.Error(t, err)
 
-	if gotCourse != nil {
-		t.Error("Expected nil but got course")
-	}
+	assert.Nil(t, gotCourse)
 }
 
 func TestGetCourses(t *testing.T) {
@@ -210,21 +170,12 @@ func TestGetCourses(t *testing.T) {
 	courseRepository.CreateCourse(course2)
 
 	gotCourses, err := courseRepository.GetCourses()
-	if err != nil {
-		t.Fatalf("Error getting courses: %v", err)
-	}
+	assert.NoError(t, err)
 
-	if len(gotCourses) != 2 {
-		t.Errorf("Expected 2 courses but got %d", len(gotCourses))
-	}
+	assert.Equal(t, 2, len(gotCourses))
 
-	if gotCourses[0].Title != course1.Title {
-		t.Errorf("Expected title %s but got %s", course1.Title, gotCourses[0].Title)
-	}
-
-	if gotCourses[1].Title != course2.Title {
-		t.Errorf("Expected title %s but got %s", course2.Title, gotCourses[1].Title)
-	}
+	assert.Equal(t, course1.Title, gotCourses[0].Title)
+	assert.Equal(t, course2.Title, gotCourses[1].Title)
 }
 
 func TestGetCoursesEmpty(t *testing.T) {
@@ -235,13 +186,9 @@ func TestGetCoursesEmpty(t *testing.T) {
 	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
 
 	gotCourses, err := courseRepository.GetCourses()
-	if err != nil {
-		t.Fatalf("Error getting courses: %v", err)
-	}
+	assert.NoError(t, err)
 
-	if len(gotCourses) != 0 {
-		t.Errorf("Expected 0 courses but got %d", len(gotCourses))
-	}
+	assert.Equal(t, 0, len(gotCourses))
 }
 
 func TestDeleteCourse(t *testing.T) {
@@ -257,23 +204,15 @@ func TestDeleteCourse(t *testing.T) {
 	}
 
 	createdCourse, err := courseRepository.CreateCourse(course)
-	if err != nil {
-		t.Fatalf("Error creating course: %v", err)
-	}
+	assert.NoError(t, err)
 
 	err = courseRepository.DeleteCourse(createdCourse.ID.Hex())
-	if err != nil {
-		t.Fatalf("Error deleting course: %v", err)
-	}
+	assert.NoError(t, err)
 
 	gotCourse, err := courseRepository.GetCourseById(createdCourse.ID.Hex())
-	if err == nil {
-		t.Fatalf("Expected error but got nil")
-	}
+	assert.Error(t, err)
 
-	if gotCourse != nil {
-		t.Error("Expected nil but got course")
-	}
+	assert.Nil(t, gotCourse)
 }
 
 func TestDeleteCourseNotFound(t *testing.T) {
@@ -284,7 +223,5 @@ func TestDeleteCourseNotFound(t *testing.T) {
 	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
 
 	err := courseRepository.DeleteCourse("663463666666666666666666")
-	if err != nil {
-		t.Fatalf("Expected nil but got error: %v", err)
-	}
+	assert.NoError(t, err)
 }
