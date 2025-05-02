@@ -58,11 +58,10 @@ jobs:
             exit 1
           fi
       
-      - name: Convert coverage to Coveralls format
-        run: |
-          go install github.com/mattn/goveralls@latest
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-          goveralls -coverprofile=coverage/coverage.out -service=github
+      - name: Check coverage and upload to Coveralls
+        uses: shogo82148/actions-goveralls@v1
+        with:
+          path-to-profile: coverage/coverage.out
         env:
           COVERALLS_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
       
