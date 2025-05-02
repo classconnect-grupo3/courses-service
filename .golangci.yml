@@ -1,0 +1,28 @@
+version: 2
+
+run:
+  timeout: 5m
+  tests: false
+  skip-dirs:
+    - vendor
+
+  misspell:
+    locale: US
+
+issues:
+  exclude-use-default: false
+  # Podés usar estas expresiones regulares para ignorar mensajes específicos
+  exclude:
+    - "should have comment or be unexported"
+    - "error return value .* is not checked"  # (si querés ignorarlo globalmente, no recomendado)
+  
+  # Agrupar errores similares
+  group-by: source
+  severity:
+    errcheck: warning
+    staticcheck: warning
+    govet: error
+
+output:
+  format: colored-line-number
+  sort-results: true

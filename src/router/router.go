@@ -6,9 +6,9 @@ import (
 	"courses-service/src/database"
 	"courses-service/src/repository"
 	"courses-service/src/service"
+	"github.com/gin-gonic/gin"
 	"log"
 	"log/slog"
-	"github.com/gin-gonic/gin"
 )
 
 func createRouterFromConfig(config *config.Config) *gin.Engine {
