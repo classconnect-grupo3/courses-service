@@ -4,7 +4,7 @@ import "time"
 
 type CreateCourseRequest struct {
 	Title       string `json:"title" binding:"required"`
-	Description string `json:"description" binding:"required"`
+	Description string `json:"description" binding:"optional"`
 	TeacherID   string `json:"teacher_id" binding:"required"`
 	Capacity    int    `json:"capacity" binding:"required"`
 }

@@ -3,8 +3,6 @@ package repository
 import (
 	"context"
 	"courses-service/src/model"
-	"courses-service/src/schemas"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -21,15 +19,7 @@ func NewCourseRepository(db *mongo.Client, dbName string) *CourseRepository {
 	return &CourseRepository{db: db, dbName: dbName, courseCollection: db.Database(dbName).Collection("courses")}
 }
 
-func (r *CourseRepository) CreateCourse(c schemas.CreateCourseRequest) (*model.Course, error) {
-	course := model.Course{
-		Title:       c.Title,
-		Description: c.Description,
-		TeacherUUID: c.TeacherID,
-		Capacity:    c.Capacity,
-		CreatedAt:   time.Now(),
-	}
-
+func (r *CourseRepository) CreateCourse(course model.Course) (*model.Course, error) {
 	result, err := r.courseCollection.InsertOne(context.TODO(), course)
 	if err != nil {
 		return nil, err

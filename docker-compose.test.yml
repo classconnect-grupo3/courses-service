@@ -1,0 +1,39 @@
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    restart: always
+    env_file:
+      - ./src/.env.test
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+      - MONGO_INITDB_DATABASE=test_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - courses-network
+    command: mongod --quiet
+
+  app-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: courses-service-test
+    restart: "no"
+    env_file:
+      - ./src/.env.test
+    depends_on:
+      - mongodb
+    networks:
+      - courses-network
+    volumes:
+      - ./coverage:/app/coverage
+volumes:
+  mongodb_data: {}
+
+networks:
+  courses-network:
+    driver: bridge

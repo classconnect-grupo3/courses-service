@@ -1,5 +1,5 @@
 # Courses Service
-
+[![Coverage Status](https://coveralls.io/repos/github/classconnect-grupo3/courses-service/badge.svg?branch=main)](https://coveralls.io/github/classconnect-grupo3/courses-service?branch=main)
 ## Overview
 This is a Go-based microservice for managing courses. It provides endpoints to create, retrieve, and delete courses, storing data in a MongoDB database.
 
