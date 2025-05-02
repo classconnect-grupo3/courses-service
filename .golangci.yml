@@ -51,7 +51,7 @@ output:
     text:
       print-linter-name: true
       print-issued-lines: true
-      colors: auto
+      colors: true
   sort-order:
     - linter
     - severity
