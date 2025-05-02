@@ -29,7 +29,8 @@ services:
       - mongodb
     networks:
       - courses-network
-
+    volumes:
+      - ./coverage:/app/coverage
 volumes:
   mongodb_data: {}
 
