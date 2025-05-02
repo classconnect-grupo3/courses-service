@@ -1,35 +1,71 @@
-# Version must be a string, not a number
+# v2 schema must be exactly "2"
 version: "2"
+
+linters:
+  # choose your default set: "standard", "all", "fast" or "none"
+  default: all
+
+  # disable linters you don’t want
+  disable:
+    - govet  # example
+
+  # settings for individual linters MUST live under linters.settings
+  settings:
+    misspell:
+      locale: US
+    # ... your other linters-settings here ...
+
+formatters:
+  # if you previously enabled formatters under linters.enable,
+  # move them here. e.g.:
+  enable:
+    - goimports
+    - gci
+
+issues:
+  # to keep the built‑in excludes, or disable them:
+  use-default-excludes: false
+
+  # your exclude‑patterns (these replace top‑level "exclude")
+  exclude-rules:
+    - linters:
+        - errcheck
+      text: "error return value .* is not checked"
+
+  # group-by → this moved under issues.group-by
+  group-by: source
+
+  # severity rules moved under issues.severity
+  severity:
+    rules:
+      - path: ".*\\.go"
+        text: "@linter"    # keep each linter’s default severity
+
+  # if you want to exclude whole dirs:
+  exclude-dirs:
+    - vendor
+
+output:
+  # the new `formats:` block replaces deprecated format/sort-results
+  formats:
+    text:
+      print-linter-name: true
+      print-issued-lines: true
+      colors: auto
+  sort-order:
+    - linter
+    - severity
+    - file
+  show-stats: true
+  path-prefix: ""        # if you need to strip/​add prefixes
 
 run:
   timeout: 5m
   tests: false
-  # skip-dirs is a valid property for the run section
-  skip-dirs:
-    - vendor
+  relative-path-mode: cfg
+  issues-exit-code: 2
+  # skip-dirs was removed — use issues.exclude-dirs instead
+  build-tags: []
 
-# linters-settings section for linter configurations
-linters-settings:
-  misspell:
-    locale: US
-
-issues:
-  # These settings are now properly placed in the issues section
-  exclude-use-default: false
-  exclude:
-    - "should have comment or be unexported"
-    - "error return value .* is not checked"
-  
-  # Grouping settings
-  group-by: source
-  
-  # Severity levels for different linters
-  severity:
-    errcheck: warning
-    staticcheck: warning
-    govet: error
-
-# Output configuration
-output:
-  format: colored-line-number
-  sort-results: true
+severity:
+  default: error
