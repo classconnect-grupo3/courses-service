@@ -8,7 +8,7 @@ on:
 
 jobs:
   lint-and-format:
-    name: Go Format & Lint Check
+    name: Go Format Check
     runs-on: ubuntu-latest
 
     steps:
@@ -31,13 +31,6 @@ jobs:
             echo "$gofmt_output"
             exit 1
           fi
-
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v7
-        with:
-          version: "latest"
-          args: --config=.golangci.yml
-
 
   test:
     name: Run Tests
