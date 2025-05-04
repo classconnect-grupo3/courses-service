@@ -14,6 +14,7 @@ type CourseRepository interface {
 	DeleteCourse(id string) error
 	GetCourseByTeacherId(teacherId string) ([]*model.Course, error)
 	GetCourseByTitle(title string) ([]*model.Course, error)
+	UpdateCourse(id string, updateCourseRequest model.Course) (*model.Course, error)
 }
 
 type CourseService struct {
@@ -39,6 +40,7 @@ func (s *CourseService) CreateCourse(c schemas.CreateCourseRequest) (*model.Cour
 		TeacherUUID: c.TeacherID,
 		Capacity:    c.Capacity,
 		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 	return s.courseRepository.CreateCourse(course)
 }
@@ -69,4 +71,18 @@ func (s *CourseService) GetCourseByTitle(title string) ([]*model.Course, error) 
 		return nil, errors.New("title is required")
 	}
 	return s.courseRepository.GetCourseByTitle(title)
+}
+
+func (s *CourseService) UpdateCourse(id string, updateCourseRequest schemas.UpdateCourseRequest) (*model.Course, error) {
+	if id == "" {
+		return nil, errors.New("id is required")
+	}
+	course := model.Course{
+		Title:       updateCourseRequest.Title,
+		Description: updateCourseRequest.Description,
+		TeacherUUID: updateCourseRequest.TeacherID,
+		Capacity:    updateCourseRequest.Capacity,
+		UpdatedAt:   time.Now(),
+	}
+	return s.courseRepository.UpdateCourse(id, course)
 }

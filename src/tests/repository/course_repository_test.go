@@ -225,3 +225,93 @@ func TestDeleteCourseNotFound(t *testing.T) {
 	err := courseRepository.DeleteCourse("663463666666666666666666")
 	assert.NoError(t, err)
 }
+
+func TestUpdateCourse(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	course := model.Course{
+		Title:       "Test Course",
+		Description: "Test Description",
+	}
+
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	expectedUpdatedCourse := model.Course{
+		Title:       "Updated Course",
+		Description: "Updated Description",
+	}
+
+	updatedCourse, err := courseRepository.UpdateCourse(createdCourse.ID.Hex(), expectedUpdatedCourse)
+	assert.NoError(t, err)
+
+	assert.Equal(t, expectedUpdatedCourse.Title, updatedCourse.Title)
+	assert.Equal(t, expectedUpdatedCourse.Description, updatedCourse.Description)
+}
+
+func TestUpdateCourseNotFound(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	_, err := courseRepository.UpdateCourse("663463666666666666666666", model.Course{
+		Title:       "Updated Course",
+		Description: "Updated Description",
+	})
+	assert.Error(t, err)
+}
+
+func TestUpdateCourseOnlyTitle(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	course := model.Course{
+		Title:       "Test Course",
+		Description: "Test Description",
+	}
+
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	updatedCourse, err := courseRepository.UpdateCourse(createdCourse.ID.Hex(), model.Course{
+		Title: "Updated Course",
+	})
+	assert.NoError(t, err)
+
+	assert.Equal(t, "Updated Course", updatedCourse.Title)
+	assert.Equal(t, course.Description, updatedCourse.Description)
+}
+
+func TestUpdatedCourseOnlyCapacity(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	course := model.Course{
+		Title:       "Test Course",
+		Description: "Test Description",
+	}
+
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	updatedCourse, err := courseRepository.UpdateCourse(createdCourse.ID.Hex(), model.Course{
+		Capacity: 10,
+	})
+	assert.NoError(t, err)
+
+	assert.Equal(t, 10, updatedCourse.Capacity)
+	assert.Equal(t, course.Title, updatedCourse.Title)
+	assert.Equal(t, course.Description, updatedCourse.Description)
+}

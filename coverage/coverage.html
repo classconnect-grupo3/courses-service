@@ -55,9 +55,9 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">courses-service/src/repository/course_repository.go (76.7%)</option>
+				<option value="file0">courses-service/src/repository/course_repository.go (80.8%)</option>
 				
-				<option value="file1">courses-service/src/service/course.go (88.9%)</option>
+				<option value="file1">courses-service/src/service/course.go (90.9%)</option>
 				
 				<option value="file2">courses-service/src/tests/testutil/db_setup.go (72.2%)</option>
 				
@@ -82,6 +82,8 @@ import (
         "go.mongodb.org/mongo-driver/bson"
         "go.mongodb.org/mongo-driver/bson/primitive"
         "go.mongodb.org/mongo-driver/mongo"
+
+        "reflect"
 )
 
 type CourseRepository struct {
@@ -90,6 +92,43 @@ type CourseRepository struct {
         courseCollection *mongo.Collection
 }
 
+func filterEmptyFields(course model.Course) any <span class="cov8" title="1">{
+        updates := bson.D{}
+
+        courseType := reflect.TypeOf(course)
+        courseValue := reflect.ValueOf(course)
+
+        for i := 0; i &lt; courseType.NumField(); i++ </span><span class="cov8" title="1">{
+                field := courseType.Field(i)
+                fieldValue := courseValue.Field(i)
+                tag := field.Tag.Get("json")
+                if !isZeroType(fieldValue) </span><span class="cov8" title="1">{ // reflect library doesnt contemplate time.Time values so it always filters it
+                        update := bson.E{Key: tag, Value: fieldValue.Interface()}
+                        updates = append(updates, update)
+                }</span>
+        }
+
+        <span class="cov8" title="1">return updates</span>
+}
+
+func isZeroType(value reflect.Value) bool <span class="cov8" title="1">{
+        zero := reflect.Zero(value.Type()).Interface()
+
+        switch value.Kind() </span>{
+        case reflect.Slice, reflect.Array, reflect.Chan, reflect.Map:<span class="cov8" title="1">
+                return value.Len() == 0</span>
+        case reflect.String:<span class="cov8" title="1">
+                return value.String() == ""</span>
+        case reflect.Int:<span class="cov8" title="1">
+                return value.Int() == 0</span>
+        case reflect.Bool:<span class="cov0" title="0">
+                return !value.Bool()</span>
+        case reflect.Float64:<span class="cov0" title="0">
+                return value.Float() == 0</span>
+        default:<span class="cov8" title="1">
+                return reflect.DeepEqual(zero, value.Interface())</span>
+        }
+}
 func NewCourseRepository(db *mongo.Client, dbName string) *CourseRepository <span class="cov8" title="1">{
         return &amp;CourseRepository{db: db, dbName: dbName, courseCollection: db.Database(dbName).Collection("courses")}
 }</span>
@@ -176,6 +215,27 @@ func (r *CourseRepository) DeleteCourse(id string) error <span class="cov8" titl
         }</span>
         <span class="cov8" title="1">return nil</span>
 }
+
+func (r *CourseRepository) UpdateCourse(id string, updateCourseRequest model.Course) (*model.Course, error) <span class="cov8" title="1">{
+        objectId, err := primitive.ObjectIDFromHex(id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">update := filterEmptyFields(updateCourseRequest)
+
+        _, err = r.courseCollection.UpdateOne(context.TODO(), bson.M{"_id": objectId}, bson.M{"$set": update})
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">updatedCourse, err := r.GetCourseById(id)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return updatedCourse, nil</span>
+}
 </pre>
 		
 		<pre class="file" id="file1" style="display: none">package service
@@ -194,6 +254,7 @@ type CourseRepository interface {
         DeleteCourse(id string) error
         GetCourseByTeacherId(teacherId string) ([]*model.Course, error)
         GetCourseByTitle(title string) ([]*model.Course, error)
+        UpdateCourse(id string, updateCourseRequest model.Course) (*model.Course, error)
 }
 
 type CourseService struct {
@@ -219,6 +280,7 @@ func (s *CourseService) CreateCourse(c schemas.CreateCourseRequest) (*model.Cour
                 TeacherUUID: c.TeacherID,
                 Capacity:    c.Capacity,
                 CreatedAt:   time.Now(),
+                UpdatedAt:   time.Now(),
         }
         return s.courseRepository.CreateCourse(course)</span>
 }
@@ -249,6 +311,20 @@ func (s *CourseService) GetCourseByTitle(title string) ([]*model.Course, error) 
                 return nil, errors.New("title is required")
         }</span>
         <span class="cov8" title="1">return s.courseRepository.GetCourseByTitle(title)</span>
+}
+
+func (s *CourseService) UpdateCourse(id string, updateCourseRequest schemas.UpdateCourseRequest) (*model.Course, error) <span class="cov8" title="1">{
+        if id == "" </span><span class="cov8" title="1">{
+                return nil, errors.New("id is required")
+        }</span>
+        <span class="cov8" title="1">course := model.Course{
+                Title:       updateCourseRequest.Title,
+                Description: updateCourseRequest.Description,
+                TeacherUUID: updateCourseRequest.TeacherID,
+                Capacity:    updateCourseRequest.Capacity,
+                UpdatedAt:   time.Now(),
+        }
+        return s.courseRepository.UpdateCourse(id, course)</span>
 }
 </pre>
 		
