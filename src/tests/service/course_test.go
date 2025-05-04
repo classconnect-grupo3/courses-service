@@ -70,6 +70,10 @@ func (m *MockCourseRepository) GetCourseByTitle(title string) ([]*model.Course, 
 	return []*model.Course{}, nil
 }
 
+func (m *MockCourseRepository) UpdateCourse(id string, updateCourseRequest model.Course) (*model.Course, error) {
+	return nil, nil
+}
+
 func TestCreateCourseWithInvalidCapacity(t *testing.T) {
 	courseService := service.NewCourseService(&MockCourseRepository{})
 	course, err := courseService.CreateCourse(schemas.CreateCourseRequest{

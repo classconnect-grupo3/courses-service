@@ -7,6 +7,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"reflect"
 )
 
 type CourseRepository struct {
@@ -15,6 +17,43 @@ type CourseRepository struct {
 	courseCollection *mongo.Collection
 }
 
+func filterEmptyFields(course model.Course) any {
+	updates := bson.D{}
+
+	courseType := reflect.TypeOf(course)
+	courseValue := reflect.ValueOf(course)
+
+	for i := 0; i < courseType.NumField(); i++ {
+		field := courseType.Field(i)
+		fieldValue := courseValue.Field(i)
+		tag := field.Tag.Get("json")
+		if !isZeroType(fieldValue) || field.Name == "UpdatedAt" { // reflect library doesnt contemplate time.Time values so it always filters it
+			update := bson.E{Key: tag, Value: fieldValue.Interface()}
+			updates = append(updates, update)
+		}
+	}
+
+	return updates
+}
+
+func isZeroType(value reflect.Value) bool {
+	zero := reflect.Zero(value.Type()).Interface()
+
+	switch value.Kind() {
+	case reflect.Slice, reflect.Array, reflect.Chan, reflect.Map:
+		return value.Len() == 0
+	case reflect.String:
+		return value.String() == ""
+	case reflect.Int:
+		return value.Int() == 0
+	case reflect.Bool:
+		return !value.Bool()
+	case reflect.Float64:
+		return value.Float() == 0
+	default:
+		return reflect.DeepEqual(zero, value.Interface())
+	}
+}
 func NewCourseRepository(db *mongo.Client, dbName string) *CourseRepository {
 	return &CourseRepository{db: db, dbName: dbName, courseCollection: db.Database(dbName).Collection("courses")}
 }
@@ -100,4 +139,25 @@ func (r *CourseRepository) DeleteCourse(id string) error {
 		return err
 	}
 	return nil
+}
+
+func (r *CourseRepository) UpdateCourse(id string, updateCourseRequest model.Course) (*model.Course, error) {
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+
+	update := filterEmptyFields(updateCourseRequest)
+
+	_, err = r.courseCollection.UpdateOne(context.TODO(), bson.M{"_id": objectId}, bson.M{"$set": update})
+	if err != nil {
+		return nil, err
+	}
+
+	updatedCourse, err := r.GetCourseById(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedCourse, nil
 }

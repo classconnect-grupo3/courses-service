@@ -106,3 +106,24 @@ func (c *CoursesController) GetCourseByTitle(ctx *gin.Context) {
 	slog.Debug("Course retrieved", "course", course)
 	ctx.JSON(http.StatusOK, course)
 }
+
+func (c *CoursesController) UpdateCourse(ctx *gin.Context) {
+	slog.Debug("Updating course")
+	id := ctx.Param("id")
+
+	var updateCourseRequest schemas.UpdateCourseRequest
+	if err := ctx.ShouldBindJSON(&updateCourseRequest); err != nil {
+		slog.Error("Error binding JSON", "error", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	updatedCourse, err := c.service.UpdateCourse(id, updateCourseRequest)
+	if err != nil {
+		slog.Error("Error updating course", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	slog.Debug("Course updated", "course", updatedCourse)
+	ctx.JSON(http.StatusOK, updatedCourse)
+}

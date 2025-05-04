@@ -14,5 +14,5 @@ type Course struct {
 	Capacity       int                `json:"capacity" bson:"capacity"`
 	StudentsAmount int                `json:"students_amount" bson:"students_amount"`
 	CreatedAt      time.Time          `json:"created_at" bson:"created_at"`
-	// TODO: add reamining fields
+	UpdatedAt      time.Time          `json:"updated_at" bson:"updated_at"`
 }

@@ -46,4 +46,5 @@ func initializeRoutes(r *gin.Engine, controller *controller.CoursesController) {
 	r.DELETE("/courses/:id", controller.DeleteCourse)
 	r.GET("/courses/teacher/:teacherId", controller.GetCourseByTeacherId)
 	r.GET("/courses/title/:title", controller.GetCourseByTitle)
+	r.PUT("/courses/:id", controller.UpdateCourse)
 }
