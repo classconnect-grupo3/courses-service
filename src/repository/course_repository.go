@@ -27,7 +27,7 @@ func filterEmptyFields(course model.Course) any {
 		field := courseType.Field(i)
 		fieldValue := courseValue.Field(i)
 		tag := field.Tag.Get("json")
-		if !isZeroType(fieldValue){ // reflect library doesnt contemplate time.Time values so it always filters it
+		if !isZeroType(fieldValue) { // reflect library doesnt contemplate time.Time values so it always filters it
 			update := bson.E{Key: tag, Value: fieldValue.Interface()}
 			updates = append(updates, update)
 		}

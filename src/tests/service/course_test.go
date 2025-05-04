@@ -6,6 +6,7 @@ import (
 	"courses-service/src/service"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -71,7 +72,13 @@ func (m *MockCourseRepository) GetCourseByTitle(title string) ([]*model.Course, 
 }
 
 func (m *MockCourseRepository) UpdateCourse(id string, updateCourseRequest model.Course) (*model.Course, error) {
-	return nil, nil
+	return &model.Course{
+		ID:          primitive.NewObjectID(),
+		Title:       "Test Course",
+		Description: "Test Description",
+		TeacherUUID: "123e4567-e89b-12d3-a456-426614174000",
+		Capacity:    10,
+	}, nil
 }
 
 func TestCreateCourseWithInvalidCapacity(t *testing.T) {
@@ -82,12 +89,8 @@ func TestCreateCourseWithInvalidCapacity(t *testing.T) {
 		TeacherID:   "123e4567-e89b-12d3-a456-426614174000",
 		Capacity:    0,
 	})
-	if err == nil {
-		t.Errorf("Expected error, got nil")
-	}
-	if course != nil {
-		t.Errorf("Expected nil, got %v", course)
-	}
+	assert.Error(t, err)
+	assert.Nil(t, course)
 }
 
 func TestCreateCourseWithValidCapacity(t *testing.T) {
@@ -98,111 +101,97 @@ func TestCreateCourseWithValidCapacity(t *testing.T) {
 		TeacherID:   "123e4567-e89b-12d3-a456-426614174000",
 		Capacity:    10,
 	})
-	if err != nil {
-		t.Errorf("Expected nil, got %v", err)
-	}
+	assert.NoError(t, err)
 }
 
 func TestGetCourseById(t *testing.T) {
 	courseService := service.NewCourseService(&MockCourseRepository{})
 	course, err := courseService.GetCourseById("123e4567-e89b-12d3-a456-426614174000")
-	if err != nil {
-		t.Errorf("Expected nil, got %v", err)
-	}
-	if course == nil {
-		t.Errorf("Expected course, got nil")
-	}
+	assert.NoError(t, err)
+	assert.NotNil(t, course)
 }
 
 func TestGetCourseByIdWithNonExistentId(t *testing.T) {
 	courseService := service.NewCourseService(&MockCourseRepository{})
 	course, err := courseService.GetCourseById("123e4567-e89b-12d3-a456-426614174001")
-	if err != nil {
-		t.Errorf("Expected nil, got %v", err)
-	}
-	if course != nil {
-		t.Errorf("Expected nil, got %v", course)
-	}
+	assert.NoError(t, err)
+	assert.Nil(t, course)
 }
 
 func TestGetCourseByIdWithEmptyId(t *testing.T) {
 	courseService := service.NewCourseService(&MockCourseRepository{})
 	course, err := courseService.GetCourseById("")
-	if err == nil {
-		t.Errorf("Expected error, got nil")
-	}
-	if course != nil {
-		t.Errorf("Expected nil, got %v", course)
-	}
+	assert.Error(t, err)
+	assert.Nil(t, course)
 }
 
 func TestGetCourseByTeacherId(t *testing.T) {
 	courseService := service.NewCourseService(&MockCourseRepository{})
 	courses, err := courseService.GetCourseByTeacherId("123e4567-e89b-12d3-a456-426614174000")
-	if err != nil {
-		t.Errorf("Expected nil, got %v", err)
-	}
-	if len(courses) != 1 {
-		t.Errorf("Expected 1 course, got %v", len(courses))
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(courses))
 }
 
 func TestGetCourseByTeacherIdWithNonExistentId(t *testing.T) {
 	courseService := service.NewCourseService(&MockCourseRepository{})
 	courses, err := courseService.GetCourseByTeacherId("123e4567-e89b-12d3-a456-426614174001")
-	if err != nil {
-		t.Errorf("Expected nil, got %v", err)
-	}
-	if len(courses) != 0 {
-		t.Errorf("Expected 0 courses, got %v", len(courses))
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(courses))
 }
 
 func TestGetCourseByTeacherIdWithEmptyId(t *testing.T) {
 	courseService := service.NewCourseService(&MockCourseRepository{})
 	courses, err := courseService.GetCourseByTeacherId("")
-	if err == nil {
-		t.Errorf("Expected error, got nil")
-	}
-	if len(courses) != 0 {
-		t.Errorf("Expected 0 courses, got %v", len(courses))
-	}
+	assert.Error(t, err)
+	assert.Equal(t, 0, len(courses))
 }
 
 func TestGetCourseByTitle(t *testing.T) {
 	courseService := service.NewCourseService(&MockCourseRepository{})
 	courses, err := courseService.GetCourseByTitle("Test Course")
-	if err != nil {
-		t.Errorf("Expected nil, got %v", err)
-	}
-	if len(courses) != 1 {
-		t.Errorf("Expected 1 course, got %v", len(courses))
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(courses))
 }
 
 func TestGetCourseByTitleWithNonExistentTitle(t *testing.T) {
 	courseService := service.NewCourseService(&MockCourseRepository{})
 	courses, err := courseService.GetCourseByTitle("Non Existent Title")
-	if err != nil {
-		t.Errorf("Expected nil, got %v", err)
-	}
-	if len(courses) != 0 {
-		t.Errorf("Expected 0 courses, got %v", len(courses))
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(courses))
 }
 
 func TestDeleteCourse(t *testing.T) {
 	courseService := service.NewCourseService(&MockCourseRepository{})
 	err := courseService.DeleteCourse("123e4567-e89b-12d3-a456-426614174000")
-	if err != nil {
-		t.Errorf("Expected nil, got %v", err)
-	}
+	assert.NoError(t, err)
 }
 
 func TestDeleteCourseWithEmptyId(t *testing.T) {
 	courseService := service.NewCourseService(&MockCourseRepository{})
 	err := courseService.DeleteCourse("")
-	if err == nil {
-		t.Errorf("Expected error, got nil")
-	}
+	assert.Error(t, err)
+}
+
+func TestUpdateCourse(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{})
+	course, err := courseService.UpdateCourse("123e4567-e89b-12d3-a456-426614174000", schemas.UpdateCourseRequest{
+		Title:       "Test Course",
+		Description: "Test Description",
+		TeacherID:   "123e4567-e89b-12d3-a456-426614174000",
+		Capacity:    10,
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, course)
+}
+
+func TestUpdateCourseWithEmptyId(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{})
+	course, err := courseService.UpdateCourse("", schemas.UpdateCourseRequest{
+		Title:       "Test Course",
+		Description: "Test Description",
+		TeacherID:   "123e4567-e89b-12d3-a456-426614174000",
+		Capacity:    10,
+	})
+	assert.Error(t, err)
+	assert.Nil(t, course)
 }
