@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	r = router.NewRouter(config.NewConfig())
+	r       = router.NewRouter(config.NewConfig())
 	dbSetup *testutil.DBSetup
 )
 
