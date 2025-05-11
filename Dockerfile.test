@@ -15,6 +15,6 @@ COPY . .
 RUN mkdir -p /app/coverage
 
 # Comando para ejecutar pruebas con cobertura
-CMD ["sh", "-c", "go test -covermode=set -coverprofile=/app/coverage/coverage.out -coverpkg=./src/... -v ./src/... && \
+CMD ["sh", "-c", "go test -p 1 -covermode=set -coverprofile=/app/coverage/coverage.out -coverpkg=./src/... -v ./src/... && \
     go tool cover -html=/app/coverage/coverage.out -o /app/coverage/coverage.html && \
     go tool cover -func=/app/coverage/coverage.out"] 
