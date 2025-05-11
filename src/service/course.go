@@ -41,6 +41,8 @@ func (s *CourseService) CreateCourse(c schemas.CreateCourseRequest) (*model.Cour
 		Capacity:    c.Capacity,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
+		StartDate:   c.StartDate,
+		EndDate:     c.EndDate,
 	}
 	return s.courseRepository.CreateCourse(course)
 }
