@@ -57,7 +57,7 @@
 				
 				<option value="file0">courses-service/src/config/config.go (0.0%)</option>
 				
-				<option value="file1">courses-service/src/controller/courses_controller.go (0.0%)</option>
+				<option value="file1">courses-service/src/controller/courses_controller.go (100.0%)</option>
 				
 				<option value="file2">courses-service/src/database/connection.go (0.0%)</option>
 				
@@ -65,7 +65,7 @@
 				
 				<option value="file4">courses-service/src/repository/course_repository.go (80.8%)</option>
 				
-				<option value="file5">courses-service/src/router/router.go (0.0%)</option>
+				<option value="file5">courses-service/src/router/router.go (26.9%)</option>
 				
 				<option value="file6">courses-service/src/service/course.go (90.9%)</option>
 				
@@ -117,126 +117,136 @@ import (
         "log/slog"
         "net/http"
 
+        "courses-service/src/model"
         "courses-service/src/schemas"
-        "courses-service/src/service"
 
         "github.com/gin-gonic/gin"
 )
 
-type CoursesController struct {
-        service *service.CourseService
+type CourseService interface {
+        GetCourses() ([]*model.Course, error)
+        CreateCourse(c schemas.CreateCourseRequest) (*model.Course, error)
+        GetCourseById(id string) (*model.Course, error)
+        DeleteCourse(id string) error
+        GetCourseByTeacherId(teacherId string) ([]*model.Course, error)
+        GetCourseByTitle(title string) ([]*model.Course, error)
+        UpdateCourse(id string, updateCourseRequest schemas.UpdateCourseRequest) (*model.Course, error)
 }
 
-func NewCoursesController(service *service.CourseService) *CoursesController <span class="cov0" title="0">{
+type CoursesController struct {
+        service CourseService
+}
+
+func NewCoursesController(service CourseService) *CoursesController <span class="cov8" title="1">{
         return &amp;CoursesController{service: service}
 }</span>
 
-func (c *CoursesController) GetCourses(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *CoursesController) GetCourses(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting courses")
 
         courses, err := c.service.GetCourses()
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error getting courses", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
-        <span class="cov0" title="0">slog.Debug("Courses retrieved", "courses", courses)
+        <span class="cov8" title="1">slog.Debug("Courses retrieved", "courses", courses)
         ctx.JSON(http.StatusOK, courses)</span>
 }
 
-func (c *CoursesController) CreateCourse(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *CoursesController) CreateCourse(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Creating course")
 
         var course schemas.CreateCourseRequest
-        if err := ctx.ShouldBindJSON(&amp;course); err != nil </span><span class="cov0" title="0">{
+        if err := ctx.ShouldBindJSON(&amp;course); err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error binding JSON", "error", err)
                 ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">createdCourse, err := c.service.CreateCourse(course)
-        if err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">createdCourse, err := c.service.CreateCourse(course)
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error creating course", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
-        <span class="cov0" title="0">slog.Debug("Course created", "course", createdCourse)
+        <span class="cov8" title="1">slog.Debug("Course created", "course", createdCourse)
         ctx.JSON(http.StatusCreated, createdCourse)</span>
 }
 
-func (c *CoursesController) GetCourseById(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *CoursesController) GetCourseById(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting course by ID")
 
         id := ctx.Param("id")
         course, err := c.service.GetCourseById(id)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error getting course by ID", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
-        <span class="cov0" title="0">slog.Debug("Course retrieved", "course", course)
+        <span class="cov8" title="1">slog.Debug("Course retrieved", "course", course)
         ctx.JSON(http.StatusOK, course)</span>
 }
 
-func (c *CoursesController) DeleteCourse(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *CoursesController) DeleteCourse(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Deleting course")
         id := ctx.Param("id")
 
         err := c.service.DeleteCourse(id)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error deleting course", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
-        <span class="cov0" title="0">slog.Debug("Course deleted", "id", id)
+        <span class="cov8" title="1">slog.Debug("Course deleted", "id", id)
         ctx.JSON(http.StatusOK, gin.H{"message": "Course deleted successfully"})</span>
 }
 
-func (c *CoursesController) GetCourseByTeacherId(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *CoursesController) GetCourseByTeacherId(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting course by teacher ID")
         teacherId := ctx.Param("teacherId")
         log.Printf("The teacher ID is %v", teacherId)
         course, err := c.service.GetCourseByTeacherId(teacherId)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error getting course by teacher ID", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
-        <span class="cov0" title="0">slog.Debug("Course retrieved", "course", course)
+        <span class="cov8" title="1">slog.Debug("Course retrieved", "course", course)
         ctx.JSON(http.StatusOK, course)</span>
 }
 
-func (c *CoursesController) GetCourseByTitle(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *CoursesController) GetCourseByTitle(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting course by title")
         title := ctx.Param("title")
         course, err := c.service.GetCourseByTitle(title)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error getting course by title", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
-        <span class="cov0" title="0">slog.Debug("Course retrieved", "course", course)
+        <span class="cov8" title="1">slog.Debug("Course retrieved", "course", course)
         ctx.JSON(http.StatusOK, course)</span>
 }
 
-func (c *CoursesController) UpdateCourse(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *CoursesController) UpdateCourse(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Updating course")
         id := ctx.Param("id")
 
         var updateCourseRequest schemas.UpdateCourseRequest
-        if err := ctx.ShouldBindJSON(&amp;updateCourseRequest); err != nil </span><span class="cov0" title="0">{
+        if err := ctx.ShouldBindJSON(&amp;updateCourseRequest); err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error binding JSON", "error", err)
                 ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">updatedCourse, err := c.service.UpdateCourse(id, updateCourseRequest)
-        if err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">updatedCourse, err := c.service.UpdateCourse(id, updateCourseRequest)
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error updating course", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
-        <span class="cov0" title="0">slog.Debug("Course updated", "course", updatedCourse)
+        <span class="cov8" title="1">slog.Debug("Course updated", "course", updatedCourse)
         ctx.JSON(http.StatusOK, updatedCourse)</span>
 }
 </pre>
@@ -510,11 +520,11 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov0" title="0">{
         <span class="cov0" title="0">slog.Debug("Connected to database")
 
         controller := controller.NewCoursesController(service.NewCourseService(repository.NewCourseRepository(dbClient, config.DBName))) // TODO: dejar esto mas lindo :)
-        initializeRoutes(r, controller)
+        InitializeRoutes(r, controller)
         return r</span>
 }
 
-func initializeRoutes(r *gin.Engine, controller *controller.CoursesController) <span class="cov0" title="0">{
+func InitializeRoutes(r *gin.Engine, controller *controller.CoursesController) <span class="cov8" title="1">{
         r.GET("/courses", controller.GetCourses)
         r.POST("/courses", controller.CreateCourse)
         r.GET("/courses/:id", controller.GetCourseById)
