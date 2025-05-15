@@ -1,0 +1,64 @@
+package service
+
+import (
+	"courses-service/src/model"
+	"errors"
+	"log/slog"
+)
+
+type ModuleService struct {
+	moduleRepository ModuleRepository
+}
+
+type ModuleRepository interface {
+	GetNextModuleOrder(courseID string) (int, error)
+	CreateModule(courseID string, module model.Module) (*model.Module, error)
+	GetModuleById(id string) (*model.Module, error)
+	UpdateModule(id string, module model.Module) (*model.Module, error)
+	DeleteModule(id string) error
+	GetModulesByCourseId(courseId string) ([]*model.Module, error)
+}
+
+func NewModuleService(moduleRepository ModuleRepository) *ModuleService {
+	return &ModuleService{moduleRepository: moduleRepository}
+}
+
+func (s *ModuleService) CreateModule(module model.Module) (*model.Module, error) {
+	slog.Debug("Creating module", "module", module)
+	if module.Order == 0 {
+		order, err := s.moduleRepository.GetNextModuleOrder(module.CourseID)
+		if err != nil {
+			return nil, err
+		}
+		module.Order = order
+	}
+	return s.moduleRepository.CreateModule(module.CourseID, module)
+}
+
+func (s *ModuleService) GetModulesByCourseId(courseId string) ([]*model.Module, error) {
+	if courseId == "" {
+		return nil, errors.New("courseId is required")
+	}
+	return s.moduleRepository.GetModulesByCourseId(courseId)
+}
+
+func (s *ModuleService) GetModuleById(id string) (*model.Module, error) {
+	if id == "" {
+		return nil, errors.New("module id is required")
+	}
+	return s.moduleRepository.GetModuleById(id)
+}
+
+func (s *ModuleService) UpdateModule(id string, module model.Module) (*model.Module, error) {
+	if id == "" {
+		return nil, errors.New("module id is required")
+	}
+	return s.moduleRepository.UpdateModule(id, module)
+}
+
+func (s *ModuleService) DeleteModule(id string) error {
+	if id == "" {
+		return errors.New("module id is required")
+	}
+	return s.moduleRepository.DeleteModule(id)
+}
