@@ -50,6 +50,32 @@ func (r *ModuleRepository) CreateModule(courseID string, module model.Module) (*
 	return &module, nil
 }
 
+func (r *ModuleRepository) UpdateModule(id string, module model.Module) (*model.Module, error) {
+	filter := bson.M{"modules._id": id}
+	update := bson.M{"$set": module}
+
+	var course model.Course
+	err := r.moduleCollection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&course)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update module: %v", err)
+	}
+
+	return &course.Modules[0], nil
+}
+
+func (r *ModuleRepository) DeleteModule(id string) error {
+	filter := bson.M{"modules._id": id}
+	update := bson.M{"$pull": bson.M{"modules": bson.M{"_id": id}}}
+
+	var course model.Course
+	err := r.moduleCollection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&course)
+	if err != nil {
+		return fmt.Errorf("failed to delete module: %v", err)
+	}
+
+	return nil
+}
+
 func (r *ModuleRepository) GetModuleByName(courseID string, moduleName string) (*model.Module, error) {
 	filter := bson.M{"_id": courseID, "modules.title": moduleName}
 
@@ -67,4 +93,28 @@ func (r *ModuleRepository) GetModuleByName(courseID string, moduleName string) (
 	}
 
 	return nil, fmt.Errorf("module with name %s not found in course %s", moduleName, courseID)
+}
+
+func (r *ModuleRepository) GetModuleById(id string) (*model.Module, error) {
+	filter := bson.M{"modules._id": id}
+
+	var course model.Course
+	err := r.moduleCollection.FindOne(context.TODO(), filter).Decode(&course)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find course or module: %v", err)
+	}
+
+	return &course.Modules[0], nil
+}
+
+func (r *ModuleRepository) GetModulesByCourseId(courseID string) ([]model.Module, error) {
+	filter := bson.M{"_id": courseID}
+
+	var course model.Course
+	err := r.moduleCollection.FindOne(context.TODO(), filter).Decode(&course)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find course: %v", err)
+	}
+
+	return course.Modules, nil
 }
