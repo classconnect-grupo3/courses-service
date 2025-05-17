@@ -43,6 +43,7 @@ func (s *ModuleService) CreateModule(module model.Module) (*model.Module, error)
 }
 
 func (s *ModuleService) GetModulesByCourseId(courseId string) ([]*model.Module, error) {
+	slog.Debug("Getting modules by course id", "courseId", courseId)
 	if courseId == "" {
 		return nil, errors.New("courseId is required")
 	}
@@ -50,6 +51,7 @@ func (s *ModuleService) GetModulesByCourseId(courseId string) ([]*model.Module, 
 }
 
 func (s *ModuleService) GetModuleById(id string) (*model.Module, error) {
+	slog.Debug("Getting module by id", "id", id)
 	if id == "" {
 		return nil, errors.New("module id is required")
 	}
@@ -57,6 +59,7 @@ func (s *ModuleService) GetModuleById(id string) (*model.Module, error) {
 }
 
 func (s *ModuleService) UpdateModule(id string, module model.Module) (*model.Module, error) {
+	slog.Debug("Updating module", "id", id, "module", module)
 	if id == "" {
 		return nil, errors.New("module id is required")
 	}
@@ -75,6 +78,7 @@ func (s *ModuleService) UpdateModule(id string, module model.Module) (*model.Mod
 }
 
 func (s *ModuleService) DeleteModule(id string) error {
+	slog.Debug("Deleting module", "id", id)
 	if id == "" {
 		return errors.New("module id is required")
 	}
