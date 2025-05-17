@@ -3,6 +3,7 @@ package service
 import (
 	"courses-service/src/model"
 	"errors"
+	"fmt"
 	"log/slog"
 )
 
@@ -17,6 +18,7 @@ type ModuleRepository interface {
 	UpdateModule(id string, module model.Module) (*model.Module, error)
 	DeleteModule(id string) error
 	GetModulesByCourseId(courseId string) ([]*model.Module, error)
+	GetModuleByName(courseID string, moduleName string) (*model.Module, error)
 }
 
 func NewModuleService(moduleRepository ModuleRepository) *ModuleService {
@@ -32,6 +34,11 @@ func (s *ModuleService) CreateModule(module model.Module) (*model.Module, error)
 		}
 		module.Order = order
 	}
+
+	if _, err := s.moduleRepository.GetModuleByName(module.CourseID, module.Title); err == nil {
+		return nil, fmt.Errorf("module with title %s already exists in course %s", module.Title, module.CourseID)
+	}
+
 	return s.moduleRepository.CreateModule(module.CourseID, module)
 }
 
@@ -53,6 +60,17 @@ func (s *ModuleService) UpdateModule(id string, module model.Module) (*model.Mod
 	if id == "" {
 		return nil, errors.New("module id is required")
 	}
+
+	existingModule, err := s.moduleRepository.GetModuleByName(module.CourseID, module.Title)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if the module we are updating is the same as the existing module
+	if existingModule.ID != module.ID {
+		return nil, fmt.Errorf("module with title %s already exists in course %s", module.Title, module.CourseID)
+	}
+
 	return s.moduleRepository.UpdateModule(id, module)
 }
 

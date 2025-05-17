@@ -50,4 +50,21 @@ func (r *ModuleRepository) CreateModule(courseID string, module model.Module) (*
 	return &module, nil
 }
 
+func (r *ModuleRepository) GetModuleByName(courseID string, moduleName string) (*model.Module, error) {
+	filter := bson.M{"_id": courseID, "modules.title": moduleName}
 
+	var course model.Course
+	err := r.moduleCollection.FindOne(context.TODO(), filter).Decode(&course)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find course or module: %v", err)
+	}
+
+	// Find the module with the specified name
+	for _, module := range course.Modules {
+		if module.Title == moduleName {
+			return &module, nil
+		}
+	}
+
+	return nil, fmt.Errorf("module with name %s not found in course %s", moduleName, courseID)
+}
