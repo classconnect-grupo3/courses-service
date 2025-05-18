@@ -43,6 +43,7 @@ func (s *AssignmentService) CreateAssignment(req schemas.CreateAssignmentRequest
 
 	// Verificar que la fecha de entrega es posterior a la fecha actual
 	now := time.Now()
+	
 	slog.Info("Comparing dates",
 		"now", now.Format(time.RFC3339),
 		"due_date", req.DueDate.Format(time.RFC3339),
@@ -61,13 +62,17 @@ func (s *AssignmentService) CreateAssignment(req schemas.CreateAssignmentRequest
 	}
 
 	assignment := model.Assignment{
-		Title:       req.Title,
-		Description: req.Description,
-		Type:        req.Type,
-		CourseID:    req.CourseID,
-		DueDate:     req.DueDate,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		Title:           req.Title,
+		Description:     req.Description,
+		Instructions:    req.Instructions,
+		Type:            req.Type,
+		CourseID:        req.CourseID,
+		DueDate:         req.DueDate,
+		GracePeriod:     req.GracePeriod,
+		Status:          req.Status,
+		SubmissionRules: req.SubmissionRules,
+		CreatedAt:       now,
+		UpdatedAt:       now,
 	}
 
 	return s.assignmentRepository.CreateAssignment(assignment)
@@ -110,6 +115,7 @@ func (s *AssignmentService) UpdateAssignment(id string, req schemas.UpdateAssign
 	}
 
 	// Si se actualiza la fecha de entrega, verificar que es válida
+	var dueDate time.Time
 	if !req.DueDate.IsZero() {
 		course, err := s.courseService.GetCourseById(assignment.CourseID)
 		if err != nil {
@@ -117,21 +123,28 @@ func (s *AssignmentService) UpdateAssignment(id string, req schemas.UpdateAssign
 		}
 
 		now := time.Now()
-		if req.DueDate.Before(now) {
+		dueDate = req.DueDate
+		
+		if dueDate.Before(now) {
 			return nil, errors.New("due date must be in the future")
 		}
 		
 		// Solo validar la fecha de fin del curso si está establecida (no es la fecha por defecto)
-		if !course.EndDate.IsZero() && req.DueDate.After(course.EndDate) {
+		if !course.EndDate.IsZero() && dueDate.After(course.EndDate) {
 			return nil, errors.New("due date must be before course end date")
 		}
 	}
 
 	updateAssignment := model.Assignment{
-		Title:       req.Title,
-		Description: req.Description,
-		DueDate:     req.DueDate,
-		UpdatedAt:   time.Now(),
+		Title:           req.Title,
+		Description:     req.Description,
+		Instructions:    req.Instructions,
+		Type:            req.Type,
+		DueDate:         dueDate,
+		GracePeriod:     req.GracePeriod,
+		Status:          req.Status,
+		SubmissionRules: req.SubmissionRules,
+		UpdatedAt:       time.Now(),
 	}
 
 	return s.assignmentRepository.UpdateAssignment(id, updateAssignment)
