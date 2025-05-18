@@ -7,6 +7,7 @@ import (
 	"courses-service/src/repository"
 	"courses-service/src/service"
 	"io"
+	"log"
 	"log/slog"
 	"os"
 
@@ -42,7 +43,7 @@ func addNewRelicMiddleware(r *gin.Engine) {
 		newrelic.ConfigAppLogForwardingEnabled(true),
 	)
 	if err != nil {
-		slog.Error("Failed to create NewRelic application", "error", err)
+		log.Fatalf("Failed to create NewRelic application: %v", err)
 	}
 
 	r.Use(nrgin.Middleware(app))
@@ -51,10 +52,10 @@ func addNewRelicMiddleware(r *gin.Engine) {
 func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseController) {
 	r.GET("/courses", controller.GetCourses)
 	r.POST("/courses", controller.CreateCourse)
-	r.GET("/courses/:id", controller.GetCourseById)
-	r.DELETE("/courses/:id", controller.DeleteCourse)
 	r.GET("/courses/teacher/:teacherId", controller.GetCourseByTeacherId)
 	r.GET("/courses/title/:title", controller.GetCourseByTitle)
+	r.GET("/courses/:id", controller.GetCourseById)
+	r.DELETE("/courses/:id", controller.DeleteCourse)
 	r.PUT("/courses/:id", controller.UpdateCourse)
 }
 
@@ -66,6 +67,15 @@ func InitializeModulesRoutes(r *gin.Engine, controller *controller.ModuleControl
 	r.PUT("/modules/:id", controller.UpdateModule)
 }
 
+func InitializeAssignmentsRoutes(r *gin.Engine, controller *controller.AssignmentsController) {
+	r.GET("/assignments", controller.GetAssignments)
+	r.POST("/assignments", controller.CreateAssignment)
+	r.GET("/assignments/:id", controller.GetAssignmentById)
+	r.PUT("/assignments/:id", controller.UpdateAssignment)
+	r.DELETE("/assignments/:id", controller.DeleteAssignment)
+	r.GET("/courses/assignments/:courseId", controller.GetAssignmentsByCourseId)
+}
+
 func NewRouter(config *config.Config) *gin.Engine {
 	setUpLogger()
 	r := createRouterFromConfig(config)
@@ -75,21 +85,24 @@ func NewRouter(config *config.Config) *gin.Engine {
 
 	dbClient, err := database.NewMongoDBClient(config)
 	if err != nil {
-		slog.Error("Failed to connect to database", "error", err)
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
 	slog.Debug("Connected to database")
-	courseController := controller.NewCourseController(service.NewCourseService(repository.NewCourseRepository(dbClient, config.DBName))) // TODO: dejar esto mas lindo :)
 
-	moduleRepo := repository.NewModuleRepository(dbClient, config.DBName)
-	moduleService := service.NewModuleService(moduleRepo)
-	moduleController := controller.NewModuleController(moduleService)
+	courseRepository := repository.NewCourseRepository(dbClient, config.DBName)
+	courseService := service.NewCourseService(courseRepository)
+	courseController := controller.NewCourseController(courseService)
 
-	InitializeRoutes(r, courseController, moduleController)
+	assignmentRepository := repository.NewAssignmentRepository(dbClient, config.DBName)
+	assignmentService := service.NewAssignmentService(assignmentRepository, courseService)
+	assignmentsController := controller.NewAssignmentsController(assignmentService)
+
+	InitializeRoutes(r, courseController, assignmentsController)
 	return r
 }
 
-func InitializeRoutes(r *gin.Engine, courseController *controller.CourseController, moduleController *controller.ModuleController) {
+func InitializeRoutes(r *gin.Engine, courseController *controller.CourseController, assignmentsController *controller.AssignmentsController) {
 	InitializeCoursesRoutes(r, courseController)
-	InitializeModulesRoutes(r, moduleController)
+	InitializeAssignmentsRoutes(r, assignmentsController)
 }
