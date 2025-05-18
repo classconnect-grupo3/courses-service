@@ -39,12 +39,14 @@ func (s *AssignmentService) CreateAssignment(req schemas.CreateAssignmentRequest
 		return nil, errors.New("course not found")
 	}
 
-	// Verificar que la fecha de entrega es posterior a la fecha actual y anterior a la fecha de fin del curso
+	// Verificar que la fecha de entrega es posterior a la fecha actual
 	now := time.Now()
 	if req.DueDate.Before(now) {
 		return nil, errors.New("due date must be in the future")
 	}
-	if req.DueDate.After(course.EndDate) {
+
+	// Solo validar la fecha de fin del curso si está establecida (no es la fecha por defecto)
+	if !course.EndDate.IsZero() && req.DueDate.After(course.EndDate) {
 		return nil, errors.New("due date must be before course end date")
 	}
 
@@ -107,7 +109,9 @@ func (s *AssignmentService) UpdateAssignment(id string, req schemas.UpdateAssign
 		if req.DueDate.Before(now) {
 			return nil, errors.New("due date must be in the future")
 		}
-		if req.DueDate.After(course.EndDate) {
+		
+		// Solo validar la fecha de fin del curso si está establecida (no es la fecha por defecto)
+		if !course.EndDate.IsZero() && req.DueDate.After(course.EndDate) {
 			return nil, errors.New("due date must be before course end date")
 		}
 	}
