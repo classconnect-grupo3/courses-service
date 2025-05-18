@@ -63,6 +63,7 @@ func (s *AssignmentService) CreateAssignment(req schemas.CreateAssignmentRequest
 	assignment := model.Assignment{
 		Title:       req.Title,
 		Description: req.Description,
+		Type:        req.Type,
 		CourseID:    req.CourseID,
 		DueDate:     req.DueDate,
 		CreatedAt:   time.Now(),

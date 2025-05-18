@@ -87,6 +87,9 @@ func filterEmptyAssignmentFields(assignment model.Assignment) bson.M {
 	if assignment.Description != "" {
 		update["description"] = assignment.Description
 	}
+	if assignment.Type != "" {
+		update["type"] = assignment.Type
+	}
 	if !assignment.DueDate.IsZero() {
 		update["due_date"] = assignment.DueDate
 	}
