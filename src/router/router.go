@@ -6,14 +6,23 @@ import (
 	"courses-service/src/database"
 	"courses-service/src/repository"
 	"courses-service/src/service"
-	"log"
+	"io"
 	"log/slog"
+	"os"
 
 	"github.com/gin-gonic/gin"
 
 	nrgin "github.com/newrelic/go-agent/v3/integrations/nrgin"
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
+
+func setUpLogger() {
+	gin.DefaultWriter = io.Discard
+	gin.DefaultErrorWriter = io.Discard
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+}
 
 func createRouterFromConfig(config *config.Config) *gin.Engine {
 	if config.Environment == "production" {
@@ -33,21 +42,21 @@ func addNewRelicMiddleware(r *gin.Engine) {
 		newrelic.ConfigAppLogForwardingEnabled(true),
 	)
 	if err != nil {
-		log.Fatalf("Failed to create NewRelic application: %v", err)
+		slog.Error("Failed to create NewRelic application", "error", err)
 	}
 
 	r.Use(nrgin.Middleware(app))
 }
 func NewRouter(config *config.Config) *gin.Engine {
+	setUpLogger()
 	r := createRouterFromConfig(config)
-
 	addNewRelicMiddleware(r)
 
 	slog.Debug("Connecting to database")
 
 	dbClient, err := database.NewMongoDBClient(config)
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		slog.Error("Failed to connect to database", "error", err)
 	}
 
 	slog.Debug("Connected to database")
