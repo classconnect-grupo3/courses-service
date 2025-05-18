@@ -73,7 +73,7 @@ func InitializeAssignmentsRoutes(r *gin.Engine, controller *controller.Assignmen
 	r.GET("/assignments/:id", controller.GetAssignmentById)
 	r.PUT("/assignments/:id", controller.UpdateAssignment)
 	r.DELETE("/assignments/:id", controller.DeleteAssignment)
-	r.GET("/courses/assignments/:courseId", controller.GetAssignmentsByCourseId)
+	r.GET("/assignments/course/:courseId", controller.GetAssignmentsByCourseId)
 }
 
 func NewRouter(config *config.Config) *gin.Engine {
