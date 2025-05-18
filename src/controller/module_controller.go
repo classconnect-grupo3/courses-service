@@ -57,7 +57,7 @@ func (c *ModuleController) GetModulesByCourseId(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	slog.Debug("Modules retrieved", "modules", modules)
 	ctx.JSON(http.StatusOK, modules)
 }

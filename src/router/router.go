@@ -80,11 +80,11 @@ func NewRouter(config *config.Config) *gin.Engine {
 
 	slog.Debug("Connected to database")
 	courseController := controller.NewCourseController(service.NewCourseService(repository.NewCourseRepository(dbClient, config.DBName))) // TODO: dejar esto mas lindo :)
-	
+
 	moduleRepo := repository.NewModuleRepository(dbClient, config.DBName)
 	moduleService := service.NewModuleService(moduleRepo)
 	moduleController := controller.NewModuleController(moduleService)
-	
+
 	InitializeRoutes(r, courseController, moduleController)
 	return r
 }
