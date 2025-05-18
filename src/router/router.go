@@ -47,6 +47,25 @@ func addNewRelicMiddleware(r *gin.Engine) {
 
 	r.Use(nrgin.Middleware(app))
 }
+
+func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseController) {
+	r.GET("/courses", controller.GetCourses)
+	r.POST("/courses", controller.CreateCourse)
+	r.GET("/courses/:id", controller.GetCourseById)
+	r.DELETE("/courses/:id", controller.DeleteCourse)
+	r.GET("/courses/teacher/:teacherId", controller.GetCourseByTeacherId)
+	r.GET("/courses/title/:title", controller.GetCourseByTitle)
+	r.PUT("/courses/:id", controller.UpdateCourse)
+}
+
+func InitializeModulesRoutes(r *gin.Engine, controller *controller.ModuleController) {
+	r.POST("/modules", controller.CreateModule)
+	r.GET("/modules/course/:courseId", controller.GetModulesByCourseId)
+	r.GET("/modules/:id", controller.GetModuleById)
+	r.DELETE("/modules/:id", controller.DeleteModule)
+	r.PUT("/modules/:id", controller.UpdateModule)
+}
+
 func NewRouter(config *config.Config) *gin.Engine {
 	setUpLogger()
 	r := createRouterFromConfig(config)
@@ -60,18 +79,17 @@ func NewRouter(config *config.Config) *gin.Engine {
 	}
 
 	slog.Debug("Connected to database")
-
-	controller := controller.NewCoursesController(service.NewCourseService(repository.NewCourseRepository(dbClient, config.DBName))) // TODO: dejar esto mas lindo :)
-	InitializeRoutes(r, controller)
+	courseController := controller.NewCourseController(service.NewCourseService(repository.NewCourseRepository(dbClient, config.DBName))) // TODO: dejar esto mas lindo :)
+	
+	moduleRepo := repository.NewModuleRepository(dbClient, config.DBName)
+	moduleService := service.NewModuleService(moduleRepo)
+	moduleController := controller.NewModuleController(moduleService)
+	
+	InitializeRoutes(r, courseController, moduleController)
 	return r
 }
 
-func InitializeRoutes(r *gin.Engine, controller *controller.CoursesController) {
-	r.GET("/courses", controller.GetCourses)
-	r.POST("/courses", controller.CreateCourse)
-	r.GET("/courses/:id", controller.GetCourseById)
-	r.DELETE("/courses/:id", controller.DeleteCourse)
-	r.GET("/courses/teacher/:teacherId", controller.GetCourseByTeacherId)
-	r.GET("/courses/title/:title", controller.GetCourseByTitle)
-	r.PUT("/courses/:id", controller.UpdateCourse)
+func InitializeRoutes(r *gin.Engine, courseController *controller.CourseController, moduleController *controller.ModuleController) {
+	InitializeCoursesRoutes(r, courseController)
+	InitializeModulesRoutes(r, moduleController)
 }
