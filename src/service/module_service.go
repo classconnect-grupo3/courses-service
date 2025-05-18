@@ -17,7 +17,7 @@ type ModuleRepository interface {
 	GetModuleById(id string) (*model.Module, error)
 	UpdateModule(id string, module model.Module) (*model.Module, error)
 	DeleteModule(id string) error
-	GetModulesByCourseId(courseId string) ([]*model.Module, error)
+	GetModulesByCourseId(courseId string) ([]model.Module, error)
 	GetModuleByName(courseID string, moduleName string) (*model.Module, error)
 }
 
@@ -42,7 +42,7 @@ func (s *ModuleService) CreateModule(module model.Module) (*model.Module, error)
 	return s.moduleRepository.CreateModule(module.CourseID, module)
 }
 
-func (s *ModuleService) GetModulesByCourseId(courseId string) ([]*model.Module, error) {
+func (s *ModuleService) GetModulesByCourseId(courseId string) ([]model.Module, error) {
 	slog.Debug("Getting modules by course id", "courseId", courseId)
 	if courseId == "" {
 		return nil, errors.New("courseId is required")

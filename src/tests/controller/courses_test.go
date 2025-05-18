@@ -20,15 +20,15 @@ import (
 var (
 	mockService      = &MockCourseService{}
 	mockErrorService = &MockCourseServiceWithError{}
-	normalController = controller.NewCoursesController(mockService)
-	errorController  = controller.NewCoursesController(mockErrorService)
+	normalController = controller.NewCourseController(mockService)
+	errorController  = controller.NewCourseController(mockErrorService)
 	normalRouter     = gin.Default()
 	errorRouter      = gin.Default()
 )
 
 func init() {
-	router.InitializeRoutes(normalRouter, normalController)
-	router.InitializeRoutes(errorRouter, errorController)
+	router.InitializeCoursesRoutes(normalRouter, normalController)
+	router.InitializeCoursesRoutes(errorRouter, errorController)
 }
 
 type MockCourseService struct{}

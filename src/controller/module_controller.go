@@ -15,6 +15,7 @@ type ModuleController struct {
 type ModuleService interface {
 	CreateModule(module model.Module) (*model.Module, error)
 	GetModuleById(id string) (*model.Module, error)
+	GetModulesByCourseId(courseId string) ([]model.Module, error)
 	UpdateModule(id string, module model.Module) (*model.Module, error)
 	DeleteModule(id string) error
 }
@@ -44,6 +45,21 @@ func (c *ModuleController) CreateModule(ctx *gin.Context) {
 
 	slog.Debug("Module created", "module", createdModule)
 	ctx.JSON(http.StatusCreated, createdModule)
+}
+
+func (c *ModuleController) GetModulesByCourseId(ctx *gin.Context) {
+	slog.Debug("Getting modules by course ID")
+	courseId := ctx.Param("courseId")
+
+	modules, err := c.service.GetModulesByCourseId(courseId)
+	if err != nil {
+		slog.Error("Error getting modules by course ID", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	slog.Debug("Modules retrieved", "modules", modules)
+	ctx.JSON(http.StatusOK, modules)
 }
 
 func (c *ModuleController) GetModuleById(ctx *gin.Context) {
