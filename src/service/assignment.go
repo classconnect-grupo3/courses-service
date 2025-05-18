@@ -4,6 +4,8 @@ import (
 	"courses-service/src/model"
 	"courses-service/src/schemas"
 	"errors"
+	"fmt"
+	"log/slog"
 	"time"
 )
 
@@ -41,8 +43,16 @@ func (s *AssignmentService) CreateAssignment(req schemas.CreateAssignmentRequest
 
 	// Verificar que la fecha de entrega es posterior a la fecha actual
 	now := time.Now()
+	slog.Info("Comparing dates",
+		"now", now.Format(time.RFC3339),
+		"due_date", req.DueDate.Format(time.RFC3339),
+		"now_location", now.Location().String(),
+		"due_date_location", req.DueDate.Location().String())
+
 	if req.DueDate.Before(now) {
-		return nil, errors.New("due date must be in the future")
+		return nil, fmt.Errorf("due date must be in the future. Now: %v, DueDate: %v", 
+			now.Format(time.RFC3339), 
+			req.DueDate.Format(time.RFC3339))
 	}
 
 	// Solo validar la fecha de fin del curso si está establecida (no es la fecha por defecto)
