@@ -64,7 +64,7 @@ func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) {
 
 func (c *AssignmentsController) GetAssignmentById(ctx *gin.Context) {
 	slog.Debug("Getting assignment by ID")
-	id := ctx.Param("id")
+	id := ctx.Param("assignmentId")
 
 	assignment, err := c.service.GetAssignmentById(id)
 	if err != nil {
@@ -99,7 +99,7 @@ func (c *AssignmentsController) GetAssignmentsByCourseId(ctx *gin.Context) {
 
 func (c *AssignmentsController) UpdateAssignment(ctx *gin.Context) {
 	slog.Debug("Updating assignment")
-	id := ctx.Param("id")
+	id := ctx.Param("assignmentId")
 
 	var updateAssignmentRequest schemas.UpdateAssignmentRequest
 	if err := ctx.ShouldBindJSON(&updateAssignmentRequest); err != nil {
@@ -121,7 +121,7 @@ func (c *AssignmentsController) UpdateAssignment(ctx *gin.Context) {
 
 func (c *AssignmentsController) DeleteAssignment(ctx *gin.Context) {
 	slog.Debug("Deleting assignment")
-	id := ctx.Param("id")
+	id := ctx.Param("assignmentId")
 
 	if err := c.service.DeleteAssignment(id); err != nil {
 		slog.Error("Error deleting assignment", "error", err)
