@@ -11,21 +11,30 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type AssignmentRepository struct {
+type AssignmentRepository interface {
+	CreateAssignment(assignment model.Assignment) (*model.Assignment, error)
+	GetAssignments() ([]*model.Assignment, error)
+	GetByID(ctx context.Context, id string) (*model.Assignment, error)
+	GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error)
+	UpdateAssignment(id string, updateAssignment model.Assignment) (*model.Assignment, error)
+	DeleteAssignment(id string) error
+}
+
+type MongoAssignmentRepository struct {
 	db                   *mongo.Client
 	dbName              string
 	assignmentCollection *mongo.Collection
 }
 
-func NewAssignmentRepository(db *mongo.Client, dbName string) *AssignmentRepository {
-	return &AssignmentRepository{
+func NewAssignmentRepository(db *mongo.Client, dbName string) AssignmentRepository {
+	return &MongoAssignmentRepository{
 		db:                   db,
 		dbName:              dbName,
 		assignmentCollection: db.Database(dbName).Collection("assignments"),
 	}
 }
 
-func (r *AssignmentRepository) CreateAssignment(assignment model.Assignment) (*model.Assignment, error) {
+func (r *MongoAssignmentRepository) CreateAssignment(assignment model.Assignment) (*model.Assignment, error) {
 	result, err := r.assignmentCollection.InsertOne(context.TODO(), assignment)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create assignment: %v", err)
@@ -35,7 +44,7 @@ func (r *AssignmentRepository) CreateAssignment(assignment model.Assignment) (*m
 	return &assignment, nil
 }
 
-func (r *AssignmentRepository) GetAssignments() ([]*model.Assignment, error) {
+func (r *MongoAssignmentRepository) GetAssignments() ([]*model.Assignment, error) {
 	cursor, err := r.assignmentCollection.Find(context.TODO(), bson.M{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get assignments: %v", err)
@@ -49,22 +58,25 @@ func (r *AssignmentRepository) GetAssignments() ([]*model.Assignment, error) {
 	return assignments, nil
 }
 
-func (r *AssignmentRepository) GetAssignmentById(id string) (*model.Assignment, error) {
+func (r *MongoAssignmentRepository) GetByID(ctx context.Context, id string) (*model.Assignment, error) {
 	var assignment model.Assignment
 	objectId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get assignment by id: %v", err)
 	}
 
-	err = r.assignmentCollection.FindOne(context.TODO(), bson.M{"_id": objectId}).Decode(&assignment)
+	err = r.assignmentCollection.FindOne(ctx, bson.M{"_id": objectId}).Decode(&assignment)
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
 		return nil, fmt.Errorf("failed to get assignment by id: %v", err)
 	}
 
 	return &assignment, nil
 }
 
-func (r *AssignmentRepository) GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error) {
+func (r *MongoAssignmentRepository) GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error) {
 	cursor, err := r.assignmentCollection.Find(context.TODO(), bson.M{"course_id": courseId})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get assignments by course id: %v", err)
@@ -105,12 +117,21 @@ func filterEmptyAssignmentFields(assignment model.Assignment) bson.M {
 	if assignment.Instructions != "" {
 		update["instructions"] = assignment.Instructions
 	}
+	if len(assignment.Questions) > 0 {
+		update["questions"] = assignment.Questions
+	}
+	if assignment.TotalPoints > 0 {
+		update["total_points"] = assignment.TotalPoints
+	}
+	if assignment.PassingScore > 0 {
+		update["passing_score"] = assignment.PassingScore
+	}
 	update["updated_at"] = primitive.NewDateTimeFromTime(time.Now())
 
 	return update
 }
 
-func (r *AssignmentRepository) UpdateAssignment(id string, updateAssignment model.Assignment) (*model.Assignment, error) {
+func (r *MongoAssignmentRepository) UpdateAssignment(id string, updateAssignment model.Assignment) (*model.Assignment, error) {
 	objectId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update assignment: %v", err)
@@ -123,7 +144,7 @@ func (r *AssignmentRepository) UpdateAssignment(id string, updateAssignment mode
 		return nil, fmt.Errorf("failed to update assignment: %v", err)
 	}
 
-	updatedAssignment, err := r.GetAssignmentById(id)
+	updatedAssignment, err := r.GetByID(context.TODO(), id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get updated assignment: %v", err)
 	}
@@ -131,7 +152,7 @@ func (r *AssignmentRepository) UpdateAssignment(id string, updateAssignment mode
 	return updatedAssignment, nil
 }
 
-func (r *AssignmentRepository) DeleteAssignment(id string) error {
+func (r *MongoAssignmentRepository) DeleteAssignment(id string) error {
 	objectId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return fmt.Errorf("failed to delete assignment: %v", err)
