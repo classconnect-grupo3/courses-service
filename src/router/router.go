@@ -4,6 +4,7 @@ import (
 	"courses-service/src/config"
 	"courses-service/src/controller"
 	"courses-service/src/database"
+	"courses-service/src/middleware"
 	"courses-service/src/repository"
 	"courses-service/src/service"
 	"io"
@@ -70,10 +71,25 @@ func InitializeModulesRoutes(r *gin.Engine, controller *controller.ModuleControl
 func InitializeAssignmentsRoutes(r *gin.Engine, controller *controller.AssignmentsController) {
 	r.GET("/assignments", controller.GetAssignments)
 	r.POST("/assignments", controller.CreateAssignment)
-	r.GET("/assignments/:id", controller.GetAssignmentById)
-	r.PUT("/assignments/:id", controller.UpdateAssignment)
-	r.DELETE("/assignments/:id", controller.DeleteAssignment)
 	r.GET("/assignments/course/:courseId", controller.GetAssignmentsByCourseId)
+	r.GET("/assignments/:assignmentId", controller.GetAssignmentById)
+	r.PUT("/assignments/:assignmentId", controller.UpdateAssignment)
+	r.DELETE("/assignments/:assignmentId", controller.DeleteAssignment)
+}
+
+func InitializeSubmissionRoutes(r *gin.Engine, controller *controller.SubmissionController) {
+	// Aplicar el middleware de autenticación de estudiantes
+	studentAuthGroup := r.Group("")
+	studentAuthGroup.Use(middleware.StudentAuth())
+	
+	studentAuthGroup.POST("/assignments/:assignmentId/submissions", controller.CreateSubmission)
+	studentAuthGroup.GET("/assignments/:assignmentId/submissions/:id", controller.GetSubmission)
+	studentAuthGroup.PUT("/assignments/:assignmentId/submissions/:id", controller.UpdateSubmission)
+	studentAuthGroup.POST("/assignments/:assignmentId/submissions/:id/submit", controller.SubmitSubmission)
+	studentAuthGroup.GET("/students/:studentUUID/submissions", controller.GetSubmissionsByStudent)
+	
+	// Esta ruta no requiere autenticación de estudiante
+	r.GET("/assignments/:assignmentId/submissions", controller.GetSubmissionsByAssignment)
 }
 
 func NewRouter(config *config.Config) *gin.Engine {
@@ -98,11 +114,16 @@ func NewRouter(config *config.Config) *gin.Engine {
 	assignmentService := service.NewAssignmentService(assignmentRepository, courseService)
 	assignmentsController := controller.NewAssignmentsController(assignmentService)
 
-	InitializeRoutes(r, courseController, assignmentsController)
+	submissionRepository := repository.NewMongoSubmissionRepository(dbClient.Database(config.DBName))
+	submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository)
+	submissionController := controller.NewSubmissionController(submissionService)
+
+	InitializeRoutes(r, courseController, assignmentsController, submissionController)
 	return r
 }
 
-func InitializeRoutes(r *gin.Engine, courseController *controller.CourseController, assignmentsController *controller.AssignmentsController) {
+func InitializeRoutes(r *gin.Engine, courseController *controller.CourseController, assignmentsController *controller.AssignmentsController, submissionController *controller.SubmissionController) {
 	InitializeCoursesRoutes(r, courseController)
+	InitializeSubmissionRoutes(r, submissionController)
 	InitializeAssignmentsRoutes(r, assignmentsController)
 }
