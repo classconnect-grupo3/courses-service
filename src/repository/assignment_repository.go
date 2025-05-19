@@ -93,6 +93,18 @@ func filterEmptyAssignmentFields(assignment model.Assignment) bson.M {
 	if !assignment.DueDate.IsZero() {
 		update["due_date"] = assignment.DueDate
 	}
+	if assignment.Status != "" {
+		update["status"] = assignment.Status
+	}
+	if assignment.GracePeriod > 0 {
+		update["grace_period"] = assignment.GracePeriod
+	}
+	if len(assignment.SubmissionRules) > 0 {
+		update["submission_rules"] = assignment.SubmissionRules
+	}
+	if assignment.Instructions != "" {
+		update["instructions"] = assignment.Instructions
+	}
 	update["updated_at"] = primitive.NewDateTimeFromTime(time.Now())
 
 	return update
