@@ -59,7 +59,7 @@
 				
 				<option value="file1">courses-service/src/controller/courses_controller.go (100.0%)</option>
 				
-				<option value="file2">courses-service/src/controller/module_controller.go (1.8%)</option>
+				<option value="file2">courses-service/src/controller/module_controller.go (83.6%)</option>
 				
 				<option value="file3">courses-service/src/database/connection.go (71.4%)</option>
 				
@@ -67,13 +67,13 @@
 				
 				<option value="file5">courses-service/src/repository/course_repository.go (80.8%)</option>
 				
-				<option value="file6">courses-service/src/repository/module_repository.go (1.9%)</option>
+				<option value="file6">courses-service/src/repository/module_repository.go (1.6%)</option>
 				
 				<option value="file7">courses-service/src/router/router.go (92.7%)</option>
 				
 				<option value="file8">courses-service/src/service/course_service.go (95.5%)</option>
 				
-				<option value="file9">courses-service/src/service/module_service.go (3.2%)</option>
+				<option value="file9">courses-service/src/service/module_service.go (2.9%)</option>
 				
 				<option value="file10">courses-service/src/tests/testutil/db_setup.go (72.2%)</option>
 				
@@ -119,7 +119,6 @@ func NewConfig() *Config <span class="cov8" title="1">{
 		<pre class="file" id="file1" style="display: none">package controller
 
 import (
-        "log"
         "log/slog"
         "net/http"
 
@@ -211,7 +210,6 @@ func (c *CourseController) DeleteCourse(ctx *gin.Context) <span class="cov8" tit
 func (c *CourseController) GetCourseByTeacherId(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting course by teacher ID")
         teacherId := ctx.Param("teacherId")
-        log.Printf("The teacher ID is %v", teacherId)
         course, err := c.service.GetCourseByTeacherId(teacherId)
         if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error getting course by teacher ID", "error", err)
@@ -261,6 +259,7 @@ func (c *CourseController) UpdateCourse(ctx *gin.Context) <span class="cov8" tit
 
 import (
         "courses-service/src/model"
+        "courses-service/src/schemas"
         "log/slog"
         "net/http"
 
@@ -272,7 +271,7 @@ type ModuleController struct {
 }
 
 type ModuleService interface {
-        CreateModule(module model.Module) (*model.Module, error)
+        CreateModule(module schemas.CreateModuleRequest) (*model.Module, error)
         GetModuleById(id string) (*model.Module, error)
         GetModulesByCourseId(courseId string) ([]model.Module, error)
         UpdateModule(id string, module model.Module) (*model.Module, error)
@@ -285,76 +284,76 @@ func NewModuleController(service ModuleService) *ModuleController <span class="c
         }
 }</span>
 
-func (c *ModuleController) CreateModule(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *ModuleController) CreateModule(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Creating module")
 
-        var module model.Module
-        if err := ctx.ShouldBindJSON(&amp;module); err != nil </span><span class="cov0" title="0">{
+        var module schemas.CreateModuleRequest        
+        if err := ctx.ShouldBindJSON(&amp;module); err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error binding JSON", "error", err)
                 ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">createdModule, err := c.service.CreateModule(module)
-        if err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">createdModule, err := c.service.CreateModule(module)
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error creating module", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">slog.Debug("Module created", "module", createdModule)
+        <span class="cov8" title="1">slog.Debug("Module created", "module", createdModule)
         ctx.JSON(http.StatusCreated, createdModule)</span>
 }
 
-func (c *ModuleController) GetModulesByCourseId(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *ModuleController) GetModulesByCourseId(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting modules by course ID")
         courseId := ctx.Param("courseId")
 
         modules, err := c.service.GetModulesByCourseId(courseId)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error getting modules by course ID", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
-        
-        <span class="cov0" title="0">slog.Debug("Modules retrieved", "modules", modules)
+
+        <span class="cov8" title="1">slog.Debug("Modules retrieved", "modules", modules)
         ctx.JSON(http.StatusOK, modules)</span>
 }
 
-func (c *ModuleController) GetModuleById(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *ModuleController) GetModuleById(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting module by ID")
         id := ctx.Param("id")
 
         module, err := c.service.GetModuleById(id)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error getting module by ID", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">slog.Debug("Module retrieved", "module", module)
+        <span class="cov8" title="1">slog.Debug("Module retrieved", "module", module)
         ctx.JSON(http.StatusOK, module)</span>
 }
 
-func (c *ModuleController) UpdateModule(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *ModuleController) UpdateModule(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Updating module")
         id := ctx.Param("id")
 
         var module model.Module
-        if err := ctx.ShouldBindJSON(&amp;module); err != nil </span><span class="cov0" title="0">{
+        if err := ctx.ShouldBindJSON(&amp;module); err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error binding JSON", "error", err)
                 ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">updatedModule, err := c.service.UpdateModule(id, module)
-        if err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">updatedModule, err := c.service.UpdateModule(id, module)
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error updating module", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">slog.Debug("Module updated", "module", updatedModule)
+        <span class="cov8" title="1">slog.Debug("Module updated", "module", updatedModule)
         ctx.JSON(http.StatusOK, updatedModule)</span>
 }
 
@@ -596,6 +595,7 @@ import (
         "fmt"
 
         "go.mongodb.org/mongo-driver/bson"
+        "go.mongodb.org/mongo-driver/bson/primitive"
         "go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -628,6 +628,8 @@ func (r *ModuleRepository) GetNextModuleOrder(courseID string) (int, error) <spa
 }
 
 func (r *ModuleRepository) CreateModule(courseID string, module model.Module) (*model.Module, error) <span class="cov0" title="0">{
+        module.ID = primitive.NewObjectID()
+
         filter := bson.M{"_id": courseID}
         update := bson.M{"$push": bson.M{"modules": module}}
 
@@ -707,6 +709,24 @@ func (r *ModuleRepository) GetModulesByCourseId(courseID string) ([]model.Module
         }</span>
 
         <span class="cov0" title="0">return course.Modules, nil</span>
+}
+
+func (r *ModuleRepository) GetModuleByOrder(courseID string, order int) (*model.Module, error) <span class="cov0" title="0">{
+        filter := bson.M{"_id": courseID, "modules.order": order}
+
+        var course model.Course
+        err := r.moduleCollection.FindOne(context.TODO(), filter).Decode(&amp;course)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to find course: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">for _, module := range course.Modules </span><span class="cov0" title="0">{
+                if module.Order == order </span><span class="cov0" title="0">{
+                        return &amp;module, nil
+                }</span>
+        }
+
+        <span class="cov0" title="0">return nil, fmt.Errorf("module with order %d not found in course %s", order, courseID)</span>
 }
 </pre>
 		
@@ -792,11 +812,11 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
 
         <span class="cov8" title="1">slog.Debug("Connected to database")
         courseController := controller.NewCourseController(service.NewCourseService(repository.NewCourseRepository(dbClient, config.DBName))) // TODO: dejar esto mas lindo :)
-        
+
         moduleRepo := repository.NewModuleRepository(dbClient, config.DBName)
         moduleService := service.NewModuleService(moduleRepo)
         moduleController := controller.NewModuleController(moduleService)
-        
+
         InitializeRoutes(r, courseController, moduleController)
         return r</span>
 }
@@ -903,6 +923,7 @@ func (s *CourseService) UpdateCourse(id string, updateCourseRequest schemas.Upda
 
 import (
         "courses-service/src/model"
+        "courses-service/src/schemas"
         "errors"
         "fmt"
         "log/slog"
@@ -920,27 +941,32 @@ type ModuleRepository interface {
         DeleteModule(id string) error
         GetModulesByCourseId(courseId string) ([]model.Module, error)
         GetModuleByName(courseID string, moduleName string) (*model.Module, error)
+        GetModuleByOrder(courseID string, order int) (*model.Module, error)
 }
 
 func NewModuleService(moduleRepository ModuleRepository) *ModuleService <span class="cov8" title="1">{
         return &amp;ModuleService{moduleRepository: moduleRepository}
 }</span>
 
-func (s *ModuleService) CreateModule(module model.Module) (*model.Module, error) <span class="cov0" title="0">{
+func (s *ModuleService) CreateModule(module schemas.CreateModuleRequest) (*model.Module, error) <span class="cov0" title="0">{
         slog.Debug("Creating module", "module", module)
-        if module.Order == 0 </span><span class="cov0" title="0">{
-                order, err := s.moduleRepository.GetNextModuleOrder(module.CourseID)
-                if err != nil </span><span class="cov0" title="0">{
-                        return nil, err
-                }</span>
-                <span class="cov0" title="0">module.Order = order</span>
-        }
-
-        <span class="cov0" title="0">if _, err := s.moduleRepository.GetModuleByName(module.CourseID, module.Title); err == nil </span><span class="cov0" title="0">{
+        if _, err := s.moduleRepository.GetModuleByName(module.CourseID, module.Title); err == nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("module with title %s already exists in course %s", module.Title, module.CourseID)
         }</span>
 
-        <span class="cov0" title="0">return s.moduleRepository.CreateModule(module.CourseID, module)</span>
+        <span class="cov0" title="0">moduleModel := model.Module{
+                Title:       module.Title,
+                Description: module.Description,
+                Content:     module.Content,
+        }
+
+        order, err := s.moduleRepository.GetNextModuleOrder(module.CourseID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">moduleModel.Order = order
+
+        return s.moduleRepository.CreateModule(module.CourseID, moduleModel)</span>
 }
 
 func (s *ModuleService) GetModulesByCourseId(courseId string) ([]model.Module, error) <span class="cov0" title="0">{
@@ -959,6 +985,13 @@ func (s *ModuleService) GetModuleById(id string) (*model.Module, error) <span cl
         <span class="cov0" title="0">return s.moduleRepository.GetModuleById(id)</span>
 }
 
+func (s *ModuleService) GetModuleByOrder(courseID string, order int) (*model.Module, error) <span class="cov0" title="0">{
+        slog.Debug("Getting module by order", "courseID", courseID, "order", order)
+        if courseID == "" </span><span class="cov0" title="0">{
+                return nil, errors.New("courseId is required")
+        }</span>
+        <span class="cov0" title="0">return s.moduleRepository.GetModuleByOrder(courseID, order)</span>
+}
 func (s *ModuleService) UpdateModule(id string, module model.Module) (*model.Module, error) <span class="cov0" title="0">{
         slog.Debug("Updating module", "id", id, "module", module)
         if id == "" </span><span class="cov0" title="0">{

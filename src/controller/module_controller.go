@@ -2,6 +2,7 @@ package controller
 
 import (
 	"courses-service/src/model"
+	"courses-service/src/schemas"
 	"log/slog"
 	"net/http"
 
@@ -13,7 +14,7 @@ type ModuleController struct {
 }
 
 type ModuleService interface {
-	CreateModule(module model.Module) (*model.Module, error)
+	CreateModule(module schemas.CreateModuleRequest) (*model.Module, error)
 	GetModuleById(id string) (*model.Module, error)
 	GetModulesByCourseId(courseId string) ([]model.Module, error)
 	UpdateModule(id string, module model.Module) (*model.Module, error)
@@ -29,7 +30,7 @@ func NewModuleController(service ModuleService) *ModuleController {
 func (c *ModuleController) CreateModule(ctx *gin.Context) {
 	slog.Debug("Creating module")
 
-	var module model.Module
+	var module schemas.CreateModuleRequest	
 	if err := ctx.ShouldBindJSON(&module); err != nil {
 		slog.Error("Error binding JSON", "error", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"log"
 	"log/slog"
 	"net/http"
 
@@ -93,7 +92,6 @@ func (c *CourseController) DeleteCourse(ctx *gin.Context) {
 func (c *CourseController) GetCourseByTeacherId(ctx *gin.Context) {
 	slog.Debug("Getting course by teacher ID")
 	teacherId := ctx.Param("teacherId")
-	log.Printf("The teacher ID is %v", teacherId)
 	course, err := c.service.GetCourseByTeacherId(teacherId)
 	if err != nil {
 		slog.Error("Error getting course by teacher ID", "error", err)
