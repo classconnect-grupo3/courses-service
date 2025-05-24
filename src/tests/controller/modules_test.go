@@ -193,3 +193,17 @@ func TestUpdateModuleWithError(t *testing.T) {
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
+
+func TestDeleteModule(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/modules/123", nil)
+	normalModuleRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
+}
+
+func TestDeleteModuleWithError(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/modules/123", nil)
+	errorModuleRouter.ServeHTTP(w, req)
+}

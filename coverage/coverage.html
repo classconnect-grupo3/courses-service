@@ -59,7 +59,7 @@
 				
 				<option value="file1">courses-service/src/controller/courses_controller.go (100.0%)</option>
 				
-				<option value="file2">courses-service/src/controller/module_controller.go (83.6%)</option>
+				<option value="file2">courses-service/src/controller/module_controller.go (100.0%)</option>
 				
 				<option value="file3">courses-service/src/database/connection.go (71.4%)</option>
 				
@@ -357,18 +357,18 @@ func (c *ModuleController) UpdateModule(ctx *gin.Context) <span class="cov8" tit
         ctx.JSON(http.StatusOK, updatedModule)</span>
 }
 
-func (c *ModuleController) DeleteModule(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *ModuleController) DeleteModule(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Deleting module")
         id := ctx.Param("id")
 
         err := c.service.DeleteModule(id)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error deleting module", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">slog.Debug("Module deleted", "id", id)
+        <span class="cov8" title="1">slog.Debug("Module deleted", "id", id)
         ctx.JSON(http.StatusNoContent, nil)</span>
 }
 </pre>

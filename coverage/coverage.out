@@ -438,9 +438,9 @@ courses-service/src/controller/module_controller.go:86.52,90.3 3 1
 courses-service/src/controller/module_controller.go:92.2,93.16 2 1
 courses-service/src/controller/module_controller.go:93.16,97.3 3 1
 courses-service/src/controller/module_controller.go:99.2,100.40 2 1
-courses-service/src/controller/module_controller.go:103.59,108.16 4 0
-courses-service/src/controller/module_controller.go:108.16,112.3 3 0
-courses-service/src/controller/module_controller.go:114.2,115.37 2 0
+courses-service/src/controller/module_controller.go:103.59,108.16 4 1
+courses-service/src/controller/module_controller.go:108.16,112.3 3 1
+courses-service/src/controller/module_controller.go:114.2,115.37 2 1
 courses-service/src/database/connection.go:13.69,20.16 3 0
 courses-service/src/database/connection.go:20.16,23.3 2 0
 courses-service/src/database/connection.go:25.2,27.20 2 0
