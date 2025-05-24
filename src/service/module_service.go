@@ -2,6 +2,7 @@ package service
 
 import (
 	"courses-service/src/model"
+	"courses-service/src/schemas"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -19,27 +20,32 @@ type ModuleRepository interface {
 	DeleteModule(id string) error
 	GetModulesByCourseId(courseId string) ([]model.Module, error)
 	GetModuleByName(courseID string, moduleName string) (*model.Module, error)
+	GetModuleByOrder(courseID string, order int) (*model.Module, error)
 }
 
 func NewModuleService(moduleRepository ModuleRepository) *ModuleService {
 	return &ModuleService{moduleRepository: moduleRepository}
 }
 
-func (s *ModuleService) CreateModule(module model.Module) (*model.Module, error) {
+func (s *ModuleService) CreateModule(module schemas.CreateModuleRequest) (*model.Module, error) {
 	slog.Debug("Creating module", "module", module)
-	if module.Order == 0 {
-		order, err := s.moduleRepository.GetNextModuleOrder(module.CourseID)
-		if err != nil {
-			return nil, err
-		}
-		module.Order = order
-	}
-
 	if _, err := s.moduleRepository.GetModuleByName(module.CourseID, module.Title); err == nil {
 		return nil, fmt.Errorf("module with title %s already exists in course %s", module.Title, module.CourseID)
 	}
 
-	return s.moduleRepository.CreateModule(module.CourseID, module)
+	moduleModel := model.Module{
+		Title:       module.Title,
+		Description: module.Description,
+		Content:     module.Content,
+	}
+
+	order, err := s.moduleRepository.GetNextModuleOrder(module.CourseID)
+	if err != nil {
+		return nil, err
+	}
+	moduleModel.Order = order
+
+	return s.moduleRepository.CreateModule(module.CourseID, moduleModel)
 }
 
 func (s *ModuleService) GetModulesByCourseId(courseId string) ([]model.Module, error) {
@@ -58,6 +64,13 @@ func (s *ModuleService) GetModuleById(id string) (*model.Module, error) {
 	return s.moduleRepository.GetModuleById(id)
 }
 
+func (s *ModuleService) GetModuleByOrder(courseID string, order int) (*model.Module, error) {
+	slog.Debug("Getting module by order", "courseID", courseID, "order", order)
+	if courseID == "" {
+		return nil, errors.New("courseId is required")
+	}
+	return s.moduleRepository.GetModuleByOrder(courseID, order)
+}
 func (s *ModuleService) UpdateModule(id string, module model.Module) (*model.Module, error) {
 	slog.Debug("Updating module", "id", id, "module", module)
 	if id == "" {
