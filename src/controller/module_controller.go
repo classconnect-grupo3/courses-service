@@ -30,7 +30,7 @@ func NewModuleController(service ModuleService) *ModuleController {
 func (c *ModuleController) CreateModule(ctx *gin.Context) {
 	slog.Debug("Creating module")
 
-	var module schemas.CreateModuleRequest	
+	var module schemas.CreateModuleRequest
 	if err := ctx.ShouldBindJSON(&module); err != nil {
 		slog.Error("Error binding JSON", "error", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
