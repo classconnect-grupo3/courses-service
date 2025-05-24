@@ -12,6 +12,11 @@ import (
 
 type MockCourseRepository struct{}
 
+// GetCoursesByStudentId implements service.CourseRepository.
+func (m *MockCourseRepository) GetCoursesByStudentId(studentId string) ([]*model.Course, error) {
+	return []*model.Course{}, nil
+}
+
 func (m *MockCourseRepository) CreateCourse(c model.Course) (*model.Course, error) {
 	return &model.Course{
 		ID:          primitive.NewObjectID(),
@@ -194,4 +199,18 @@ func TestUpdateCourseWithEmptyId(t *testing.T) {
 	})
 	assert.Error(t, err)
 	assert.Nil(t, course)
+}
+
+func TestGetCoursesByStudentId(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{})
+	courses, err := courseService.GetCoursesByStudentId("123e4567-e89b-12d3-a456-426614174000")
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(courses))
+}
+
+func TestGetCoursesByStudentIdWithEmptyId(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{})
+	courses, err := courseService.GetCoursesByStudentId("")
+	assert.Error(t, err)
+	assert.Nil(t, courses)
 }

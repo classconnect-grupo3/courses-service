@@ -315,3 +315,31 @@ func TestUpdatedCourseOnlyCapacity(t *testing.T) {
 	assert.Equal(t, course.Title, updatedCourse.Title)
 	assert.Equal(t, course.Description, updatedCourse.Description)
 }
+
+func TestGetCoursesByStudentId(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+		dbSetup.CleanupCollection("enrollments")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	course := model.Course{
+		Title:       "Test Course",
+		Description: "Test Description",
+	}
+	courseRepository.CreateCourse(course)
+
+	enrollment := model.Enrollment{
+		StudentID: "123e4567-e89b-12d3-a456-426614174000",
+		CourseID:  course.ID.Hex(),
+	}
+	enrollmentRepository.CreateEnrollment(enrollment, &course)
+
+	gotCourses, err := courseRepository.GetCoursesByStudentId(enrollment.StudentID)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, len(gotCourses))
+	assert.Equal(t, course.Title, gotCourses[0].Title)
+}

@@ -13,9 +13,10 @@ import (
 )
 
 type CourseRepository struct {
-	db               *mongo.Client
-	dbName           string
-	courseCollection *mongo.Collection
+	db                   *mongo.Client
+	dbName               string
+	courseCollection     *mongo.Collection
+	enrollmentCollection *mongo.Collection
 }
 
 func filterEmptyFields(course model.Course) any {
@@ -55,8 +56,14 @@ func isZeroType(value reflect.Value) bool {
 		return reflect.DeepEqual(zero, value.Interface())
 	}
 }
+
 func NewCourseRepository(db *mongo.Client, dbName string) *CourseRepository {
-	return &CourseRepository{db: db, dbName: dbName, courseCollection: db.Database(dbName).Collection("courses")}
+	return &CourseRepository{
+		db:                   db,
+		dbName:               dbName,
+		courseCollection:     db.Database(dbName).Collection("courses"),
+		enrollmentCollection: db.Database(dbName).Collection("enrollments"),
+	}
 }
 
 func (r *CourseRepository) CreateCourse(course model.Course) (*model.Course, error) {
@@ -106,6 +113,22 @@ func (r *CourseRepository) GetCourseByTeacherId(teacherId string) ([]*model.Cour
 	if err := cursor.All(context.TODO(), &courses); err != nil {
 		return nil, fmt.Errorf("failed to get course by teacher id: %v", err)
 	}
+	return courses, nil
+}
+
+func (r *CourseRepository) GetCoursesByStudentId(studentId string) ([]*model.Course, error) {
+	fmt.Println("studentId", studentId)
+	cursor, err := r.enrollmentCollection.Find(context.TODO(), bson.M{"student_id": studentId})
+	fmt.Printf("cursor: %v", cursor)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get courses by student id: %v", err)
+	}
+
+	var courses []*model.Course
+	if err := cursor.All(context.TODO(), &courses); err != nil {
+		return nil, fmt.Errorf("failed to get courses by student id: %v", err)
+	}
+	fmt.Printf("courses: %v", courses)
 	return courses, nil
 }
 

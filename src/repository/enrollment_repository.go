@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"courses-service/src/model"
+	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -21,6 +22,7 @@ func NewEnrollmentRepository(db *mongo.Client, dbName string, courseRepository *
 }
 
 func (r *EnrollmentRepository) createEnrollmentAndModifyCourseCapacity(enrollment model.Enrollment, course *model.Course, ctx context.Context) (interface{}, error) {
+	fmt.Printf("enrollment: %v", enrollment)
 	res, err := r.enrollmentCollection.InsertOne(ctx, enrollment)
 	if err != nil {
 		return nil, err
@@ -34,6 +36,7 @@ func (r *EnrollmentRepository) createEnrollmentAndModifyCourseCapacity(enrollmen
 		return nil, err
 	}
 
+	fmt.Printf("enrollment: %v", enrollment)
 	return enrollment, nil
 }
 
