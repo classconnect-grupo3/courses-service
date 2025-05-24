@@ -66,6 +66,11 @@ func InitializeModulesRoutes(r *gin.Engine, controller *controller.ModuleControl
 	r.PUT("/modules/:id", controller.UpdateModule)
 }
 
+func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.EnrollmentController) {
+	r.POST("/courses/:courseId/enroll", controller.EnrollStudent)
+	r.POST("/courses/:courseId/unenroll", controller.UnenrollStudent)
+}
+
 func NewRouter(config *config.Config) *gin.Engine {
 	setUpLogger()
 	r := createRouterFromConfig(config)
@@ -79,17 +84,25 @@ func NewRouter(config *config.Config) *gin.Engine {
 	}
 
 	slog.Debug("Connected to database")
-	courseController := controller.NewCourseController(service.NewCourseService(repository.NewCourseRepository(dbClient, config.DBName))) // TODO: dejar esto mas lindo :)
+
+	courseRepo := repository.NewCourseRepository(dbClient, config.DBName)
+	courseService := service.NewCourseService(courseRepo)
+	courseController := controller.NewCourseController(courseService)
 
 	moduleRepo := repository.NewModuleRepository(dbClient, config.DBName)
 	moduleService := service.NewModuleService(moduleRepo)
 	moduleController := controller.NewModuleController(moduleService)
 
-	InitializeRoutes(r, courseController, moduleController)
+	enrollmentRepo := repository.NewEnrollmentRepository(dbClient, config.DBName, courseRepo)
+	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
+	enrollmentController := controller.NewEnrollmentController(enrollmentService)
+
+	InitializeRoutes(r, courseController, moduleController, enrollmentController)
 	return r
 }
 
-func InitializeRoutes(r *gin.Engine, courseController *controller.CourseController, moduleController *controller.ModuleController) {
+func InitializeRoutes(r *gin.Engine, courseController *controller.CourseController, moduleController *controller.ModuleController, enrollmentController *controller.EnrollmentController) {
 	InitializeCoursesRoutes(r, courseController)
 	InitializeModulesRoutes(r, moduleController)
+	InitializeEnrollmentsRoutes(r, enrollmentController)
 }
