@@ -68,6 +68,7 @@ func InitializeModulesRoutes(r *gin.Engine, controller *controller.ModuleControl
 
 func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.EnrollmentController) {
 	r.POST("/courses/:courseId/enroll", controller.EnrollStudent)
+	r.POST("/courses/:courseId/unenroll", controller.UnenrollStudent)
 }
 
 func NewRouter(config *config.Config) *gin.Engine {
@@ -92,7 +93,7 @@ func NewRouter(config *config.Config) *gin.Engine {
 	moduleService := service.NewModuleService(moduleRepo)
 	moduleController := controller.NewModuleController(moduleService)
 
-	enrollmentRepo := repository.NewEnrollmentRepository(dbClient, config.DBName)
+	enrollmentRepo := repository.NewEnrollmentRepository(dbClient, config.DBName, courseRepo)
 	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
 	enrollmentController := controller.NewEnrollmentController(enrollmentService)
 

@@ -4,11 +4,14 @@ import (
 	"courses-service/src/model"
 	"fmt"
 	"time"
+
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type EnrollmentRepository interface {
-	CreateEnrollment(enrollment model.Enrollment) error
+	CreateEnrollment(enrollment model.Enrollment, course *model.Course) error
 	IsEnrolled(studentID, courseID string) (bool, error)
+	DeleteEnrollment(studentID string, course *model.Course) error
 }
 
 type EnrollmentService struct {
@@ -49,5 +52,33 @@ func (s *EnrollmentService) EnrollStudent(studentID, courseID string) error {
 		Status:     model.EnrollmentStatusActive,
 		UpdatedAt:  time.Now(),
 	}
-	return s.enrollmentRepository.CreateEnrollment(enrollment)
+
+	err = s.enrollmentRepository.CreateEnrollment(enrollment, course)
+	if err != nil {
+		return fmt.Errorf("error creating enrollment for student %s in course %s", studentID, courseID)
+	}
+
+	return nil
+}
+
+func (s *EnrollmentService) UnenrollStudent(studentID, courseID string) error {
+	course, err := s.courseRepository.GetCourseById(courseID)
+	if err != nil {
+		return fmt.Errorf("course %s not found for unenrollment", courseID)
+	}
+
+	enrolled, err := s.enrollmentRepository.IsEnrolled(studentID, courseID)
+	if err != nil && err != mongo.ErrNoDocuments {
+		return fmt.Errorf("error checking if student %s is enrolled in course %s", studentID, courseID)
+	}
+	if !enrolled {
+		return fmt.Errorf("student %s is not enrolled in course %s", studentID, courseID)
+	}
+
+	err = s.enrollmentRepository.DeleteEnrollment(studentID, course)
+	if err != nil {
+		return fmt.Errorf("error deleting enrollment for student %s in course %s", studentID, courseID)
+	}
+
+	return nil
 }
