@@ -117,18 +117,45 @@ func (r *CourseRepository) GetCourseByTeacherId(teacherId string) ([]*model.Cour
 }
 
 func (r *CourseRepository) GetCoursesByStudentId(studentId string) ([]*model.Course, error) {
-	fmt.Println("studentId", studentId)
+	// First, get all enrollment records for this student
 	cursor, err := r.enrollmentCollection.Find(context.TODO(), bson.M{"student_id": studentId})
-	fmt.Printf("cursor: %v", cursor)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get courses by student id: %v", err)
+		return nil, fmt.Errorf("failed to get enrollments by student id: %v", err)
 	}
 
-	var courses []*model.Course
-	if err := cursor.All(context.TODO(), &courses); err != nil {
-		return nil, fmt.Errorf("failed to get courses by student id: %v", err)
+	// Parse enrollments to get course IDs
+	var enrollments []model.Enrollment
+	if err := cursor.All(context.TODO(), &enrollments); err != nil {
+		return nil, fmt.Errorf("failed to parse enrollments: %v", err)
 	}
-	fmt.Printf("courses: %v", courses)
+
+	if len(enrollments) == 0 {
+		return []*model.Course{}, nil
+	}
+
+	// Extract course IDs from enrollments
+	var courseIds []primitive.ObjectID
+	for _, enrollment := range enrollments {
+		courseId, err := primitive.ObjectIDFromHex(enrollment.CourseID)
+		if err != nil {
+			return nil, fmt.Errorf("invalid course id in enrollment: %v", err)
+		}
+		courseIds = append(courseIds, courseId)
+	}
+
+	// Find all courses with these IDs
+	filter := bson.M{"_id": bson.M{"$in": courseIds}}
+	courseCursor, err := r.courseCollection.Find(context.TODO(), filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get courses by ids: %v", err)
+	}
+
+	// Parse courses
+	var courses []*model.Course
+	if err := courseCursor.All(context.TODO(), &courses); err != nil {
+		return nil, fmt.Errorf("failed to parse courses: %v", err)
+	}
+
 	return courses, nil
 }
 

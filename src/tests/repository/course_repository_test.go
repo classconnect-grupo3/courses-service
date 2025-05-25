@@ -4,6 +4,7 @@ import (
 	"courses-service/src/model"
 	"courses-service/src/repository"
 	"courses-service/src/tests/testutil"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -329,13 +330,15 @@ func TestGetCoursesByStudentId(t *testing.T) {
 		Title:       "Test Course",
 		Description: "Test Description",
 	}
-	courseRepository.CreateCourse(course)
+	resCourse, _ := courseRepository.CreateCourse(course)
 
 	enrollment := model.Enrollment{
 		StudentID: "123e4567-e89b-12d3-a456-426614174000",
-		CourseID:  course.ID.Hex(),
+		CourseID:  resCourse.ID.Hex(),
 	}
-	enrollmentRepository.CreateEnrollment(enrollment, &course)
+
+	fmt.Printf("resCourseId: %v", resCourse.ID.Hex())
+	enrollmentRepository.CreateEnrollment(enrollment, resCourse)
 
 	gotCourses, err := courseRepository.GetCoursesByStudentId(enrollment.StudentID)
 	assert.NoError(t, err)
