@@ -35,6 +35,10 @@ func (s *EnrollmentService) EnrollStudent(studentID, courseID string) error {
 		return fmt.Errorf("course %s is full", courseID)
 	}
 
+	if course.TeacherUUID == studentID {
+		return fmt.Errorf("teacher %s cannot enroll in course %s", studentID, courseID)
+	}
+
 	// Then check if the student is already enrolled in the course
 	enrolled, err := s.enrollmentRepository.IsEnrolled(studentID, courseID)
 	if err != nil {
@@ -69,6 +73,10 @@ func (s *EnrollmentService) UnenrollStudent(studentID, courseID string) error {
 
 	if course.StudentsAmount <= 0 {
 		return fmt.Errorf("course %s is empty", courseID)
+	}
+
+	if course.TeacherUUID == studentID {
+		return fmt.Errorf("teacher %s cannot unenroll from course %s", studentID, courseID)
 	}
 
 	enrolled, err := s.enrollmentRepository.IsEnrolled(studentID, courseID)
