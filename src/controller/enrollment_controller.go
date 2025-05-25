@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"courses-service/src/schemas"
 	"log/slog"
 	"net/http"
 
@@ -23,23 +24,29 @@ func NewEnrollmentController(enrollmentService EnrollmentService) *EnrollmentCon
 func (c *EnrollmentController) EnrollStudent(ctx *gin.Context) {
 	slog.Debug("Enrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("courseId"))
 	courseID := ctx.Param("courseId")
-	studentID := ctx.Param("studentId")
 
-	if studentID == "" || courseID == "" {
-		slog.Error("Invalid student ID or course ID")
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid student ID or course ID"})
+	if courseID == "" {
+		slog.Error("Invalid course ID", "courseId", courseID)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid course ID"})
 		return
 	}
 
-	err := c.enrollmentService.EnrollStudent(studentID, courseID)
+	var enrollmentRequest schemas.EnrollStudentRequest
+	if err := ctx.ShouldBindJSON(&enrollmentRequest); err != nil {
+		slog.Error("Error binding enrollment request", "error", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := c.enrollmentService.EnrollStudent(enrollmentRequest.StudentID, courseID)
 	if err != nil {
 		slog.Error("Error enrolling student", "error", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	slog.Debug("Student enrolled in course", "studentId", studentID, "courseId", courseID)
-	ctx.JSON(http.StatusOK, gin.H{"message": "Student successfully enrolled in course"})
+	slog.Debug("Student enrolled in course", "studentId", enrollmentRequest.StudentID, "courseId", courseID)
+	ctx.JSON(http.StatusCreated, gin.H{"message": "Student successfully enrolled in course"})
 }
 
 func (c *EnrollmentController) UnenrollStudent(ctx *gin.Context) {

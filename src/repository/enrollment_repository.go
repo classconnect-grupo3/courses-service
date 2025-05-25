@@ -3,6 +3,8 @@ package repository
 import (
 	"context"
 	"courses-service/src/model"
+	"fmt"
+	"log/slog"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -21,16 +23,22 @@ func NewEnrollmentRepository(db *mongo.Client, dbName string, courseRepository *
 }
 
 func (r *EnrollmentRepository) createEnrollmentAndModifyCourseCapacity(enrollment model.Enrollment, course *model.Course, ctx context.Context) (interface{}, error) {
+	fmt.Printf("enrollment: %v", enrollment)
 	res, err := r.enrollmentCollection.InsertOne(ctx, enrollment)
 	if err != nil {
+		slog.Error("Error creating enrollment", "error", err)
 		return nil, err
 	}
 
 	enrollment.ID = res.InsertedID.(primitive.ObjectID)
 
-	course.Capacity--
-	_, err = r.courseRepository.UpdateCourse(course.ID.Hex(), *course)
+	courseToUpdate := model.Course{
+		ID:       course.ID,
+		Capacity: course.Capacity - 1,
+	}
+	_, err = r.courseRepository.UpdateCourse(course.ID.Hex(), courseToUpdate)
 	if err != nil {
+		slog.Error("Error updating course capacity", "error", err)
 		return nil, err
 	}
 
@@ -38,18 +46,10 @@ func (r *EnrollmentRepository) createEnrollmentAndModifyCourseCapacity(enrollmen
 }
 
 func (r *EnrollmentRepository) CreateEnrollment(enrollment model.Enrollment, course *model.Course) error {
-	session, err := r.db.StartSession()
+	_, err := r.createEnrollmentAndModifyCourseCapacity(enrollment, course, context.TODO())
 	if err != nil {
 		return err
 	}
-	defer session.EndSession(context.TODO())
-
-	if _, err = session.WithTransaction(context.TODO(), func(ctx mongo.SessionContext) (interface{}, error) {
-		return r.createEnrollmentAndModifyCourseCapacity(enrollment, course, ctx)
-	}); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -81,8 +81,11 @@ func (r *EnrollmentRepository) deleteEnrollmentAndModifyCourseCapacity(studentID
 		return err
 	}
 
-	course.Capacity++
-	_, err = r.courseRepository.UpdateCourse(course.ID.Hex(), *course)
+	courseToUpdate := model.Course{
+		ID:       course.ID,
+		Capacity: course.Capacity + 1,
+	}
+	_, err = r.courseRepository.UpdateCourse(course.ID.Hex(), courseToUpdate)
 	if err != nil {
 		return err
 	}
@@ -90,17 +93,9 @@ func (r *EnrollmentRepository) deleteEnrollmentAndModifyCourseCapacity(studentID
 }
 
 func (r *EnrollmentRepository) DeleteEnrollment(studentID string, course *model.Course) error {
-	session, err := r.db.StartSession()
+	err := r.deleteEnrollmentAndModifyCourseCapacity(studentID, course, context.TODO())
 	if err != nil {
 		return err
 	}
-	defer session.EndSession(context.TODO())
-
-	if _, err = session.WithTransaction(context.TODO(), func(ctx mongo.SessionContext) (interface{}, error) {
-		return nil, r.deleteEnrollmentAndModifyCourseCapacity(studentID, course, ctx)
-	}); err != nil {
-		return err
-	}
-
 	return nil
 }

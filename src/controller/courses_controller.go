@@ -16,6 +16,8 @@ type CourseService interface {
 	GetCourseById(id string) (*model.Course, error)
 	DeleteCourse(id string) error
 	GetCourseByTeacherId(teacherId string) ([]*model.Course, error)
+	GetCoursesByStudentId(studentId string) ([]*model.Course, error)
+	GetCoursesByUserId(userId string) (*schemas.GetCoursesByUserIdResponse, error)
 	GetCourseByTitle(title string) ([]*model.Course, error)
 	UpdateCourse(id string, updateCourseRequest schemas.UpdateCourseRequest) (*model.Course, error)
 }
@@ -134,4 +136,30 @@ func (c *CourseController) UpdateCourse(ctx *gin.Context) {
 	}
 	slog.Debug("Course updated", "course", updatedCourse)
 	ctx.JSON(http.StatusOK, updatedCourse)
+}
+
+func (c *CourseController) GetCoursesByStudentId(ctx *gin.Context) {
+	slog.Debug("Getting courses by student ID")
+	studentId := ctx.Param("studentId")
+	courses, err := c.service.GetCoursesByStudentId(studentId)
+	if err != nil {
+		slog.Error("Error getting courses by student ID", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	slog.Debug("Courses retrieved", "courses", courses)
+	ctx.JSON(http.StatusOK, courses)
+}
+
+func (c *CourseController) GetCoursesByUserId(ctx *gin.Context) {
+	slog.Debug("Getting courses by user ID")
+	userId := ctx.Param("userId")
+	courses, err := c.service.GetCoursesByUserId(userId)
+	if err != nil {
+		slog.Error("Error getting courses by user ID", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	slog.Debug("Courses retrieved", "courses", courses)
+	ctx.JSON(http.StatusOK, courses)
 }

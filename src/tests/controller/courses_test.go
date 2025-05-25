@@ -33,6 +33,19 @@ func init() {
 
 type MockCourseService struct{}
 
+// GetCoursesByStudentId implements controller.CourseService.
+func (m *MockCourseService) GetCoursesByStudentId(studentId string) ([]*model.Course, error) {
+	return []*model.Course{}, nil
+}
+
+// GetCoursesByUserId implements controller.CourseService.
+func (m *MockCourseService) GetCoursesByUserId(userId string) (*schemas.GetCoursesByUserIdResponse, error) {
+	return &schemas.GetCoursesByUserIdResponse{
+		Student: []*model.Course{},
+		Teacher: []*model.Course{},
+	}, nil
+}
+
 func (m *MockCourseService) CreateCourse(c schemas.CreateCourseRequest) (*model.Course, error) {
 	course := &model.Course{
 		ID:          primitive.NewObjectID(),
@@ -76,6 +89,16 @@ func (m *MockCourseService) UpdateCourse(id string, updateCourseRequest schemas.
 }
 
 type MockCourseServiceWithError struct{}
+
+// GetCoursesByStudentId implements controller.CourseService.
+func (m *MockCourseServiceWithError) GetCoursesByStudentId(studentId string) ([]*model.Course, error) {
+	return nil, errors.New("Error getting courses by student ID")
+}
+
+// GetCoursesByUserId implements controller.CourseService.
+func (m *MockCourseServiceWithError) GetCoursesByUserId(userId string) (*schemas.GetCoursesByUserIdResponse, error) {
+	return nil, errors.New("Error getting courses by user ID")
+}
 
 func (m *MockCourseServiceWithError) CreateCourse(c schemas.CreateCourseRequest) (*model.Course, error) {
 	return nil, errors.New("Error creating course")
@@ -208,6 +231,37 @@ func TestGetCourseByTeacherIdWithError(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
 
+func TestGetCoursesByStudentId(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/courses/student/123", nil)
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestGetCoursesByStudentIdWithError(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/courses/student/123", nil)
+	errorRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestGetCoursesByUserId(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/courses/user/123", nil)
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestGetCoursesByUserIdWithError(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/courses/user/123", nil)
+	errorRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
 func TestGetCourseByTitle(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/courses/title/Test Course", nil)
