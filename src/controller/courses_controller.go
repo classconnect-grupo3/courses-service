@@ -163,4 +163,3 @@ func (c *CourseController) GetCoursesByUserId(ctx *gin.Context) {
 	slog.Debug("Courses retrieved", "courses", courses)
 	ctx.JSON(http.StatusOK, courses)
 }
-
