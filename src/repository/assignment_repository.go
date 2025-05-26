@@ -22,14 +22,14 @@ type AssignmentRepository interface {
 
 type MongoAssignmentRepository struct {
 	db                   *mongo.Client
-	dbName              string
+	dbName               string
 	assignmentCollection *mongo.Collection
 }
 
 func NewAssignmentRepository(db *mongo.Client, dbName string) AssignmentRepository {
 	return &MongoAssignmentRepository{
 		db:                   db,
-		dbName:              dbName,
+		dbName:               dbName,
 		assignmentCollection: db.Database(dbName).Collection("assignments"),
 	}
 }
@@ -164,4 +164,4 @@ func (r *MongoAssignmentRepository) DeleteAssignment(id string) error {
 	}
 
 	return nil
-} 
+}

@@ -175,4 +175,4 @@ func (c *SubmissionController) GetSubmissionsByStudent(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, submissions)
-} 
+}

@@ -1,0 +1,10 @@
+info:
+  contact:
+    email: classconnectingsoft2@gmail.com
+    name: Grupo 3 alias el mejor grupo ahre ndea
+    url: https://github.com/classconnect-grupo3
+  description: Welcome to the API for the Courses Service of Class Connect!
+  title: Courses Service API
+  version: "1.0"
+paths: {}
+swagger: "2.0"

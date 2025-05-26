@@ -18,29 +18,19 @@ type CourseRepository interface {
 	UpdateCourse(id string, updateCourseRequest model.Course) (*model.Course, error)
 }
 
-type CourseService interface {
-	GetCourses() ([]*model.Course, error)
-	CreateCourse(c schemas.CreateCourseRequest) (*model.Course, error)
-	GetCourseById(id string) (*model.Course, error)
-	DeleteCourse(id string) error
-	GetCourseByTeacherId(teacherId string) ([]*model.Course, error)
-	GetCourseByTitle(title string) ([]*model.Course, error)
-	UpdateCourse(id string, updateCourseRequest schemas.UpdateCourseRequest) (*model.Course, error)
-}
-
-type CourseServiceImpl struct {
+type CourseService struct {
 	courseRepository CourseRepository
 }
 
-func NewCourseService(courseRepository CourseRepository) CourseService {
-	return &CourseServiceImpl{courseRepository: courseRepository}
+func NewCourseService(courseRepository CourseRepository) *CourseService {
+	return &CourseService{courseRepository: courseRepository}
 }
 
-func (s *CourseServiceImpl) GetCourses() ([]*model.Course, error) {
+func (s *CourseService) GetCourses() ([]*model.Course, error) {
 	return s.courseRepository.GetCourses()
 }
 
-func (s *CourseServiceImpl) CreateCourse(c schemas.CreateCourseRequest) (*model.Course, error) {
+func (s *CourseService) CreateCourse(c schemas.CreateCourseRequest) (*model.Course, error) {
 	if c.Capacity <= 0 {
 		return nil, errors.New("capacity must be greater than 0")
 	}
@@ -58,21 +48,21 @@ func (s *CourseServiceImpl) CreateCourse(c schemas.CreateCourseRequest) (*model.
 	return s.courseRepository.CreateCourse(course)
 }
 
-func (s *CourseServiceImpl) GetCourseById(id string) (*model.Course, error) {
+func (s *CourseService) GetCourseById(id string) (*model.Course, error) {
 	if id == "" {
 		return nil, errors.New("id is required")
 	}
 	return s.courseRepository.GetCourseById(id)
 }
 
-func (s *CourseServiceImpl) DeleteCourse(id string) error {
+func (s *CourseService) DeleteCourse(id string) error {
 	if id == "" {
 		return errors.New("id is required")
 	}
 	return s.courseRepository.DeleteCourse(id)
 }
 
-func (s *CourseServiceImpl) GetCourseByTeacherId(teacherId string) ([]*model.Course, error) {
+func (s *CourseService) GetCourseByTeacherId(teacherId string) ([]*model.Course, error) {
 	if teacherId == "" {
 		return nil, errors.New("teacherId is required")
 	}
@@ -115,7 +105,7 @@ func (s *CourseService) GetCourseByTitle(title string) ([]*model.Course, error) 
 	return s.courseRepository.GetCourseByTitle(title)
 }
 
-func (s *CourseServiceImpl) UpdateCourse(id string, updateCourseRequest schemas.UpdateCourseRequest) (*model.Course, error) {
+func (s *CourseService) UpdateCourse(id string, updateCourseRequest schemas.UpdateCourseRequest) (*model.Course, error) {
 	if id == "" {
 		return nil, errors.New("id is required")
 	}

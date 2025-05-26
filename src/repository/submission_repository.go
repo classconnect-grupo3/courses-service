@@ -101,4 +101,4 @@ func (r *MongoSubmissionRepository) GetByStudent(ctx context.Context, studentUUI
 		return nil, err
 	}
 	return submissions, nil
-} 
+}

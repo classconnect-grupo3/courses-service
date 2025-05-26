@@ -21,7 +21,7 @@ func StudentAuth() gin.HandlerFunc {
 		// Set values in context for downstream handlers
 		c.Set("student_uuid", studentUUID)
 		c.Set("student_name", studentName)
-		
+
 		c.Next()
 	}
-} 
+}

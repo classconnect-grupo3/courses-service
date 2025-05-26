@@ -123,4 +123,4 @@ func (s *SubmissionService) GetOrCreateSubmission(ctx context.Context, assignmen
 	}
 
 	return newSubmission, nil
-} 
+}

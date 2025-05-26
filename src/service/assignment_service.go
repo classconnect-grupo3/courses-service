@@ -11,7 +11,7 @@ import (
 
 type AssignmentService struct {
 	assignmentRepository repository.AssignmentRepository
-	courseService       CourseService
+	courseService        CourseService
 }
 
 func NewAssignmentService(assignmentRepository repository.AssignmentRepository, courseService CourseService) *AssignmentService {
@@ -40,19 +40,19 @@ func (s *AssignmentService) CreateAssignment(c schemas.CreateAssignmentRequest) 
 	}
 
 	assignment := model.Assignment{
-		Title:           c.Title,
-		Description:     c.Description,
-		Instructions:    c.Instructions,
-		Type:           c.Type,
-		CourseID:       c.CourseID,
-		DueDate:        c.DueDate,
-		GracePeriod:    c.GracePeriod,
-		Status:         c.Status,
-		Questions:      c.Questions,
-		TotalPoints:    c.TotalPoints,
-		PassingScore:   c.PassingScore,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
+		Title:        c.Title,
+		Description:  c.Description,
+		Instructions: c.Instructions,
+		Type:         c.Type,
+		CourseID:     c.CourseID,
+		DueDate:      c.DueDate,
+		GracePeriod:  c.GracePeriod,
+		Status:       c.Status,
+		Questions:    c.Questions,
+		TotalPoints:  c.TotalPoints,
+		PassingScore: c.PassingScore,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}
 
 	return s.assignmentRepository.CreateAssignment(assignment)
@@ -73,18 +73,18 @@ func (s *AssignmentService) UpdateAssignment(id string, updateAssignmentRequest 
 	}
 
 	assignment := model.Assignment{
-		Title:           updateAssignmentRequest.Title,
-		Description:     updateAssignmentRequest.Description,
-		Instructions:    updateAssignmentRequest.Instructions,
-		Type:           updateAssignmentRequest.Type,
-		CourseID:       existingAssignment.CourseID,
-		DueDate:        updateAssignmentRequest.DueDate,
-		GracePeriod:    updateAssignmentRequest.GracePeriod,
-		Status:         updateAssignmentRequest.Status,
-		Questions:      updateAssignmentRequest.Questions,
-		TotalPoints:    updateAssignmentRequest.TotalPoints,
-		PassingScore:   updateAssignmentRequest.PassingScore,
-		UpdatedAt:      time.Now(),
+		Title:        updateAssignmentRequest.Title,
+		Description:  updateAssignmentRequest.Description,
+		Instructions: updateAssignmentRequest.Instructions,
+		Type:         updateAssignmentRequest.Type,
+		CourseID:     existingAssignment.CourseID,
+		DueDate:      updateAssignmentRequest.DueDate,
+		GracePeriod:  updateAssignmentRequest.GracePeriod,
+		Status:       updateAssignmentRequest.Status,
+		Questions:    updateAssignmentRequest.Questions,
+		TotalPoints:  updateAssignmentRequest.TotalPoints,
+		PassingScore: updateAssignmentRequest.PassingScore,
+		UpdatedAt:    time.Now(),
 	}
 
 	return s.assignmentRepository.UpdateAssignment(id, assignment)
@@ -102,4 +102,4 @@ func (s *AssignmentService) GetAssignmentsByCourseId(courseId string) ([]*model.
 		return nil, errors.New("course id is required")
 	}
 	return s.assignmentRepository.GetAssignmentsByCourseId(courseId)
-} 
+}

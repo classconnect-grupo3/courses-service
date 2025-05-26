@@ -131,4 +131,4 @@ func (c *AssignmentsController) DeleteAssignment(ctx *gin.Context) {
 
 	slog.Debug("Assignment deleted")
 	ctx.JSON(http.StatusNoContent, nil)
-} 
+}

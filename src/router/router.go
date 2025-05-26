@@ -83,13 +83,13 @@ func InitializeSubmissionRoutes(r *gin.Engine, controller *controller.Submission
 	// Aplicar el middleware de autenticación de estudiantes
 	studentAuthGroup := r.Group("")
 	studentAuthGroup.Use(middleware.StudentAuth())
-	
+
 	studentAuthGroup.POST("/assignments/:assignmentId/submissions", controller.CreateSubmission)
 	studentAuthGroup.GET("/assignments/:assignmentId/submissions/:id", controller.GetSubmission)
 	studentAuthGroup.PUT("/assignments/:assignmentId/submissions/:id", controller.UpdateSubmission)
 	studentAuthGroup.POST("/assignments/:assignmentId/submissions/:id/submit", controller.SubmitSubmission)
 	studentAuthGroup.GET("/students/:studentUUID/submissions", controller.GetSubmissionsByStudent)
-	
+
 	// Esta ruta no requiere autenticación de estudiante
 	r.GET("/assignments/:assignmentId/submissions", controller.GetSubmissionsByAssignment)
 }
@@ -118,7 +118,7 @@ func NewRouter(config *config.Config) *gin.Engine {
 	courseController := controller.NewCourseController(courseService)
 
 	assignmentRepository := repository.NewAssignmentRepository(dbClient, config.DBName)
-	assignmentService := service.NewAssignmentService(assignmentRepository, courseService)
+	assignmentService := service.NewAssignmentService(assignmentRepository, *courseService)
 	assignmentsController := controller.NewAssignmentsController(assignmentService)
 
 	submissionRepository := repository.NewMongoSubmissionRepository(dbClient.Database(config.DBName))
@@ -128,7 +128,7 @@ func NewRouter(config *config.Config) *gin.Engine {
 	enrollmentRepo := repository.NewEnrollmentRepository(dbClient, config.DBName, courseRepo)
 	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
 	enrollmentController := controller.NewEnrollmentController(enrollmentService)
-	
+
 	InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController)
 	return r
 }
