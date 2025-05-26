@@ -77,7 +77,7 @@
 				
 				<option value="file10">courses-service/src/service/course_service.go (89.2%)</option>
 				
-				<option value="file11">courses-service/src/service/enrollment_service.go (39.3%)</option>
+				<option value="file11">courses-service/src/service/enrollment_service.go (36.7%)</option>
 				
 				<option value="file12">courses-service/src/service/module_service.go (2.9%)</option>
 				
@@ -287,7 +287,6 @@ func (c *CourseController) GetCoursesByUserId(ctx *gin.Context) <span class="cov
         <span class="cov8" title="1">slog.Debug("Courses retrieved", "courses", courses)
         ctx.JSON(http.StatusOK, courses)</span>
 }
-
 </pre>
 		
 		<pre class="file" id="file2" style="display: none">package controller
@@ -781,8 +780,8 @@ func (r *EnrollmentRepository) createEnrollmentAndModifyCourseCapacity(enrollmen
         <span class="cov8" title="1">enrollment.ID = res.InsertedID.(primitive.ObjectID)
 
         courseToUpdate := model.Course{
-                ID:       course.ID,
-                Capacity: course.Capacity - 1,
+                ID:             course.ID,
+                StudentsAmount: course.StudentsAmount + 1,
         }
         _, err = r.courseRepository.UpdateCourse(course.ID.Hex(), courseToUpdate)
         if err != nil </span><span class="cov0" title="0">{
@@ -830,8 +829,8 @@ func (r *EnrollmentRepository) deleteEnrollmentAndModifyCourseCapacity(studentID
         }</span>
 
         <span class="cov0" title="0">courseToUpdate := model.Course{
-                ID:       course.ID,
-                Capacity: course.Capacity + 1,
+                ID:             course.ID,
+                StudentsAmount: course.StudentsAmount - 1,
         }
         _, err = r.courseRepository.UpdateCourse(course.ID.Hex(), courseToUpdate)
         if err != nil </span><span class="cov0" title="0">{
@@ -1259,7 +1258,7 @@ func (s *EnrollmentService) EnrollStudent(studentID, courseID string) error <spa
         }</span>
 
         // Then check if the course has the capacity to enroll more students
-        <span class="cov8" title="1">if course.Capacity &lt;= 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if course.StudentsAmount &gt;= course.Capacity </span><span class="cov0" title="0">{
                 return fmt.Errorf("course %s is full", courseID)
         }</span>
 
@@ -1293,6 +1292,10 @@ func (s *EnrollmentService) UnenrollStudent(studentID, courseID string) error <s
         course, err := s.courseRepository.GetCourseById(courseID)
         if err != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("course %s not found for unenrollment", courseID)
+        }</span>
+
+        <span class="cov0" title="0">if course.StudentsAmount &lt;= 0 </span><span class="cov0" title="0">{
+                return fmt.Errorf("course %s is empty", courseID)
         }</span>
 
         <span class="cov0" title="0">enrolled, err := s.enrollmentRepository.IsEnrolled(studentID, courseID)

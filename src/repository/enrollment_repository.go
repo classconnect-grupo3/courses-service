@@ -33,8 +33,8 @@ func (r *EnrollmentRepository) createEnrollmentAndModifyCourseCapacity(enrollmen
 	enrollment.ID = res.InsertedID.(primitive.ObjectID)
 
 	courseToUpdate := model.Course{
-		ID:       course.ID,
-		Capacity: course.Capacity - 1,
+		ID:             course.ID,
+		StudentsAmount: course.StudentsAmount + 1,
 	}
 	_, err = r.courseRepository.UpdateCourse(course.ID.Hex(), courseToUpdate)
 	if err != nil {
@@ -82,8 +82,8 @@ func (r *EnrollmentRepository) deleteEnrollmentAndModifyCourseCapacity(studentID
 	}
 
 	courseToUpdate := model.Course{
-		ID:       course.ID,
-		Capacity: course.Capacity + 1,
+		ID:             course.ID,
+		StudentsAmount: course.StudentsAmount - 1,
 	}
 	_, err = r.courseRepository.UpdateCourse(course.ID.Hex(), courseToUpdate)
 	if err != nil {
