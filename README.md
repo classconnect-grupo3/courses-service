@@ -28,4 +28,4 @@ This is a Go-based microservice for managing courses. It provides endpoints to c
 - `GET /courses/{id}`: Retrieve a specific course by ID.
 - `DELETE /courses/{id}`: Delete a specific course by ID.
 - `GET /courses/teacher/{teacherId}`: Retrieve courses by teacher ID.
-- `GET /courses/title/{title}`: Retrieve courses by title.
+- `GET /courses/title/{title}`: Retrieve courses by title

@@ -2,7 +2,7 @@ package database
 
 import (
 	"courses-service/src/config"
-	"log"
+	"log/slog"
 
 	"context"
 
@@ -18,11 +18,11 @@ func NewMongoDBClient(config *config.Config) (*mongo.Client, error) {
 
 	client, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		slog.Error("Failed to connect to database", "error", err)
 		return nil, err
 	}
 
-	log.Println("Connected to database")
+	slog.Info("Connected to database")
 
 	return client, nil
 }

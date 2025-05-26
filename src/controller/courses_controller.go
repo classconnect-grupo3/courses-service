@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"log"
 	"log/slog"
 	"net/http"
 
@@ -17,19 +16,21 @@ type CourseService interface {
 	GetCourseById(id string) (*model.Course, error)
 	DeleteCourse(id string) error
 	GetCourseByTeacherId(teacherId string) ([]*model.Course, error)
+	GetCoursesByStudentId(studentId string) ([]*model.Course, error)
+	GetCoursesByUserId(userId string) (*schemas.GetCoursesByUserIdResponse, error)
 	GetCourseByTitle(title string) ([]*model.Course, error)
 	UpdateCourse(id string, updateCourseRequest schemas.UpdateCourseRequest) (*model.Course, error)
 }
 
-type CoursesController struct {
+type CourseController struct {
 	service CourseService
 }
 
-func NewCoursesController(service CourseService) *CoursesController {
-	return &CoursesController{service: service}
+func NewCourseController(service CourseService) *CourseController {
+	return &CourseController{service: service}
 }
 
-func (c *CoursesController) GetCourses(ctx *gin.Context) {
+func (c *CourseController) GetCourses(ctx *gin.Context) {
 	slog.Debug("Getting courses")
 
 	courses, err := c.service.GetCourses()
@@ -42,7 +43,7 @@ func (c *CoursesController) GetCourses(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, courses)
 }
 
-func (c *CoursesController) CreateCourse(ctx *gin.Context) {
+func (c *CourseController) CreateCourse(ctx *gin.Context) {
 	slog.Debug("Creating course")
 
 	var course schemas.CreateCourseRequest
@@ -62,7 +63,7 @@ func (c *CoursesController) CreateCourse(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, createdCourse)
 }
 
-func (c *CoursesController) GetCourseById(ctx *gin.Context) {
+func (c *CourseController) GetCourseById(ctx *gin.Context) {
 	slog.Debug("Getting course by ID")
 
 	id := ctx.Param("id")
@@ -76,7 +77,7 @@ func (c *CoursesController) GetCourseById(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, course)
 }
 
-func (c *CoursesController) DeleteCourse(ctx *gin.Context) {
+func (c *CourseController) DeleteCourse(ctx *gin.Context) {
 	slog.Debug("Deleting course")
 	id := ctx.Param("id")
 
@@ -90,10 +91,9 @@ func (c *CoursesController) DeleteCourse(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Course deleted successfully"})
 }
 
-func (c *CoursesController) GetCourseByTeacherId(ctx *gin.Context) {
+func (c *CourseController) GetCourseByTeacherId(ctx *gin.Context) {
 	slog.Debug("Getting course by teacher ID")
 	teacherId := ctx.Param("teacherId")
-	log.Printf("The teacher ID is %v", teacherId)
 	course, err := c.service.GetCourseByTeacherId(teacherId)
 	if err != nil {
 		slog.Error("Error getting course by teacher ID", "error", err)
@@ -104,7 +104,7 @@ func (c *CoursesController) GetCourseByTeacherId(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, course)
 }
 
-func (c *CoursesController) GetCourseByTitle(ctx *gin.Context) {
+func (c *CourseController) GetCourseByTitle(ctx *gin.Context) {
 	slog.Debug("Getting course by title")
 	title := ctx.Param("title")
 	course, err := c.service.GetCourseByTitle(title)
@@ -117,7 +117,7 @@ func (c *CoursesController) GetCourseByTitle(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, course)
 }
 
-func (c *CoursesController) UpdateCourse(ctx *gin.Context) {
+func (c *CourseController) UpdateCourse(ctx *gin.Context) {
 	slog.Debug("Updating course")
 	id := ctx.Param("id")
 
@@ -136,4 +136,30 @@ func (c *CoursesController) UpdateCourse(ctx *gin.Context) {
 	}
 	slog.Debug("Course updated", "course", updatedCourse)
 	ctx.JSON(http.StatusOK, updatedCourse)
+}
+
+func (c *CourseController) GetCoursesByStudentId(ctx *gin.Context) {
+	slog.Debug("Getting courses by student ID")
+	studentId := ctx.Param("studentId")
+	courses, err := c.service.GetCoursesByStudentId(studentId)
+	if err != nil {
+		slog.Error("Error getting courses by student ID", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	slog.Debug("Courses retrieved", "courses", courses)
+	ctx.JSON(http.StatusOK, courses)
+}
+
+func (c *CourseController) GetCoursesByUserId(ctx *gin.Context) {
+	slog.Debug("Getting courses by user ID")
+	userId := ctx.Param("userId")
+	courses, err := c.service.GetCoursesByUserId(userId)
+	if err != nil {
+		slog.Error("Error getting courses by user ID", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	slog.Debug("Courses retrieved", "courses", courses)
+	ctx.JSON(http.StatusOK, courses)
 }

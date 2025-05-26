@@ -1,6 +1,9 @@
 package schemas
 
-import "time"
+import (
+	"courses-service/src/model"
+	"time"
+)
 
 type CreateCourseRequest struct {
 	Title       string    `json:"title" binding:"required"`
@@ -43,4 +46,9 @@ type UpdateCourseResponse struct {
 	EndDate     time.Time `json:"end_date"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type GetCoursesByUserIdResponse struct {
+	Teacher []*model.Course `json:"teacher"`
+	Student []*model.Course `json:"student"`
 }
