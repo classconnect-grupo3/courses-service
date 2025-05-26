@@ -54,6 +54,8 @@ func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseControl
 	r.GET("/courses", controller.GetCourses)
 	r.POST("/courses", controller.CreateCourse)
 	r.GET("/courses/teacher/:teacherId", controller.GetCourseByTeacherId)
+	r.GET("/courses/student/:studentId", controller.GetCoursesByStudentId)
+	r.GET("/courses/user/:userId", controller.GetCoursesByUserId)
 	r.GET("/courses/title/:title", controller.GetCourseByTitle)
 	r.GET("/courses/:id", controller.GetCourseById)
 	r.DELETE("/courses/:id", controller.DeleteCourse)
@@ -92,6 +94,11 @@ func InitializeSubmissionRoutes(r *gin.Engine, controller *controller.Submission
 	r.GET("/assignments/:assignmentId/submissions", controller.GetSubmissionsByAssignment)
 }
 
+func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.EnrollmentController) {
+	r.POST("/courses/:courseId/enroll", controller.EnrollStudent)
+	r.POST("/courses/:courseId/unenroll", controller.UnenrollStudent)
+}
+
 func NewRouter(config *config.Config) *gin.Engine {
 	setUpLogger()
 	r := createRouterFromConfig(config)
@@ -106,8 +113,8 @@ func NewRouter(config *config.Config) *gin.Engine {
 
 	slog.Debug("Connected to database")
 
-	courseRepository := repository.NewCourseRepository(dbClient, config.DBName)
-	courseService := service.NewCourseService(courseRepository)
+	courseRepo := repository.NewCourseRepository(dbClient, config.DBName)
+	courseService := service.NewCourseService(courseRepo)
 	courseController := controller.NewCourseController(courseService)
 
 	assignmentRepository := repository.NewAssignmentRepository(dbClient, config.DBName)
@@ -118,12 +125,17 @@ func NewRouter(config *config.Config) *gin.Engine {
 	submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository)
 	submissionController := controller.NewSubmissionController(submissionService)
 
-	InitializeRoutes(r, courseController, assignmentsController, submissionController)
+	enrollmentRepo := repository.NewEnrollmentRepository(dbClient, config.DBName, courseRepo)
+	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
+	enrollmentController := controller.NewEnrollmentController(enrollmentService)
+	
+	InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController)
 	return r
 }
 
-func InitializeRoutes(r *gin.Engine, courseController *controller.CourseController, assignmentsController *controller.AssignmentsController, submissionController *controller.SubmissionController) {
+func InitializeRoutes(r *gin.Engine, courseController *controller.CourseController, assignmentsController *controller.AssignmentsController, submissionController *controller.SubmissionController, enrollmentController *controller.EnrollmentController) {
 	InitializeCoursesRoutes(r, courseController)
 	InitializeSubmissionRoutes(r, submissionController)
 	InitializeAssignmentsRoutes(r, assignmentsController)
+	InitializeEnrollmentsRoutes(r, enrollmentController)
 }

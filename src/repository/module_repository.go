@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -38,6 +39,8 @@ func (r *ModuleRepository) GetNextModuleOrder(courseID string) (int, error) {
 }
 
 func (r *ModuleRepository) CreateModule(courseID string, module model.Module) (*model.Module, error) {
+	module.ID = primitive.NewObjectID()
+
 	filter := bson.M{"_id": courseID}
 	update := bson.M{"$push": bson.M{"modules": module}}
 
@@ -117,4 +120,22 @@ func (r *ModuleRepository) GetModulesByCourseId(courseID string) ([]model.Module
 	}
 
 	return course.Modules, nil
+}
+
+func (r *ModuleRepository) GetModuleByOrder(courseID string, order int) (*model.Module, error) {
+	filter := bson.M{"_id": courseID, "modules.order": order}
+
+	var course model.Course
+	err := r.moduleCollection.FindOne(context.TODO(), filter).Decode(&course)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find course: %v", err)
+	}
+
+	for _, module := range course.Modules {
+		if module.Order == order {
+			return &module, nil
+		}
+	}
+
+	return nil, fmt.Errorf("module with order %d not found in course %s", order, courseID)
 }

@@ -13,6 +13,7 @@ type CourseRepository interface {
 	GetCourseById(id string) (*model.Course, error)
 	DeleteCourse(id string) error
 	GetCourseByTeacherId(teacherId string) ([]*model.Course, error)
+	GetCoursesByStudentId(studentId string) ([]*model.Course, error)
 	GetCourseByTitle(title string) ([]*model.Course, error)
 	UpdateCourse(id string, updateCourseRequest model.Course) (*model.Course, error)
 }
@@ -78,7 +79,36 @@ func (s *CourseServiceImpl) GetCourseByTeacherId(teacherId string) ([]*model.Cou
 	return s.courseRepository.GetCourseByTeacherId(teacherId)
 }
 
-func (s *CourseServiceImpl) GetCourseByTitle(title string) ([]*model.Course, error) {
+func (s *CourseService) GetCoursesByStudentId(studentId string) ([]*model.Course, error) {
+	if studentId == "" {
+		return nil, errors.New("studentId is required")
+	}
+	return s.courseRepository.GetCoursesByStudentId(studentId)
+}
+
+func (s *CourseService) GetCoursesByUserId(userId string) (*schemas.GetCoursesByUserIdResponse, error) {
+	if userId == "" {
+		return nil, errors.New("userId is required")
+	}
+	result := schemas.GetCoursesByUserIdResponse{}
+
+	studentCourses, err := s.courseRepository.GetCoursesByStudentId(userId)
+	if err != nil {
+		return nil, err
+	}
+
+	teacherCourses, err := s.courseRepository.GetCourseByTeacherId(userId)
+	if err != nil {
+		return nil, err
+	}
+
+	result.Student = studentCourses
+	result.Teacher = teacherCourses
+
+	return &result, nil
+}
+
+func (s *CourseService) GetCourseByTitle(title string) ([]*model.Course, error) {
 	if title == "" {
 		return nil, errors.New("title is required")
 	}
