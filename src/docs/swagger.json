@@ -1,0 +1,14 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Welcome to the API for the Courses Service of Class Connect!",
+        "title": "Courses Service API",
+        "contact": {
+            "name": "Grupo 3 alias el mejor grupo ahre ndea",
+            "url": "https://github.com/classconnect-grupo3",
+            "email": "classconnectingsoft2@gmail.com"
+        },
+        "version": "1.0"
+    },
+    "paths": {}
+}

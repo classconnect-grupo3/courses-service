@@ -4,9 +4,11 @@ import (
 	"courses-service/src/config"
 	"courses-service/src/controller"
 	"courses-service/src/database"
+	"courses-service/src/middleware"
 	"courses-service/src/repository"
 	"courses-service/src/service"
 	"io"
+	"log"
 	"log/slog"
 	"os"
 
@@ -42,7 +44,7 @@ func addNewRelicMiddleware(r *gin.Engine) {
 		newrelic.ConfigAppLogForwardingEnabled(true),
 	)
 	if err != nil {
-		slog.Error("Failed to create NewRelic application", "error", err)
+		log.Fatalf("Failed to create NewRelic application: %v", err)
 	}
 
 	r.Use(nrgin.Middleware(app))
@@ -51,12 +53,12 @@ func addNewRelicMiddleware(r *gin.Engine) {
 func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseController) {
 	r.GET("/courses", controller.GetCourses)
 	r.POST("/courses", controller.CreateCourse)
-	r.GET("/courses/:id", controller.GetCourseById)
-	r.DELETE("/courses/:id", controller.DeleteCourse)
 	r.GET("/courses/teacher/:teacherId", controller.GetCourseByTeacherId)
 	r.GET("/courses/student/:studentId", controller.GetCoursesByStudentId)
 	r.GET("/courses/user/:userId", controller.GetCoursesByUserId)
 	r.GET("/courses/title/:title", controller.GetCourseByTitle)
+	r.GET("/courses/:id", controller.GetCourseById)
+	r.DELETE("/courses/:id", controller.DeleteCourse)
 	r.PUT("/courses/:id", controller.UpdateCourse)
 }
 
@@ -66,6 +68,30 @@ func InitializeModulesRoutes(r *gin.Engine, controller *controller.ModuleControl
 	r.GET("/modules/:id", controller.GetModuleById)
 	r.DELETE("/modules/:id", controller.DeleteModule)
 	r.PUT("/modules/:id", controller.UpdateModule)
+}
+
+func InitializeAssignmentsRoutes(r *gin.Engine, controller *controller.AssignmentsController) {
+	r.GET("/assignments", controller.GetAssignments)
+	r.POST("/assignments", controller.CreateAssignment)
+	r.GET("/assignments/course/:courseId", controller.GetAssignmentsByCourseId)
+	r.GET("/assignments/:assignmentId", controller.GetAssignmentById)
+	r.PUT("/assignments/:assignmentId", controller.UpdateAssignment)
+	r.DELETE("/assignments/:assignmentId", controller.DeleteAssignment)
+}
+
+func InitializeSubmissionRoutes(r *gin.Engine, controller *controller.SubmissionController) {
+	// Aplicar el middleware de autenticación de estudiantes
+	studentAuthGroup := r.Group("")
+	studentAuthGroup.Use(middleware.StudentAuth())
+
+	studentAuthGroup.POST("/assignments/:assignmentId/submissions", controller.CreateSubmission)
+	studentAuthGroup.GET("/assignments/:assignmentId/submissions/:id", controller.GetSubmission)
+	studentAuthGroup.PUT("/assignments/:assignmentId/submissions/:id", controller.UpdateSubmission)
+	studentAuthGroup.POST("/assignments/:assignmentId/submissions/:id/submit", controller.SubmitSubmission)
+	studentAuthGroup.GET("/students/:studentUUID/submissions", controller.GetSubmissionsByStudent)
+
+	// Esta ruta no requiere autenticación de estudiante
+	r.GET("/assignments/:assignmentId/submissions", controller.GetSubmissionsByAssignment)
 }
 
 func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.EnrollmentController) {
@@ -82,7 +108,7 @@ func NewRouter(config *config.Config) *gin.Engine {
 
 	dbClient, err := database.NewMongoDBClient(config)
 	if err != nil {
-		slog.Error("Failed to connect to database", "error", err)
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
 	slog.Debug("Connected to database")
@@ -91,20 +117,25 @@ func NewRouter(config *config.Config) *gin.Engine {
 	courseService := service.NewCourseService(courseRepo)
 	courseController := controller.NewCourseController(courseService)
 
-	moduleRepo := repository.NewModuleRepository(dbClient, config.DBName)
-	moduleService := service.NewModuleService(moduleRepo)
-	moduleController := controller.NewModuleController(moduleService)
+	assignmentRepository := repository.NewAssignmentRepository(dbClient, config.DBName)
+	assignmentService := service.NewAssignmentService(assignmentRepository, *courseService)
+	assignmentsController := controller.NewAssignmentsController(assignmentService)
+
+	submissionRepository := repository.NewMongoSubmissionRepository(dbClient.Database(config.DBName))
+	submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository)
+	submissionController := controller.NewSubmissionController(submissionService)
 
 	enrollmentRepo := repository.NewEnrollmentRepository(dbClient, config.DBName, courseRepo)
 	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
 	enrollmentController := controller.NewEnrollmentController(enrollmentService)
 
-	InitializeRoutes(r, courseController, moduleController, enrollmentController)
+	InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController)
 	return r
 }
 
-func InitializeRoutes(r *gin.Engine, courseController *controller.CourseController, moduleController *controller.ModuleController, enrollmentController *controller.EnrollmentController) {
+func InitializeRoutes(r *gin.Engine, courseController *controller.CourseController, assignmentsController *controller.AssignmentsController, submissionController *controller.SubmissionController, enrollmentController *controller.EnrollmentController) {
 	InitializeCoursesRoutes(r, courseController)
-	InitializeModulesRoutes(r, moduleController)
+	InitializeSubmissionRoutes(r, submissionController)
+	InitializeAssignmentsRoutes(r, assignmentsController)
 	InitializeEnrollmentsRoutes(r, enrollmentController)
 }
