@@ -1,3 +1,340 @@
+definitions:
+  controller.CreateSubmissionRequest:
+    properties:
+      answers:
+        items:
+          $ref: '#/definitions/model.Answer'
+        type: array
+    type: object
+  model.Answer:
+    properties:
+      content:
+        description: Can be string, []string for multiple choice, or file URL
+      feedback:
+        type: string
+      question_id:
+        type: string
+      score:
+        type: number
+      type:
+        description: text, multiple_choice, file
+        type: string
+    type: object
+  model.Assignment:
+    properties:
+      course_id:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      due_date:
+        type: string
+      grace_period:
+        description: Minutes of tolerance after due_date
+        type: integer
+      id:
+        type: string
+      instructions:
+        type: string
+      passing_score:
+        description: Minimum score to pass
+        type: number
+      questions:
+        items:
+          $ref: '#/definitions/model.Question'
+        type: array
+      status:
+        description: draft, published
+        type: string
+      submission_rules:
+        description: Array of rules for submission
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+      total_points:
+        type: number
+      type:
+        description: exam, homework, quiz
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.Course:
+    properties:
+      capacity:
+        type: integer
+      created_at:
+        type: string
+      description:
+        type: string
+      end_date:
+        type: string
+      id:
+        type: string
+      modules:
+        items:
+          $ref: '#/definitions/model.Module'
+        type: array
+      start_date:
+        type: string
+      students_amount:
+        type: integer
+      teacher_name:
+        type: string
+      teacher_uuid:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.Module:
+    properties:
+      content:
+        description: TODO change this with media in the future
+        type: string
+      course_id:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      order:
+        type: integer
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.Question:
+    properties:
+      correct_answers:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      options:
+        description: For multiple choice
+        items:
+          type: string
+        type: array
+      order:
+        type: integer
+      points:
+        type: number
+      text:
+        type: string
+      type:
+        $ref: '#/definitions/model.QuestionType'
+    type: object
+  model.QuestionType:
+    enum:
+    - text
+    - multiple_choice
+    - file
+    type: string
+    x-enum-varnames:
+    - QuestionTypeText
+    - QuestionTypeMultipleChoice
+    - QuestionTypeFile
+  model.Submission:
+    properties:
+      answers:
+        items:
+          $ref: '#/definitions/model.Answer'
+        type: array
+      assignment_id:
+        type: string
+      created_at:
+        type: string
+      feedback:
+        type: string
+      id:
+        type: string
+      score:
+        type: number
+      status:
+        $ref: '#/definitions/model.SubmissionStatus'
+      student_name:
+        type: string
+      student_uuid:
+        type: string
+      submitted_at:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.SubmissionStatus:
+    enum:
+    - draft
+    - submitted
+    - late
+    type: string
+    x-enum-varnames:
+    - SubmissionStatusDraft
+    - SubmissionStatusSubmitted
+    - SubmissionStatusLate
+  schemas.CreateAssignmentRequest:
+    properties:
+      course_id:
+        type: string
+      description:
+        type: string
+      due_date:
+        type: string
+      grace_period:
+        type: integer
+      instructions:
+        type: string
+      passing_score:
+        type: number
+      questions:
+        items:
+          $ref: '#/definitions/model.Question'
+        type: array
+      status:
+        type: string
+      title:
+        type: string
+      total_points:
+        type: number
+      type:
+        type: string
+    required:
+    - course_id
+    - description
+    - due_date
+    - grace_period
+    - instructions
+    - passing_score
+    - questions
+    - status
+    - title
+    - total_points
+    - type
+    type: object
+  schemas.CreateCourseRequest:
+    properties:
+      capacity:
+        type: integer
+      description:
+        type: string
+      end_date:
+        type: string
+      start_date:
+        type: string
+      teacher_id:
+        type: string
+      teacher_name:
+        description: 'TODO: this will later be consulted with users service to get
+          the teacher name'
+        type: string
+      title:
+        type: string
+    required:
+    - capacity
+    - description
+    - end_date
+    - start_date
+    - teacher_id
+    - title
+    type: object
+  schemas.CreateModuleRequest:
+    properties:
+      content:
+        type: string
+      course_id:
+        type: string
+      description:
+        type: string
+      title:
+        type: string
+    required:
+    - course_id
+    - description
+    - title
+    type: object
+  schemas.DeleteCourseResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  schemas.EnrollStudentRequest:
+    properties:
+      student_id:
+        type: string
+    required:
+    - student_id
+    type: object
+  schemas.UnenrollStudentRequest:
+    properties:
+      student_id:
+        type: string
+    required:
+    - student_id
+    type: object
+  schemas.UnenrollStudentResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  schemas.UpdateAssignmentRequest:
+    properties:
+      description:
+        type: string
+      due_date:
+        type: string
+      grace_period:
+        type: integer
+      instructions:
+        type: string
+      passing_score:
+        type: number
+      questions:
+        items:
+          $ref: '#/definitions/model.Question'
+        type: array
+      status:
+        type: string
+      title:
+        type: string
+      total_points:
+        type: number
+      type:
+        type: string
+    type: object
+  schemas.UpdateCourseRequest:
+    properties:
+      capacity:
+        type: integer
+      description:
+        type: string
+      end_date:
+        type: string
+      start_date:
+        type: string
+      teacher_id:
+        type: string
+      title:
+        type: string
+    type: object
+  schemas.UpdateModuleRequest:
+    properties:
+      content:
+        type: string
+      description:
+        type: string
+      order:
+        type: integer
+      title:
+        type: string
+    type: object
 info:
   contact:
     email: classconnectingsoft2@gmail.com
@@ -6,5 +343,647 @@ info:
   description: API for managing courses and related resources
   title: Courses Service API
   version: "1.0"
-paths: {}
+paths:
+  /assignments:
+    get:
+      consumes:
+      - application/json
+      description: Get all assignments
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Assignment'
+            type: array
+      summary: Get all assignments
+      tags:
+      - assignments
+    post:
+      consumes:
+      - application/json
+      description: Create an assignment
+      parameters:
+      - description: Assignment to create
+        in: body
+        name: assignment
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.CreateAssignmentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Assignment'
+      summary: Create an assignment
+      tags:
+      - assignments
+  /assignments/{assignmentId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an assignment by ID
+      parameters:
+      - description: Assignment ID
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Assignment deleted successfully
+          schema:
+            type: string
+      summary: Delete an assignment
+      tags:
+      - assignments
+    get:
+      consumes:
+      - application/json
+      description: Get an assignment by ID
+      parameters:
+      - description: Assignment ID
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Assignment'
+      summary: Get an assignment by ID
+      tags:
+      - assignments
+    put:
+      consumes:
+      - application/json
+      description: Update an assignment by ID
+      parameters:
+      - description: Assignment ID
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      - description: Assignment to update
+        in: body
+        name: assignment
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.UpdateAssignmentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Assignment'
+      summary: Update an assignment
+      tags:
+      - assignments
+  /assignments/{assignmentId}/submissions:
+    get:
+      consumes:
+      - application/json
+      description: Get submissions by assignment ID
+      parameters:
+      - description: Assignment ID
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Submission'
+            type: array
+      summary: Get submissions by assignment ID
+      tags:
+      - submissions
+    post:
+      consumes:
+      - application/json
+      description: Create a submission
+      parameters:
+      - description: Assignment ID
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      - description: Submission to create
+        in: body
+        name: submission
+        required: true
+        schema:
+          $ref: '#/definitions/controller.CreateSubmissionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Submission'
+      summary: Create a submission
+      tags:
+      - submissions
+  /assignments/{assignmentId}/submissions/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a submission by ID
+      parameters:
+      - description: Assignment ID
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      - description: Submission ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Submission'
+      summary: Get a submission by ID
+      tags:
+      - submissions
+    put:
+      consumes:
+      - application/json
+      description: Update a submission by ID
+      parameters:
+      - description: Assignment ID
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      - description: Submission ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Submission to update
+        in: body
+        name: submission
+        required: true
+        schema:
+          $ref: '#/definitions/model.Submission'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Submission'
+      summary: Update a submission
+      tags:
+      - submissions
+  /assignments/{assignmentId}/submissions/{id}/submit:
+    post:
+      consumes:
+      - application/json
+      description: Submit a submission by ID
+      parameters:
+      - description: Assignment ID
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      - description: Submission ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Submission'
+      summary: Submit a submission
+      tags:
+      - submissions
+  /assignments/course/{courseId}:
+    get:
+      consumes:
+      - application/json
+      description: Get assignments by course ID
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Assignment'
+            type: array
+      summary: Get assignments by course ID
+      tags:
+      - assignments
+  /courses:
+    get:
+      consumes:
+      - application/json
+      description: Get all courses available in the database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Course'
+            type: array
+      summary: Get all courses
+      tags:
+      - courses
+    post:
+      consumes:
+      - application/json
+      description: Create a new course
+      parameters:
+      - description: Course to create
+        in: body
+        name: course
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.CreateCourseRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Course'
+      summary: Course creation
+      tags:
+      - courses
+  /courses/{courseId}/enroll:
+    post:
+      consumes:
+      - application/json
+      description: Enroll a student in a course
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      - description: Enrollment request
+        in: body
+        name: enrollmentRequest
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.EnrollStudentRequest'
+      produces:
+      - application/json
+      responses: {}
+      summary: Enroll a student in a course
+      tags:
+      - enrollments
+  /courses/{courseId}/unenroll:
+    delete:
+      consumes:
+      - application/json
+      description: Unenroll a student from a course
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      - description: Unenrollment request
+        in: body
+        name: unenrollmentRequest
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.UnenrollStudentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.UnenrollStudentResponse'
+      summary: Unenroll a student from a course
+      tags:
+      - enrollments
+  /courses/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a course by ID
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.DeleteCourseResponse'
+      summary: Delete a course
+      tags:
+      - courses
+    get:
+      consumes:
+      - application/json
+      description: Get a course by ID
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Course'
+      summary: Get a course by ID
+      tags:
+      - courses
+    put:
+      consumes:
+      - application/json
+      description: Update a course by ID
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Course to update
+        in: body
+        name: course
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.UpdateCourseRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Course'
+      summary: Update a course
+      tags:
+      - courses
+  /courses/student/{studentId}:
+    get:
+      consumes:
+      - application/json
+      description: Get courses by student ID
+      parameters:
+      - description: Student ID
+        in: path
+        name: studentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Course'
+            type: array
+      summary: Get courses by student ID
+      tags:
+      - courses
+  /courses/teacher/{teacherId}:
+    get:
+      consumes:
+      - application/json
+      description: Get a course by teacher ID
+      parameters:
+      - description: Teacher ID
+        in: path
+        name: teacherId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Course'
+            type: array
+      summary: Get a course by teacher ID
+      tags:
+      - courses
+  /courses/title/{title}:
+    get:
+      consumes:
+      - application/json
+      description: Get a course by title
+      parameters:
+      - description: Course title
+        in: path
+        name: title
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Course'
+            type: array
+      summary: Get a course by title
+      tags:
+      - courses
+  /courses/user/{userId}:
+    get:
+      consumes:
+      - application/json
+      description: Get courses by user ID
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Course'
+            type: array
+      summary: Get courses by user ID
+      tags:
+      - courses
+  /modules:
+    post:
+      consumes:
+      - application/json
+      description: Create a new module
+      parameters:
+      - description: Module to create
+        in: body
+        name: module
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.CreateModuleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Module'
+      summary: Module creation
+      tags:
+      - modules
+  /modules/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a module by ID
+      parameters:
+      - description: Module ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Module deleted successfully
+          schema:
+            type: string
+      summary: Delete a module
+      tags:
+      - modules
+    get:
+      consumes:
+      - application/json
+      description: Get a module by ID
+      parameters:
+      - description: Module ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Module'
+      summary: Get a module by ID
+      tags:
+      - modules
+    put:
+      consumes:
+      - application/json
+      description: Update a module by ID
+      parameters:
+      - description: Module ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Module to update
+        in: body
+        name: module
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.UpdateModuleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Module'
+      summary: Update a module
+      tags:
+      - modules
+  /modules/course/{courseId}:
+    get:
+      consumes:
+      - application/json
+      description: Get modules by course ID
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Module'
+            type: array
+      summary: Get modules by course ID
+      tags:
+      - modules
+  /students/{studentUUID}/submissions:
+    get:
+      consumes:
+      - application/json
+      description: Get submissions by student ID
+      parameters:
+      - description: Student ID
+        in: path
+        name: studentUUID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Submission'
+            type: array
+      summary: Get submissions by student ID
+      tags:
+      - submissions
 swagger: "2.0"

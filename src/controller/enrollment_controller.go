@@ -21,6 +21,14 @@ func NewEnrollmentController(enrollmentService EnrollmentService) *EnrollmentCon
 	return &EnrollmentController{enrollmentService: enrollmentService}
 }
 
+// @Summary Enroll a student in a course
+// @Description Enroll a student in a course
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param courseId path string true "Course ID"
+// @Param enrollmentRequest body schemas.EnrollStudentRequest true "Enrollment request"
+// @Router /courses/{courseId}/enroll [post]
 func (c *EnrollmentController) EnrollStudent(ctx *gin.Context) {
 	slog.Debug("Enrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("courseId"))
 	courseID := ctx.Param("courseId")
@@ -49,6 +57,15 @@ func (c *EnrollmentController) EnrollStudent(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"message": "Student successfully enrolled in course"})
 }
 
+// @Summary Unenroll a student from a course
+// @Description Unenroll a student from a course
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param courseId path string true "Course ID"
+// @Param unenrollmentRequest body schemas.UnenrollStudentRequest true "Unenrollment request"
+// @Success 200 {object} schemas.UnenrollStudentResponse
+// @Router /courses/{courseId}/unenroll [delete]
 func (c *EnrollmentController) UnenrollStudent(ctx *gin.Context) {
 	slog.Debug("Unenrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("courseId"))
 	courseID := ctx.Param("courseId")
