@@ -5,7 +5,22 @@ import (
 	"courses-service/src/router"
 	"fmt"
 	"log"
+
+	_ "courses-service/src/docs"
+
+	_ "github.com/swaggo/files"
+	_ "github.com/swaggo/gin-swagger"
 )
+
+// @title Courses Service API
+// @version 1.0
+// @description API for managing courses and related resources
+
+// @contact.name   El mejor grupo de todos ndea deau
+// @contact.url    https://github.com/classconnect-grupo3
+// @contact.email  classconnectingsoft2@gmail.com
+
+
 
 func main() {
 	config := config.NewConfig()

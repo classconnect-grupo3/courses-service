@@ -10,7 +10,7 @@ const docTemplate = `{
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "contact": {
-            "name": "Grupo 3 alias el mejor grupo ahre ndea",
+            "name": "El mejor grupo de todos ndea deau",
             "url": "https://github.com/classconnect-grupo3",
             "email": "classconnectingsoft2@gmail.com"
         },
@@ -28,9 +28,11 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "",
 	Schemes:          []string{},
 	Title:            "Courses Service API",
-	Description:      "Welcome to the API for the Courses Service of Class Connect!",
+	Description:      "API for managing courses and related resources",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
+	LeftDelim:        "{{",
+	RightDelim:       "}}",
 }
 
 func init() {

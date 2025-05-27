@@ -1,9 +1,9 @@
 info:
   contact:
     email: classconnectingsoft2@gmail.com
-    name: Grupo 3 alias el mejor grupo ahre ndea
+    name: El mejor grupo de todos ndea deau
     url: https://github.com/classconnect-grupo3
-  description: Welcome to the API for the Courses Service of Class Connect!
+  description: API for managing courses and related resources
   title: Courses Service API
   version: "1.0"
 paths: {}
