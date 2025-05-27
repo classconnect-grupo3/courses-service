@@ -27,6 +27,13 @@ func NewAssignmentsController(service AssignmentService) *AssignmentsController 
 	return &AssignmentsController{service: service}
 }
 
+// @Summary Get all assignments
+// @Description Get all assignments
+// @Tags assignments
+// @Accept json
+// @Produce json
+// @Router /assignments [get]
+// @Success 200 {array} model.Assignment
 func (c *AssignmentsController) GetAssignments(ctx *gin.Context) {
 	slog.Debug("Getting assignments")
 
@@ -41,6 +48,14 @@ func (c *AssignmentsController) GetAssignments(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, assignments)
 }
 
+// @Summary Create an assignment
+// @Description Create an assignment
+// @Tags assignments
+// @Accept json
+// @Produce json
+// @Param assignment body schemas.CreateAssignmentRequest true "Assignment to create"
+// @Success 201 {object} model.Assignment
+// @Router /assignments [post]
 func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) {
 	slog.Debug("Creating assignment")
 
@@ -62,6 +77,14 @@ func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, createdAssignment)
 }
 
+// @Summary Get an assignment by ID
+// @Description Get an assignment by ID
+// @Tags assignments
+// @Accept json
+// @Produce json
+// @Param assignmentId path string true "Assignment ID"
+// @Success 200 {object} model.Assignment
+// @Router /assignments/{assignmentId} [get]
 func (c *AssignmentsController) GetAssignmentById(ctx *gin.Context) {
 	slog.Debug("Getting assignment by ID")
 	id := ctx.Param("assignmentId")
@@ -82,6 +105,14 @@ func (c *AssignmentsController) GetAssignmentById(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, assignment)
 }
 
+// @Summary Get assignments by course ID
+// @Description Get assignments by course ID
+// @Tags assignments
+// @Accept json
+// @Produce json
+// @Param courseId path string true "Course ID"
+// @Success 200 {array} model.Assignment
+// @Router /assignments/course/{courseId} [get]
 func (c *AssignmentsController) GetAssignmentsByCourseId(ctx *gin.Context) {
 	slog.Debug("Getting assignments by course ID")
 	courseId := ctx.Param("courseId")
@@ -97,6 +128,15 @@ func (c *AssignmentsController) GetAssignmentsByCourseId(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, assignments)
 }
 
+// @Summary Update an assignment
+// @Description Update an assignment by ID
+// @Tags assignments
+// @Accept json
+// @Produce json
+// @Param assignmentId path string true "Assignment ID"
+// @Param assignment body schemas.UpdateAssignmentRequest true "Assignment to update"
+// @Success 200 {object} model.Assignment
+// @Router /assignments/{assignmentId} [put]
 func (c *AssignmentsController) UpdateAssignment(ctx *gin.Context) {
 	slog.Debug("Updating assignment")
 	id := ctx.Param("assignmentId")
@@ -119,6 +159,14 @@ func (c *AssignmentsController) UpdateAssignment(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, updatedAssignment)
 }
 
+// @Summary Delete an assignment
+// @Description Delete an assignment by ID
+// @Tags assignments
+// @Accept json
+// @Produce json
+// @Param assignmentId path string true "Assignment ID"
+// @Success 200 {string} string "Assignment deleted successfully"
+// @Router /assignments/{assignmentId} [delete]
 func (c *AssignmentsController) DeleteAssignment(ctx *gin.Context) {
 	slog.Debug("Deleting assignment")
 	id := ctx.Param("assignmentId")

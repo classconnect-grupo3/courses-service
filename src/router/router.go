@@ -13,6 +13,8 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
 	nrgin "github.com/newrelic/go-agent/v3/integrations/nrgin"
 	"github.com/newrelic/go-agent/v3/newrelic"
@@ -130,6 +132,7 @@ func NewRouter(config *config.Config) *gin.Engine {
 	enrollmentController := controller.NewEnrollmentController(enrollmentService)
 
 	InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController)
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler)) // endpoint to consult the swagger documentation
 	return r
 }
 

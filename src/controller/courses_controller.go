@@ -30,6 +30,13 @@ func NewCourseController(service CourseService) *CourseController {
 	return &CourseController{service: service}
 }
 
+// @Summary Get all courses
+// @Description Get all courses available in the database
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Success 200 {array} model.Course
+// @Router /courses [get]
 func (c *CourseController) GetCourses(ctx *gin.Context) {
 	slog.Debug("Getting courses")
 
@@ -43,6 +50,14 @@ func (c *CourseController) GetCourses(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, courses)
 }
 
+// @Summary Course creation
+// @Description Create a new course
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param course body schemas.CreateCourseRequest true "Course to create"
+// @Success 201 {object} model.Course
+// @Router /courses [post]
 func (c *CourseController) CreateCourse(ctx *gin.Context) {
 	slog.Debug("Creating course")
 
@@ -63,6 +78,14 @@ func (c *CourseController) CreateCourse(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, createdCourse)
 }
 
+// @Summary Get a course by ID
+// @Description Get a course by ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Success 200 {object} model.Course
+// @Router /courses/{id} [get]
 func (c *CourseController) GetCourseById(ctx *gin.Context) {
 	slog.Debug("Getting course by ID")
 
@@ -77,6 +100,14 @@ func (c *CourseController) GetCourseById(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, course)
 }
 
+// @Summary Delete a course
+// @Description Delete a course by ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Success 200 {object} schemas.DeleteCourseResponse
+// @Router /courses/{id} [delete]
 func (c *CourseController) DeleteCourse(ctx *gin.Context) {
 	slog.Debug("Deleting course")
 	id := ctx.Param("id")
@@ -91,6 +122,14 @@ func (c *CourseController) DeleteCourse(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Course deleted successfully"})
 }
 
+// @Summary Get a course by teacher ID
+// @Description Get a course by teacher ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param teacherId path string true "Teacher ID"
+// @Success 200 {array} model.Course
+// @Router /courses/teacher/{teacherId} [get]
 func (c *CourseController) GetCourseByTeacherId(ctx *gin.Context) {
 	slog.Debug("Getting course by teacher ID")
 	teacherId := ctx.Param("teacherId")
@@ -104,6 +143,14 @@ func (c *CourseController) GetCourseByTeacherId(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, course)
 }
 
+// @Summary Get a course by title
+// @Description Get a course by title
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param title path string true "Course title"
+// @Success 200 {array} model.Course
+// @Router /courses/title/{title} [get]
 func (c *CourseController) GetCourseByTitle(ctx *gin.Context) {
 	slog.Debug("Getting course by title")
 	title := ctx.Param("title")
@@ -117,6 +164,15 @@ func (c *CourseController) GetCourseByTitle(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, course)
 }
 
+// @Summary Update a course
+// @Description Update a course by ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param course body schemas.UpdateCourseRequest true "Course to update"
+// @Success 200 {object} model.Course
+// @Router /courses/{id} [put]
 func (c *CourseController) UpdateCourse(ctx *gin.Context) {
 	slog.Debug("Updating course")
 	id := ctx.Param("id")
@@ -138,6 +194,14 @@ func (c *CourseController) UpdateCourse(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, updatedCourse)
 }
 
+// @Summary Get courses by student ID
+// @Description Get courses by student ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param studentId path string true "Student ID"
+// @Success 200 {array} model.Course
+// @Router /courses/student/{studentId} [get]
 func (c *CourseController) GetCoursesByStudentId(ctx *gin.Context) {
 	slog.Debug("Getting courses by student ID")
 	studentId := ctx.Param("studentId")
@@ -151,6 +215,14 @@ func (c *CourseController) GetCoursesByStudentId(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, courses)
 }
 
+// @Summary Get courses by user ID
+// @Description Get courses by user ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param userId path string true "User ID"
+// @Success 200 {array} model.Course
+// @Router /courses/user/{userId} [get]
 func (c *CourseController) GetCoursesByUserId(ctx *gin.Context) {
 	slog.Debug("Getting courses by user ID")
 	userId := ctx.Param("userId")

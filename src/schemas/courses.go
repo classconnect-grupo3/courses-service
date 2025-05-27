@@ -52,3 +52,7 @@ type GetCoursesByUserIdResponse struct {
 	Teacher []*model.Course `json:"teacher"`
 	Student []*model.Course `json:"student"`
 }
+
+type DeleteCourseResponse struct {
+	Message string `json:"message"`
+}
