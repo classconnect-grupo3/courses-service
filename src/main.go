@@ -20,8 +20,6 @@ import (
 // @contact.url    https://github.com/classconnect-grupo3
 // @contact.email  classconnectingsoft2@gmail.com
 
-
-
 func main() {
 	config := config.NewConfig()
 	r := router.NewRouter(config)

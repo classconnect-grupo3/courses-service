@@ -15,4 +15,3 @@ type UnenrollStudentRequest struct {
 type UnenrollStudentResponse struct {
 	Message string `json:"message"`
 }
-
