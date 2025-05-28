@@ -23,6 +23,15 @@ type CreateSubmissionRequest struct {
 	Answers []model.Answer `json:"answers"`
 }
 
+// @Summary Create a submission
+// @Description Create a submission
+// @Tags submissions
+// @Accept json
+// @Produce json
+// @Param assignmentId path string true "Assignment ID"
+// @Param submission body CreateSubmissionRequest true "Submission to create"
+// @Success 201 {object} model.Submission
+// @Router /assignments/{assignmentId}/submissions [post]
 func (c *SubmissionController) CreateSubmission(ctx *gin.Context) {
 	assignmentID := ctx.Param("assignmentId")
 	var req CreateSubmissionRequest
@@ -52,6 +61,15 @@ func (c *SubmissionController) CreateSubmission(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, submission)
 }
 
+// @Summary Get a submission by ID
+// @Description Get a submission by ID
+// @Tags submissions
+// @Accept json
+// @Produce json
+// @Param assignmentId path string true "Assignment ID"
+// @Param id path string true "Submission ID"
+// @Success 200 {object} model.Submission
+// @Router /assignments/{assignmentId}/submissions/{id} [get]
 func (c *SubmissionController) GetSubmission(ctx *gin.Context) {
 	assignmentID := ctx.Param("assignmentId")
 	id := ctx.Param("id")
@@ -76,6 +94,16 @@ func (c *SubmissionController) GetSubmission(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, submission)
 }
 
+// @Summary Update a submission
+// @Description Update a submission by ID
+// @Tags submissions
+// @Accept json
+// @Produce json
+// @Param assignmentId path string true "Assignment ID"
+// @Param id path string true "Submission ID"
+// @Param submission body model.Submission true "Submission to update"
+// @Success 200 {object} model.Submission
+// @Router /assignments/{assignmentId}/submissions/{id} [put]
 func (c *SubmissionController) UpdateSubmission(ctx *gin.Context) {
 	assignmentID := ctx.Param("assignmentId")
 	id := ctx.Param("id")
@@ -113,6 +141,15 @@ func (c *SubmissionController) UpdateSubmission(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, submission)
 }
 
+// @Summary Submit a submission
+// @Description Submit a submission by ID
+// @Tags submissions
+// @Accept json
+// @Produce json
+// @Param assignmentId path string true "Assignment ID"
+// @Param id path string true "Submission ID"
+// @Success 200 {object} model.Submission
+// @Router /assignments/{assignmentId}/submissions/{id}/submit [post]
 func (c *SubmissionController) SubmitSubmission(ctx *gin.Context) {
 	assignmentID := ctx.Param("assignmentId")
 	id := ctx.Param("id")
@@ -146,6 +183,14 @@ func (c *SubmissionController) SubmitSubmission(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, submission)
 }
 
+// @Summary Get submissions by assignment ID
+// @Description Get submissions by assignment ID
+// @Tags submissions
+// @Accept json
+// @Produce json
+// @Param assignmentId path string true "Assignment ID"
+// @Success 200 {array} model.Submission
+// @Router /assignments/{assignmentId}/submissions [get]
 func (c *SubmissionController) GetSubmissionsByAssignment(ctx *gin.Context) {
 	assignmentID := ctx.Param("assignmentId")
 
@@ -158,6 +203,14 @@ func (c *SubmissionController) GetSubmissionsByAssignment(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, submissions)
 }
 
+// @Summary Get submissions by student ID
+// @Description Get submissions by student ID
+// @Tags submissions
+// @Accept json
+// @Produce json
+// @Param studentUUID path string true "Student ID"
+// @Success 200 {array} model.Submission
+// @Router /students/{studentUUID}/submissions [get]
 func (c *SubmissionController) GetSubmissionsByStudent(ctx *gin.Context) {
 	studentUUID := ctx.Param("studentUUID")
 

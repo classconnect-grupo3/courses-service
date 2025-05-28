@@ -167,6 +167,13 @@ func NewAssignmentsController(service AssignmentService) *AssignmentsController 
         return &amp;AssignmentsController{service: service}
 }</span>
 
+// @Summary Get all assignments
+// @Description Get all assignments
+// @Tags assignments
+// @Accept json
+// @Produce json
+// @Router /assignments [get]
+// @Success 200 {array} model.Assignment
 func (c *AssignmentsController) GetAssignments(ctx *gin.Context) <span class="cov0" title="0">{
         slog.Debug("Getting assignments")
 
@@ -181,6 +188,14 @@ func (c *AssignmentsController) GetAssignments(ctx *gin.Context) <span class="co
         ctx.JSON(http.StatusOK, assignments)</span>
 }
 
+// @Summary Create an assignment
+// @Description Create an assignment
+// @Tags assignments
+// @Accept json
+// @Produce json
+// @Param assignment body schemas.CreateAssignmentRequest true "Assignment to create"
+// @Success 201 {object} model.Assignment
+// @Router /assignments [post]
 func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) <span class="cov0" title="0">{
         slog.Debug("Creating assignment")
 
@@ -202,6 +217,14 @@ func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) <span class="
         ctx.JSON(http.StatusCreated, createdAssignment)</span>
 }
 
+// @Summary Get an assignment by ID
+// @Description Get an assignment by ID
+// @Tags assignments
+// @Accept json
+// @Produce json
+// @Param assignmentId path string true "Assignment ID"
+// @Success 200 {object} model.Assignment
+// @Router /assignments/{assignmentId} [get]
 func (c *AssignmentsController) GetAssignmentById(ctx *gin.Context) <span class="cov0" title="0">{
         slog.Debug("Getting assignment by ID")
         id := ctx.Param("assignmentId")
@@ -222,6 +245,14 @@ func (c *AssignmentsController) GetAssignmentById(ctx *gin.Context) <span class=
         ctx.JSON(http.StatusOK, assignment)</span>
 }
 
+// @Summary Get assignments by course ID
+// @Description Get assignments by course ID
+// @Tags assignments
+// @Accept json
+// @Produce json
+// @Param courseId path string true "Course ID"
+// @Success 200 {array} model.Assignment
+// @Router /assignments/course/{courseId} [get]
 func (c *AssignmentsController) GetAssignmentsByCourseId(ctx *gin.Context) <span class="cov0" title="0">{
         slog.Debug("Getting assignments by course ID")
         courseId := ctx.Param("courseId")
@@ -237,6 +268,15 @@ func (c *AssignmentsController) GetAssignmentsByCourseId(ctx *gin.Context) <span
         ctx.JSON(http.StatusOK, assignments)</span>
 }
 
+// @Summary Update an assignment
+// @Description Update an assignment by ID
+// @Tags assignments
+// @Accept json
+// @Produce json
+// @Param assignmentId path string true "Assignment ID"
+// @Param assignment body schemas.UpdateAssignmentRequest true "Assignment to update"
+// @Success 200 {object} model.Assignment
+// @Router /assignments/{assignmentId} [put]
 func (c *AssignmentsController) UpdateAssignment(ctx *gin.Context) <span class="cov0" title="0">{
         slog.Debug("Updating assignment")
         id := ctx.Param("assignmentId")
@@ -259,6 +299,14 @@ func (c *AssignmentsController) UpdateAssignment(ctx *gin.Context) <span class="
         ctx.JSON(http.StatusOK, updatedAssignment)</span>
 }
 
+// @Summary Delete an assignment
+// @Description Delete an assignment by ID
+// @Tags assignments
+// @Accept json
+// @Produce json
+// @Param assignmentId path string true "Assignment ID"
+// @Success 200 {string} string "Assignment deleted successfully"
+// @Router /assignments/{assignmentId} [delete]
 func (c *AssignmentsController) DeleteAssignment(ctx *gin.Context) <span class="cov0" title="0">{
         slog.Debug("Deleting assignment")
         id := ctx.Param("assignmentId")
@@ -306,6 +354,13 @@ func NewCourseController(service CourseService) *CourseController <span class="c
         return &amp;CourseController{service: service}
 }</span>
 
+// @Summary Get all courses
+// @Description Get all courses available in the database
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Success 200 {array} model.Course
+// @Router /courses [get]
 func (c *CourseController) GetCourses(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting courses")
 
@@ -319,6 +374,14 @@ func (c *CourseController) GetCourses(ctx *gin.Context) <span class="cov8" title
         ctx.JSON(http.StatusOK, courses)</span>
 }
 
+// @Summary Course creation
+// @Description Create a new course
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param course body schemas.CreateCourseRequest true "Course to create"
+// @Success 201 {object} model.Course
+// @Router /courses [post]
 func (c *CourseController) CreateCourse(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Creating course")
 
@@ -339,6 +402,14 @@ func (c *CourseController) CreateCourse(ctx *gin.Context) <span class="cov8" tit
         ctx.JSON(http.StatusCreated, createdCourse)</span>
 }
 
+// @Summary Get a course by ID
+// @Description Get a course by ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Success 200 {object} model.Course
+// @Router /courses/{id} [get]
 func (c *CourseController) GetCourseById(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting course by ID")
 
@@ -353,6 +424,14 @@ func (c *CourseController) GetCourseById(ctx *gin.Context) <span class="cov8" ti
         ctx.JSON(http.StatusOK, course)</span>
 }
 
+// @Summary Delete a course
+// @Description Delete a course by ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Success 200 {object} schemas.DeleteCourseResponse
+// @Router /courses/{id} [delete]
 func (c *CourseController) DeleteCourse(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Deleting course")
         id := ctx.Param("id")
@@ -367,6 +446,14 @@ func (c *CourseController) DeleteCourse(ctx *gin.Context) <span class="cov8" tit
         ctx.JSON(http.StatusOK, gin.H{"message": "Course deleted successfully"})</span>
 }
 
+// @Summary Get a course by teacher ID
+// @Description Get a course by teacher ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param teacherId path string true "Teacher ID"
+// @Success 200 {array} model.Course
+// @Router /courses/teacher/{teacherId} [get]
 func (c *CourseController) GetCourseByTeacherId(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting course by teacher ID")
         teacherId := ctx.Param("teacherId")
@@ -380,6 +467,14 @@ func (c *CourseController) GetCourseByTeacherId(ctx *gin.Context) <span class="c
         ctx.JSON(http.StatusOK, course)</span>
 }
 
+// @Summary Get a course by title
+// @Description Get a course by title
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param title path string true "Course title"
+// @Success 200 {array} model.Course
+// @Router /courses/title/{title} [get]
 func (c *CourseController) GetCourseByTitle(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting course by title")
         title := ctx.Param("title")
@@ -393,6 +488,15 @@ func (c *CourseController) GetCourseByTitle(ctx *gin.Context) <span class="cov8"
         ctx.JSON(http.StatusOK, course)</span>
 }
 
+// @Summary Update a course
+// @Description Update a course by ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param course body schemas.UpdateCourseRequest true "Course to update"
+// @Success 200 {object} model.Course
+// @Router /courses/{id} [put]
 func (c *CourseController) UpdateCourse(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Updating course")
         id := ctx.Param("id")
@@ -414,6 +518,14 @@ func (c *CourseController) UpdateCourse(ctx *gin.Context) <span class="cov8" tit
         ctx.JSON(http.StatusOK, updatedCourse)</span>
 }
 
+// @Summary Get courses by student ID
+// @Description Get courses by student ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param studentId path string true "Student ID"
+// @Success 200 {array} model.Course
+// @Router /courses/student/{studentId} [get]
 func (c *CourseController) GetCoursesByStudentId(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting courses by student ID")
         studentId := ctx.Param("studentId")
@@ -427,6 +539,14 @@ func (c *CourseController) GetCoursesByStudentId(ctx *gin.Context) <span class="
         ctx.JSON(http.StatusOK, courses)</span>
 }
 
+// @Summary Get courses by user ID
+// @Description Get courses by user ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param userId path string true "User ID"
+// @Success 200 {array} model.Course
+// @Router /courses/user/{userId} [get]
 func (c *CourseController) GetCoursesByUserId(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting courses by user ID")
         userId := ctx.Param("userId")
@@ -464,6 +584,14 @@ func NewEnrollmentController(enrollmentService EnrollmentService) *EnrollmentCon
         return &amp;EnrollmentController{enrollmentService: enrollmentService}
 }</span>
 
+// @Summary Enroll a student in a course
+// @Description Enroll a student in a course
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param courseId path string true "Course ID"
+// @Param enrollmentRequest body schemas.EnrollStudentRequest true "Enrollment request"
+// @Router /courses/{courseId}/enroll [post]
 func (c *EnrollmentController) EnrollStudent(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Enrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("courseId"))
         courseID := ctx.Param("courseId")
@@ -492,6 +620,15 @@ func (c *EnrollmentController) EnrollStudent(ctx *gin.Context) <span class="cov8
         ctx.JSON(http.StatusCreated, gin.H{"message": "Student successfully enrolled in course"})</span>
 }
 
+// @Summary Unenroll a student from a course
+// @Description Unenroll a student from a course
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param courseId path string true "Course ID"
+// @Param unenrollmentRequest body schemas.UnenrollStudentRequest true "Unenrollment request"
+// @Success 200 {object} schemas.UnenrollStudentResponse
+// @Router /courses/{courseId}/unenroll [delete]
 func (c *EnrollmentController) UnenrollStudent(ctx *gin.Context) <span class="cov0" title="0">{
         slog.Debug("Unenrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("courseId"))
         courseID := ctx.Param("courseId")
@@ -544,6 +681,14 @@ func NewModuleController(service ModuleService) *ModuleController <span class="c
         }
 }</span>
 
+// @Summary Module creation
+// @Description Create a new module
+// @Tags modules
+// @Accept json
+// @Produce json
+// @Param module body schemas.CreateModuleRequest true "Module to create"
+// @Success 201 {object} model.Module
+// @Router /modules [post]
 func (c *ModuleController) CreateModule(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Creating module")
 
@@ -565,6 +710,14 @@ func (c *ModuleController) CreateModule(ctx *gin.Context) <span class="cov8" tit
         ctx.JSON(http.StatusCreated, createdModule)</span>
 }
 
+// @Summary Get modules by course ID
+// @Description Get modules by course ID
+// @Tags modules
+// @Accept json
+// @Produce json
+// @Param courseId path string true "Course ID"
+// @Success 200 {array} model.Module
+// @Router /modules/course/{courseId} [get]
 func (c *ModuleController) GetModulesByCourseId(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting modules by course ID")
         courseId := ctx.Param("courseId")
@@ -580,6 +733,14 @@ func (c *ModuleController) GetModulesByCourseId(ctx *gin.Context) <span class="c
         ctx.JSON(http.StatusOK, modules)</span>
 }
 
+// @Summary Get a module by ID
+// @Description Get a module by ID
+// @Tags modules
+// @Accept json
+// @Produce json
+// @Param id path string true "Module ID"
+// @Success 200 {object} model.Module
+// @Router /modules/{id} [get]
 func (c *ModuleController) GetModuleById(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting module by ID")
         id := ctx.Param("id")
@@ -595,6 +756,15 @@ func (c *ModuleController) GetModuleById(ctx *gin.Context) <span class="cov8" ti
         ctx.JSON(http.StatusOK, module)</span>
 }
 
+// @Summary Update a module
+// @Description Update a module by ID
+// @Tags modules
+// @Accept json
+// @Produce json
+// @Param id path string true "Module ID"
+// @Param module body schemas.UpdateModuleRequest true "Module to update"
+// @Success 200 {object} model.Module
+// @Router /modules/{id} [put]
 func (c *ModuleController) UpdateModule(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Updating module")
         id := ctx.Param("id")
@@ -617,6 +787,14 @@ func (c *ModuleController) UpdateModule(ctx *gin.Context) <span class="cov8" tit
         ctx.JSON(http.StatusOK, updatedModule)</span>
 }
 
+// @Summary Delete a module
+// @Description Delete a module by ID
+// @Tags modules
+// @Accept json
+// @Produce json
+// @Param id path string true "Module ID"
+// @Success 204 {string} string "Module deleted successfully"
+// @Router /modules/{id} [delete]
 func (c *ModuleController) DeleteModule(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Deleting module")
         id := ctx.Param("id")
@@ -658,6 +836,15 @@ type CreateSubmissionRequest struct {
         Answers []model.Answer `json:"answers"`
 }
 
+// @Summary Create a submission
+// @Description Create a submission
+// @Tags submissions
+// @Accept json
+// @Produce json
+// @Param assignmentId path string true "Assignment ID"
+// @Param submission body CreateSubmissionRequest true "Submission to create"
+// @Success 201 {object} model.Submission
+// @Router /assignments/{assignmentId}/submissions [post]
 func (c *SubmissionController) CreateSubmission(ctx *gin.Context) <span class="cov0" title="0">{
         assignmentID := ctx.Param("assignmentId")
         var req CreateSubmissionRequest
@@ -687,6 +874,15 @@ func (c *SubmissionController) CreateSubmission(ctx *gin.Context) <span class="c
         <span class="cov0" title="0">ctx.JSON(http.StatusOK, submission)</span>
 }
 
+// @Summary Get a submission by ID
+// @Description Get a submission by ID
+// @Tags submissions
+// @Accept json
+// @Produce json
+// @Param assignmentId path string true "Assignment ID"
+// @Param id path string true "Submission ID"
+// @Success 200 {object} model.Submission
+// @Router /assignments/{assignmentId}/submissions/{id} [get]
 func (c *SubmissionController) GetSubmission(ctx *gin.Context) <span class="cov0" title="0">{
         assignmentID := ctx.Param("assignmentId")
         id := ctx.Param("id")
@@ -711,6 +907,16 @@ func (c *SubmissionController) GetSubmission(ctx *gin.Context) <span class="cov0
         <span class="cov0" title="0">ctx.JSON(http.StatusOK, submission)</span>
 }
 
+// @Summary Update a submission
+// @Description Update a submission by ID
+// @Tags submissions
+// @Accept json
+// @Produce json
+// @Param assignmentId path string true "Assignment ID"
+// @Param id path string true "Submission ID"
+// @Param submission body model.Submission true "Submission to update"
+// @Success 200 {object} model.Submission
+// @Router /assignments/{assignmentId}/submissions/{id} [put]
 func (c *SubmissionController) UpdateSubmission(ctx *gin.Context) <span class="cov0" title="0">{
         assignmentID := ctx.Param("assignmentId")
         id := ctx.Param("id")
@@ -748,6 +954,15 @@ func (c *SubmissionController) UpdateSubmission(ctx *gin.Context) <span class="c
         <span class="cov0" title="0">ctx.JSON(http.StatusOK, submission)</span>
 }
 
+// @Summary Submit a submission
+// @Description Submit a submission by ID
+// @Tags submissions
+// @Accept json
+// @Produce json
+// @Param assignmentId path string true "Assignment ID"
+// @Param id path string true "Submission ID"
+// @Success 200 {object} model.Submission
+// @Router /assignments/{assignmentId}/submissions/{id}/submit [post]
 func (c *SubmissionController) SubmitSubmission(ctx *gin.Context) <span class="cov0" title="0">{
         assignmentID := ctx.Param("assignmentId")
         id := ctx.Param("id")
@@ -781,6 +996,14 @@ func (c *SubmissionController) SubmitSubmission(ctx *gin.Context) <span class="c
         <span class="cov0" title="0">ctx.JSON(http.StatusOK, submission)</span>
 }
 
+// @Summary Get submissions by assignment ID
+// @Description Get submissions by assignment ID
+// @Tags submissions
+// @Accept json
+// @Produce json
+// @Param assignmentId path string true "Assignment ID"
+// @Success 200 {array} model.Submission
+// @Router /assignments/{assignmentId}/submissions [get]
 func (c *SubmissionController) GetSubmissionsByAssignment(ctx *gin.Context) <span class="cov0" title="0">{
         assignmentID := ctx.Param("assignmentId")
 
@@ -793,6 +1016,14 @@ func (c *SubmissionController) GetSubmissionsByAssignment(ctx *gin.Context) <spa
         <span class="cov0" title="0">ctx.JSON(http.StatusOK, submissions)</span>
 }
 
+// @Summary Get submissions by student ID
+// @Description Get submissions by student ID
+// @Tags submissions
+// @Accept json
+// @Produce json
+// @Param studentUUID path string true "Student ID"
+// @Success 200 {array} model.Submission
+// @Router /students/{studentUUID}/submissions [get]
 func (c *SubmissionController) GetSubmissionsByStudent(ctx *gin.Context) <span class="cov0" title="0">{
         studentUUID := ctx.Param("studentUUID")
 
@@ -855,7 +1086,7 @@ const docTemplate = `{
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "contact": {
-            "name": "Grupo 3 alias el mejor grupo ahre ndea",
+            "name": "El mejor grupo de todos ndea deau",
             "url": "https://github.com/classconnect-grupo3",
             "email": "classconnectingsoft2@gmail.com"
         },
@@ -863,7 +1094,1475 @@ const docTemplate = `{
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
-    "paths": {}
+    "paths": {
+        "/assignments": {
+            "get": {
+                "description": "Get all assignments",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assignments"
+                ],
+                "summary": "Get all assignments",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Assignment"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create an assignment",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assignments"
+                ],
+                "summary": "Create an assignment",
+                "parameters": [
+                    {
+                        "description": "Assignment to create",
+                        "name": "assignment",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.CreateAssignmentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.Assignment"
+                        }
+                    }
+                }
+            }
+        },
+        "/assignments/course/{courseId}": {
+            "get": {
+                "description": "Get assignments by course ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assignments"
+                ],
+                "summary": "Get assignments by course ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "courseId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Assignment"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/assignments/{assignmentId}": {
+            "get": {
+                "description": "Get an assignment by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assignments"
+                ],
+                "summary": "Get an assignment by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Assignment ID",
+                        "name": "assignmentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Assignment"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update an assignment by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assignments"
+                ],
+                "summary": "Update an assignment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Assignment ID",
+                        "name": "assignmentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Assignment to update",
+                        "name": "assignment",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.UpdateAssignmentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Assignment"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete an assignment by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assignments"
+                ],
+                "summary": "Delete an assignment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Assignment ID",
+                        "name": "assignmentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Assignment deleted successfully",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/assignments/{assignmentId}/submissions": {
+            "get": {
+                "description": "Get submissions by assignment ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submissions"
+                ],
+                "summary": "Get submissions by assignment ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Assignment ID",
+                        "name": "assignmentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Submission"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a submission",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submissions"
+                ],
+                "summary": "Create a submission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Assignment ID",
+                        "name": "assignmentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Submission to create",
+                        "name": "submission",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controller.CreateSubmissionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.Submission"
+                        }
+                    }
+                }
+            }
+        },
+        "/assignments/{assignmentId}/submissions/{id}": {
+            "get": {
+                "description": "Get a submission by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submissions"
+                ],
+                "summary": "Get a submission by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Assignment ID",
+                        "name": "assignmentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Submission ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Submission"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a submission by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submissions"
+                ],
+                "summary": "Update a submission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Assignment ID",
+                        "name": "assignmentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Submission ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Submission to update",
+                        "name": "submission",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.Submission"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Submission"
+                        }
+                    }
+                }
+            }
+        },
+        "/assignments/{assignmentId}/submissions/{id}/submit": {
+            "post": {
+                "description": "Submit a submission by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submissions"
+                ],
+                "summary": "Submit a submission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Assignment ID",
+                        "name": "assignmentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Submission ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Submission"
+                        }
+                    }
+                }
+            }
+        },
+        "/courses": {
+            "get": {
+                "description": "Get all courses available in the database",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Get all courses",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Course"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new course",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Course creation",
+                "parameters": [
+                    {
+                        "description": "Course to create",
+                        "name": "course",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.CreateCourseRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.Course"
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/student/{studentId}": {
+            "get": {
+                "description": "Get courses by student ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Get courses by student ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Student ID",
+                        "name": "studentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Course"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/teacher/{teacherId}": {
+            "get": {
+                "description": "Get a course by teacher ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Get a course by teacher ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Teacher ID",
+                        "name": "teacherId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Course"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/title/{title}": {
+            "get": {
+                "description": "Get a course by title",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Get a course by title",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course title",
+                        "name": "title",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Course"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/user/{userId}": {
+            "get": {
+                "description": "Get courses by user ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Get courses by user ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Course"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/{courseId}/enroll": {
+            "post": {
+                "description": "Enroll a student in a course",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Enroll a student in a course",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "courseId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Enrollment request",
+                        "name": "enrollmentRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.EnrollStudentRequest"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/courses/{courseId}/unenroll": {
+            "delete": {
+                "description": "Unenroll a student from a course",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Unenroll a student from a course",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "courseId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Unenrollment request",
+                        "name": "unenrollmentRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.UnenrollStudentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.UnenrollStudentResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/{id}": {
+            "get": {
+                "description": "Get a course by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Get a course by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Course"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a course by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Update a course",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Course to update",
+                        "name": "course",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.UpdateCourseRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Course"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a course by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Delete a course",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.DeleteCourseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/modules": {
+            "post": {
+                "description": "Create a new module",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "modules"
+                ],
+                "summary": "Module creation",
+                "parameters": [
+                    {
+                        "description": "Module to create",
+                        "name": "module",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.CreateModuleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.Module"
+                        }
+                    }
+                }
+            }
+        },
+        "/modules/course/{courseId}": {
+            "get": {
+                "description": "Get modules by course ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "modules"
+                ],
+                "summary": "Get modules by course ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "courseId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Module"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/modules/{id}": {
+            "get": {
+                "description": "Get a module by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "modules"
+                ],
+                "summary": "Get a module by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Module ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Module"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a module by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "modules"
+                ],
+                "summary": "Update a module",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Module ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Module to update",
+                        "name": "module",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.UpdateModuleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Module"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a module by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "modules"
+                ],
+                "summary": "Delete a module",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Module ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Module deleted successfully",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/students/{studentUUID}/submissions": {
+            "get": {
+                "description": "Get submissions by student ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submissions"
+                ],
+                "summary": "Get submissions by student ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Student ID",
+                        "name": "studentUUID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Submission"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "controller.CreateSubmissionRequest": {
+            "type": "object",
+            "properties": {
+                "answers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Answer"
+                    }
+                }
+            }
+        },
+        "model.Answer": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "Can be string, []string for multiple choice, or file URL"
+                },
+                "feedback": {
+                    "type": "string"
+                },
+                "question_id": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "type": {
+                    "description": "text, multiple_choice, file",
+                    "type": "string"
+                }
+            }
+        },
+        "model.Assignment": {
+            "type": "object",
+            "properties": {
+                "course_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "due_date": {
+                    "type": "string"
+                },
+                "grace_period": {
+                    "description": "Minutes of tolerance after due_date",
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "instructions": {
+                    "type": "string"
+                },
+                "passing_score": {
+                    "description": "Minimum score to pass",
+                    "type": "number"
+                },
+                "questions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Question"
+                    }
+                },
+                "status": {
+                    "description": "draft, published",
+                    "type": "string"
+                },
+                "submission_rules": {
+                    "description": "Array of rules for submission",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
+                "total_points": {
+                    "type": "number"
+                },
+                "type": {
+                    "description": "exam, homework, quiz",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Course": {
+            "type": "object",
+            "properties": {
+                "capacity": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "modules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Module"
+                    }
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "students_amount": {
+                    "type": "integer"
+                },
+                "teacher_name": {
+                    "type": "string"
+                },
+                "teacher_uuid": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Module": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "TODO change this with media in the future",
+                    "type": "string"
+                },
+                "course_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Question": {
+            "type": "object",
+            "properties": {
+                "correct_answers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "options": {
+                    "description": "For multiple choice",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "points": {
+                    "type": "number"
+                },
+                "text": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.QuestionType"
+                }
+            }
+        },
+        "model.QuestionType": {
+            "type": "string",
+            "enum": [
+                "text",
+                "multiple_choice",
+                "file"
+            ],
+            "x-enum-varnames": [
+                "QuestionTypeText",
+                "QuestionTypeMultipleChoice",
+                "QuestionTypeFile"
+            ]
+        },
+        "model.Submission": {
+            "type": "object",
+            "properties": {
+                "answers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Answer"
+                    }
+                },
+                "assignment_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "feedback": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "status": {
+                    "$ref": "#/definitions/model.SubmissionStatus"
+                },
+                "student_name": {
+                    "type": "string"
+                },
+                "student_uuid": {
+                    "type": "string"
+                },
+                "submitted_at": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.SubmissionStatus": {
+            "type": "string",
+            "enum": [
+                "draft",
+                "submitted",
+                "late"
+            ],
+            "x-enum-varnames": [
+                "SubmissionStatusDraft",
+                "SubmissionStatusSubmitted",
+                "SubmissionStatusLate"
+            ]
+        },
+        "schemas.CreateAssignmentRequest": {
+            "type": "object",
+            "required": [
+                "course_id",
+                "description",
+                "due_date",
+                "grace_period",
+                "instructions",
+                "passing_score",
+                "questions",
+                "status",
+                "title",
+                "total_points",
+                "type"
+            ],
+            "properties": {
+                "course_id": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "due_date": {
+                    "type": "string"
+                },
+                "grace_period": {
+                    "type": "integer"
+                },
+                "instructions": {
+                    "type": "string"
+                },
+                "passing_score": {
+                    "type": "number"
+                },
+                "questions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Question"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "total_points": {
+                    "type": "number"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.CreateCourseRequest": {
+            "type": "object",
+            "required": [
+                "capacity",
+                "description",
+                "end_date",
+                "start_date",
+                "teacher_id",
+                "title"
+            ],
+            "properties": {
+                "capacity": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "teacher_id": {
+                    "type": "string"
+                },
+                "teacher_name": {
+                    "description": "TODO: this will later be consulted with users service to get the teacher name",
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.CreateModuleRequest": {
+            "type": "object",
+            "required": [
+                "course_id",
+                "description",
+                "title"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "course_id": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.DeleteCourseResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.EnrollStudentRequest": {
+            "type": "object",
+            "required": [
+                "student_id"
+            ],
+            "properties": {
+                "student_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.UnenrollStudentRequest": {
+            "type": "object",
+            "required": [
+                "student_id"
+            ],
+            "properties": {
+                "student_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.UnenrollStudentResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.UpdateAssignmentRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "due_date": {
+                    "type": "string"
+                },
+                "grace_period": {
+                    "type": "integer"
+                },
+                "instructions": {
+                    "type": "string"
+                },
+                "passing_score": {
+                    "type": "number"
+                },
+                "questions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Question"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "total_points": {
+                    "type": "number"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.UpdateCourseRequest": {
+            "type": "object",
+            "properties": {
+                "capacity": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "teacher_id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.UpdateModuleRequest": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        }
+    }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
@@ -873,9 +2572,11 @@ var SwaggerInfo = &amp;swag.Spec{
         BasePath:         "",
         Schemes:          []string{},
         Title:            "Courses Service API",
-        Description:      "Welcome to the API for the Courses Service of Class Connect!",
+        Description:      "API for managing courses and related resources",
         InfoInstanceName: "swagger",
         SwaggerTemplate:  docTemplate,
+        LeftDelim:        "{{",
+        RightDelim:       "}}",
 }
 
 func init() <span class="cov0" title="0">{
@@ -890,7 +2591,22 @@ import (
         "courses-service/src/router"
         "fmt"
         "log"
+
+        _ "courses-service/src/docs"
+
+        _ "github.com/swaggo/files"
+        _ "github.com/swaggo/gin-swagger"
 )
+
+// @title Courses Service API
+// @version 1.0
+// @description API for managing courses and related resources
+
+// @contact.name   El mejor grupo de todos ndea deau
+// @contact.url    https://github.com/classconnect-grupo3
+// @contact.email  classconnectingsoft2@gmail.com
+
+
 
 func main() <span class="cov0" title="0">{
         config := config.NewConfig()
@@ -1682,6 +3398,8 @@ import (
         "os"
 
         "github.com/gin-gonic/gin"
+        swaggerFiles "github.com/swaggo/files"
+        ginSwagger "github.com/swaggo/gin-swagger"
 
         nrgin "github.com/newrelic/go-agent/v3/integrations/nrgin"
         "github.com/newrelic/go-agent/v3/newrelic"
@@ -1799,6 +3517,7 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
         enrollmentController := controller.NewEnrollmentController(enrollmentService)
 
         InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController)
+        r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler)) // endpoint to consult the swagger documentation
         return r</span>
 }
 

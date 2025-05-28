@@ -133,7 +133,6 @@ func NewRouter(config *config.Config) *gin.Engine {
 
 	InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler)) // endpoint to consult the swagger documentation
-
 	return r
 }
 
