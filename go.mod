@@ -10,6 +10,8 @@ require (
 	github.com/newrelic/go-agent/v3 v3.39.0
 	github.com/newrelic/go-agent/v3/integrations/nrgin v1.3.3
 	github.com/stretchr/testify v1.10.0
+	github.com/swaggo/files v1.0.1
+	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.4
 )
 
