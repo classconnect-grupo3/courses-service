@@ -14,9 +14,10 @@ type Course struct {
 	TeacherName    string             `json:"teacher_name" bson:"teacher_name"`
 	Capacity       int                `json:"capacity" bson:"capacity"`
 	StudentsAmount int                `json:"students_amount" bson:"students_amount"`
+	Modules        []Module           `json:"modules" bson:"modules"`
+	AuxTeachers    []string           `json:"aux_teachers" bson:"aux_teachers"`
 	StartDate      time.Time          `json:"start_date" bson:"start_date"`
 	EndDate        time.Time          `json:"end_date" bson:"end_date"`
-	Modules        []Module           `json:"modules" bson:"modules"`
 	CreatedAt      time.Time          `json:"created_at" bson:"created_at"`
 	UpdatedAt      time.Time          `json:"updated_at" bson:"updated_at"`
 }

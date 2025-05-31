@@ -59,7 +59,7 @@
 				
 				<option value="file1">courses-service/src/controller/assignments_controller.go (1.5%)</option>
 				
-				<option value="file2">courses-service/src/controller/courses_controller.go (100.0%)</option>
+				<option value="file2">courses-service/src/controller/courses_controller.go (81.8%)</option>
 				
 				<option value="file3">courses-service/src/controller/enrollment_controller.go (30.3%)</option>
 				
@@ -77,23 +77,23 @@
 				
 				<option value="file10">courses-service/src/repository/assignment_repository.go (1.4%)</option>
 				
-				<option value="file11">courses-service/src/repository/course_repository.go (78.9%)</option>
+				<option value="file11">courses-service/src/repository/course_repository.go (75.8%)</option>
 				
 				<option value="file12">courses-service/src/repository/enrollment_repository.go (47.4%)</option>
 				
-				<option value="file13">courses-service/src/repository/module_repository.go (0.0%)</option>
+				<option value="file13">courses-service/src/repository/module_repository.go (1.6%)</option>
 				
 				<option value="file14">courses-service/src/repository/submission_repository.go (2.4%)</option>
 				
-				<option value="file15">courses-service/src/router/router.go (95.7%)</option>
+				<option value="file15">courses-service/src/router/router.go (96.0%)</option>
 				
 				<option value="file16">courses-service/src/service/assignment_service.go (3.7%)</option>
 				
-				<option value="file17">courses-service/src/service/course_service.go (89.2%)</option>
+				<option value="file17">courses-service/src/service/course_service.go (63.5%)</option>
 				
 				<option value="file18">courses-service/src/service/enrollment_service.go (35.3%)</option>
 				
-				<option value="file19">courses-service/src/service/module_service.go (0.0%)</option>
+				<option value="file19">courses-service/src/service/module_service.go (2.9%)</option>
 				
 				<option value="file20">courses-service/src/service/submission_service.go (2.0%)</option>
 				
@@ -344,6 +344,7 @@ type CourseService interface {
         GetCoursesByUserId(userId string) (*schemas.GetCoursesByUserIdResponse, error)
         GetCourseByTitle(title string) ([]*model.Course, error)
         UpdateCourse(id string, updateCourseRequest schemas.UpdateCourseRequest) (*model.Course, error)
+        AddAuxTeacherToCourse(id string, teacherId string, auxTeacherId string) (*model.Course, error)
 }
 
 type CourseController struct {
@@ -559,7 +560,40 @@ func (c *CourseController) GetCoursesByUserId(ctx *gin.Context) <span class="cov
         <span class="cov8" title="1">slog.Debug("Courses retrieved", "courses", courses)
         ctx.JSON(http.StatusOK, courses)</span>
 }
-</pre>
+
+// @Summary Add an aux teacher to a course
+// @Description Add an aux teacher to a course by ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+func (c *CourseController) AddAuxTeacherToCourse(ctx *gin.Context) <span class="cov0" title="0">{
+        slog.Debug("Adding aux teacher to course")
+        id := ctx.Param("id")
+        if id == "" </span><span class="cov0" title="0">{
+                slog.Error("Course ID is required")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">var auxTeacherRequest schemas.AddAuxTeacherToCourseRequest
+        if err := ctx.ShouldBindJSON(&amp;auxTeacherRequest); err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error binding JSON", "error", err)
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">teacherId := auxTeacherRequest.TeacherID
+        auxTeacherId := auxTeacherRequest.AuxTeacherID
+        course, err := c.service.AddAuxTeacherToCourse(id, teacherId, auxTeacherId)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error adding aux teacher to course", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov0" title="0">slog.Debug("Aux teacher added to course", "course", course)
+        ctx.JSON(http.StatusOK, course)</span>
+}</pre>
 		
 		<pre class="file" id="file3" style="display: none">package controller
 
@@ -589,12 +623,12 @@ func NewEnrollmentController(enrollmentService EnrollmentService) *EnrollmentCon
 // @Tags enrollments
 // @Accept json
 // @Produce json
-// @Param courseId path string true "Course ID"
+// @Param id path string true "Course ID"
 // @Param enrollmentRequest body schemas.EnrollStudentRequest true "Enrollment request"
-// @Router /courses/{courseId}/enroll [post]
+// @Router /courses/{id}/enroll [post]
 func (c *EnrollmentController) EnrollStudent(ctx *gin.Context) <span class="cov8" title="1">{
-        slog.Debug("Enrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("courseId"))
-        courseID := ctx.Param("courseId")
+        slog.Debug("Enrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("id"))
+        courseID := ctx.Param("id")
 
         if courseID == "" </span><span class="cov0" title="0">{
                 slog.Error("Invalid course ID", "courseId", courseID)
@@ -625,13 +659,13 @@ func (c *EnrollmentController) EnrollStudent(ctx *gin.Context) <span class="cov8
 // @Tags enrollments
 // @Accept json
 // @Produce json
-// @Param courseId path string true "Course ID"
+// @Param id path string true "Course ID"
 // @Param unenrollmentRequest body schemas.UnenrollStudentRequest true "Unenrollment request"
 // @Success 200 {object} schemas.UnenrollStudentResponse
-// @Router /courses/{courseId}/unenroll [delete]
+// @Router /courses/{id}/unenroll [delete]
 func (c *EnrollmentController) UnenrollStudent(ctx *gin.Context) <span class="cov0" title="0">{
-        slog.Debug("Unenrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("courseId"))
-        courseID := ctx.Param("courseId")
+        slog.Debug("Unenrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("id"))
+        courseID := ctx.Param("id")
         studentID := ctx.Param("studentId")
 
         if studentID == "" || courseID == "" </span><span class="cov0" title="0">{
@@ -2606,8 +2640,6 @@ import (
 // @contact.url    https://github.com/classconnect-grupo3
 // @contact.email  classconnectingsoft2@gmail.com
 
-
-
 func main() <span class="cov0" title="0">{
         config := config.NewConfig()
         r := router.NewRouter(config)
@@ -2821,6 +2853,7 @@ import (
         "context"
         "courses-service/src/model"
         "fmt"
+        "time"
 
         "go.mongodb.org/mongo-driver/bson"
         "go.mongodb.org/mongo-driver/bson/primitive"
@@ -3029,6 +3062,19 @@ func (r *CourseRepository) UpdateCourse(id string, updateCourseRequest model.Cou
 
         <span class="cov8" title="1">return updatedCourse, nil</span>
 }
+
+func (r *CourseRepository) AddAuxTeacherToCourse(course *model.Course, auxTeacherId string) (*model.Course, error) <span class="cov0" title="0">{
+        course.AuxTeachers = append(course.AuxTeachers, auxTeacherId)
+        course.UpdatedAt = time.Now()
+
+        updateCourseRequest := model.Course{
+                ID:          course.ID,
+                AuxTeachers: course.AuxTeachers,
+                UpdatedAt:   course.UpdatedAt,
+        }
+
+        return r.UpdateCourse(course.ID.Hex(), updateCourseRequest)
+}</span>
 </pre>
 		
 		<pre class="file" id="file12" style="display: none">package repository
@@ -3152,7 +3198,7 @@ type ModuleRepository struct {
         moduleCollection *mongo.Collection
 }
 
-func NewModuleRepository(db *mongo.Client, dbName string) *ModuleRepository <span class="cov0" title="0">{
+func NewModuleRepository(db *mongo.Client, dbName string) *ModuleRepository <span class="cov8" title="1">{
         return &amp;ModuleRepository{db: db, dbName: dbName, moduleCollection: db.Database(dbName).Collection("courses")}
 }</span>
 
@@ -3447,6 +3493,7 @@ func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseControl
         r.GET("/courses/:id", controller.GetCourseById)
         r.DELETE("/courses/:id", controller.DeleteCourse)
         r.PUT("/courses/:id", controller.UpdateCourse)
+        r.POST("/courses/:id/add-aux-teacher", controller.AddAuxTeacherToCourse)
 }</span>
 
 func InitializeModulesRoutes(r *gin.Engine, controller *controller.ModuleController) <span class="cov8" title="1">{
@@ -3482,8 +3529,8 @@ func InitializeSubmissionRoutes(r *gin.Engine, controller *controller.Submission
 }</span>
 
 func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.EnrollmentController) <span class="cov8" title="1">{
-        r.POST("/courses/:courseId/enroll", controller.EnrollStudent)
-        r.POST("/courses/:courseId/unenroll", controller.UnenrollStudent)
+        r.POST("/courses/:id/enroll", controller.EnrollStudent)
+        r.POST("/courses/:id/unenroll", controller.UnenrollStudent)
 }</span>
 
 func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
@@ -3501,31 +3548,41 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
         <span class="cov8" title="1">slog.Debug("Connected to database")
 
         courseRepo := repository.NewCourseRepository(dbClient, config.DBName)
-        courseService := service.NewCourseService(courseRepo)
-        courseController := controller.NewCourseController(courseService)
-
-        assignmentRepository := repository.NewAssignmentRepository(dbClient, config.DBName)
-        assignmentService := service.NewAssignmentService(assignmentRepository, *courseService)
-        assignmentsController := controller.NewAssignmentsController(assignmentService)
-
-        submissionRepository := repository.NewMongoSubmissionRepository(dbClient.Database(config.DBName))
-        submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository)
-        submissionController := controller.NewSubmissionController(submissionService)
-
         enrollmentRepo := repository.NewEnrollmentRepository(dbClient, config.DBName, courseRepo)
-        enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
-        enrollmentController := controller.NewEnrollmentController(enrollmentService)
+        assignmentRepository := repository.NewAssignmentRepository(dbClient, config.DBName)
+        submissionRepository := repository.NewMongoSubmissionRepository(dbClient.Database(config.DBName))
+        moduleRepository := repository.NewModuleRepository(dbClient, config.DBName)
 
-        InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController)
+        courseService := service.NewCourseService(courseRepo, enrollmentRepo)
+        enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
+        assignmentService := service.NewAssignmentService(assignmentRepository, *courseService)
+        submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository)
+        moduleService := service.NewModuleService(moduleRepository)
+
+        courseController := controller.NewCourseController(courseService)
+        enrollmentController := controller.NewEnrollmentController(enrollmentService)
+        assignmentsController := controller.NewAssignmentsController(assignmentService)
+        submissionController := controller.NewSubmissionController(submissionService)
+        moduleController := controller.NewModuleController(moduleService)
+
+        InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController, moduleController)
         r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler)) // endpoint to consult the swagger documentation
         return r</span>
 }
 
-func InitializeRoutes(r *gin.Engine, courseController *controller.CourseController, assignmentsController *controller.AssignmentsController, submissionController *controller.SubmissionController, enrollmentController *controller.EnrollmentController) <span class="cov8" title="1">{
+func InitializeRoutes(
+        r *gin.Engine,
+        courseController *controller.CourseController,
+        assignmentsController *controller.AssignmentsController,
+        submissionController *controller.SubmissionController,
+        enrollmentController *controller.EnrollmentController,
+        moduleController *controller.ModuleController,
+) <span class="cov8" title="1">{
         InitializeCoursesRoutes(r, courseController)
         InitializeSubmissionRoutes(r, submissionController)
         InitializeAssignmentsRoutes(r, assignmentsController)
         InitializeEnrollmentsRoutes(r, enrollmentController)
+        InitializeModulesRoutes(r, moduleController)
 }</span>
 </pre>
 		
@@ -3642,6 +3699,7 @@ import (
         "courses-service/src/model"
         "courses-service/src/schemas"
         "errors"
+        "slices"
         "time"
 )
 
@@ -3654,14 +3712,16 @@ type CourseRepository interface {
         GetCoursesByStudentId(studentId string) ([]*model.Course, error)
         GetCourseByTitle(title string) ([]*model.Course, error)
         UpdateCourse(id string, updateCourseRequest model.Course) (*model.Course, error)
+        AddAuxTeacherToCourse(course *model.Course, auxTeacherId string) (*model.Course, error)
 }
 
 type CourseService struct {
         courseRepository CourseRepository
+        enrollmentRepository EnrollmentRepository
 }
 
-func NewCourseService(courseRepository CourseRepository) *CourseService <span class="cov8" title="1">{
-        return &amp;CourseService{courseRepository: courseRepository}
+func NewCourseService(courseRepository CourseRepository, enrollmentRepository EnrollmentRepository) *CourseService <span class="cov8" title="1">{
+        return &amp;CourseService{courseRepository: courseRepository, enrollmentRepository: enrollmentRepository}
 }</span>
 
 func (s *CourseService) GetCourses() ([]*model.Course, error) <span class="cov8" title="1">{
@@ -3755,6 +3815,30 @@ func (s *CourseService) UpdateCourse(id string, updateCourseRequest schemas.Upda
                 UpdatedAt:   time.Now(),
         }
         return s.courseRepository.UpdateCourse(id, course)</span>
+}
+
+func (s *CourseService) AddAuxTeacherToCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error) <span class="cov0" title="0">{
+        course, err := s.courseRepository.GetCourseById(id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if course.TeacherUUID != titularTeacherId </span><span class="cov0" title="0">{
+                return nil, errors.New("the teacher trying to add an aux teacher is not the owner of the course")
+        }</span>
+        <span class="cov0" title="0">if course.TeacherUUID == auxTeacherId </span><span class="cov0" title="0">{
+                return nil, errors.New("the titular teacher cannot be an aux teacher for his own course")
+        }</span>
+        <span class="cov0" title="0">if slices.Contains(course.AuxTeachers, auxTeacherId) </span><span class="cov0" title="0">{
+                return nil, errors.New("aux teacher already exists")
+        }</span>
+        <span class="cov0" title="0">enrolled, err := s.enrollmentRepository.IsEnrolled(auxTeacherId, id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if enrolled </span><span class="cov0" title="0">{
+                return nil, errors.New("the aux teacher is already enrolled in the course")
+        }</span>
+        <span class="cov0" title="0">return s.courseRepository.AddAuxTeacherToCourse(course, auxTeacherId)</span>
 }
 </pre>
 		
@@ -3881,7 +3965,7 @@ type ModuleRepository interface {
         GetModuleByOrder(courseID string, order int) (*model.Module, error)
 }
 
-func NewModuleService(moduleRepository ModuleRepository) *ModuleService <span class="cov0" title="0">{
+func NewModuleService(moduleRepository ModuleRepository) *ModuleService <span class="cov8" title="1">{
         return &amp;ModuleService{moduleRepository: moduleRepository}
 }</span>
 

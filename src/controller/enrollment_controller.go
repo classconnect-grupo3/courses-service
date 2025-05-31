@@ -26,12 +26,12 @@ func NewEnrollmentController(enrollmentService EnrollmentService) *EnrollmentCon
 // @Tags enrollments
 // @Accept json
 // @Produce json
-// @Param courseId path string true "Course ID"
+// @Param id path string true "Course ID"
 // @Param enrollmentRequest body schemas.EnrollStudentRequest true "Enrollment request"
-// @Router /courses/{courseId}/enroll [post]
+// @Router /courses/{id}/enroll [post]
 func (c *EnrollmentController) EnrollStudent(ctx *gin.Context) {
-	slog.Debug("Enrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("courseId"))
-	courseID := ctx.Param("courseId")
+	slog.Debug("Enrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("id"))
+	courseID := ctx.Param("id")
 
 	if courseID == "" {
 		slog.Error("Invalid course ID", "courseId", courseID)
@@ -62,13 +62,13 @@ func (c *EnrollmentController) EnrollStudent(ctx *gin.Context) {
 // @Tags enrollments
 // @Accept json
 // @Produce json
-// @Param courseId path string true "Course ID"
+// @Param id path string true "Course ID"
 // @Param unenrollmentRequest body schemas.UnenrollStudentRequest true "Unenrollment request"
 // @Success 200 {object} schemas.UnenrollStudentResponse
-// @Router /courses/{courseId}/unenroll [delete]
+// @Router /courses/{id}/unenroll [delete]
 func (c *EnrollmentController) UnenrollStudent(ctx *gin.Context) {
-	slog.Debug("Unenrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("courseId"))
-	courseID := ctx.Param("courseId")
+	slog.Debug("Unenrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("id"))
+	courseID := ctx.Param("id")
 	studentID := ctx.Param("studentId")
 
 	if studentID == "" || courseID == "" {

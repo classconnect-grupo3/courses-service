@@ -4,6 +4,7 @@ import (
 	"courses-service/src/model"
 	"courses-service/src/schemas"
 	"errors"
+	"slices"
 	"time"
 )
 
@@ -16,14 +17,16 @@ type CourseRepository interface {
 	GetCoursesByStudentId(studentId string) ([]*model.Course, error)
 	GetCourseByTitle(title string) ([]*model.Course, error)
 	UpdateCourse(id string, updateCourseRequest model.Course) (*model.Course, error)
+	AddAuxTeacherToCourse(course *model.Course, auxTeacherId string) (*model.Course, error)
 }
 
 type CourseService struct {
 	courseRepository CourseRepository
+	enrollmentRepository EnrollmentRepository
 }
 
-func NewCourseService(courseRepository CourseRepository) *CourseService {
-	return &CourseService{courseRepository: courseRepository}
+func NewCourseService(courseRepository CourseRepository, enrollmentRepository EnrollmentRepository) *CourseService {
+	return &CourseService{courseRepository: courseRepository, enrollmentRepository: enrollmentRepository}
 }
 
 func (s *CourseService) GetCourses() ([]*model.Course, error) {
@@ -117,4 +120,28 @@ func (s *CourseService) UpdateCourse(id string, updateCourseRequest schemas.Upda
 		UpdatedAt:   time.Now(),
 	}
 	return s.courseRepository.UpdateCourse(id, course)
+}
+
+func (s *CourseService) AddAuxTeacherToCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error) {
+	course, err := s.courseRepository.GetCourseById(id)
+	if err != nil {
+		return nil, err
+	}
+	if course.TeacherUUID != titularTeacherId {
+		return nil, errors.New("the teacher trying to add an aux teacher is not the owner of the course")
+	}
+	if course.TeacherUUID == auxTeacherId {
+		return nil, errors.New("the titular teacher cannot be an aux teacher for his own course")
+	}
+	if slices.Contains(course.AuxTeachers, auxTeacherId) {
+		return nil, errors.New("aux teacher already exists")
+	}
+	enrolled, err := s.enrollmentRepository.IsEnrolled(auxTeacherId, id)
+	if err != nil {
+		return nil, err
+	}
+	if enrolled {
+		return nil, errors.New("the aux teacher is already enrolled in the course")
+	}
+	return s.courseRepository.AddAuxTeacherToCourse(course, auxTeacherId)
 }

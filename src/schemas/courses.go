@@ -53,6 +53,11 @@ type GetCoursesByUserIdResponse struct {
 	Student []*model.Course `json:"student"`
 }
 
+type AddAuxTeacherToCourseRequest struct {
+	TeacherID    string `json:"teacher_id" binding:"required"`
+	AuxTeacherID string `json:"aux_teacher_id" binding:"required"`
+}
+
 type DeleteCourseResponse struct {
 	Message string `json:"message"`
 }

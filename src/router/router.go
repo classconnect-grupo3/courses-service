@@ -62,6 +62,7 @@ func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseControl
 	r.GET("/courses/:id", controller.GetCourseById)
 	r.DELETE("/courses/:id", controller.DeleteCourse)
 	r.PUT("/courses/:id", controller.UpdateCourse)
+	r.POST("/courses/:id/add-aux-teacher", controller.AddAuxTeacherToCourse)
 }
 
 func InitializeModulesRoutes(r *gin.Engine, controller *controller.ModuleController) {
@@ -97,8 +98,8 @@ func InitializeSubmissionRoutes(r *gin.Engine, controller *controller.Submission
 }
 
 func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.EnrollmentController) {
-	r.POST("/courses/:courseId/enroll", controller.EnrollStudent)
-	r.POST("/courses/:courseId/unenroll", controller.UnenrollStudent)
+	r.POST("/courses/:id/enroll", controller.EnrollStudent)
+	r.POST("/courses/:id/unenroll", controller.UnenrollStudent)
 }
 
 func NewRouter(config *config.Config) *gin.Engine {
@@ -116,29 +117,39 @@ func NewRouter(config *config.Config) *gin.Engine {
 	slog.Debug("Connected to database")
 
 	courseRepo := repository.NewCourseRepository(dbClient, config.DBName)
-	courseService := service.NewCourseService(courseRepo)
-	courseController := controller.NewCourseController(courseService)
-
-	assignmentRepository := repository.NewAssignmentRepository(dbClient, config.DBName)
-	assignmentService := service.NewAssignmentService(assignmentRepository, *courseService)
-	assignmentsController := controller.NewAssignmentsController(assignmentService)
-
-	submissionRepository := repository.NewMongoSubmissionRepository(dbClient.Database(config.DBName))
-	submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository)
-	submissionController := controller.NewSubmissionController(submissionService)
-
 	enrollmentRepo := repository.NewEnrollmentRepository(dbClient, config.DBName, courseRepo)
-	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
-	enrollmentController := controller.NewEnrollmentController(enrollmentService)
+	assignmentRepository := repository.NewAssignmentRepository(dbClient, config.DBName)
+	submissionRepository := repository.NewMongoSubmissionRepository(dbClient.Database(config.DBName))
+	moduleRepository := repository.NewModuleRepository(dbClient, config.DBName)
 
-	InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController)
+	courseService := service.NewCourseService(courseRepo, enrollmentRepo)
+	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
+	assignmentService := service.NewAssignmentService(assignmentRepository, *courseService)
+	submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository)
+	moduleService := service.NewModuleService(moduleRepository)
+
+	courseController := controller.NewCourseController(courseService)
+	enrollmentController := controller.NewEnrollmentController(enrollmentService)
+	assignmentsController := controller.NewAssignmentsController(assignmentService)
+	submissionController := controller.NewSubmissionController(submissionService)
+	moduleController := controller.NewModuleController(moduleService)
+
+	InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController, moduleController)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler)) // endpoint to consult the swagger documentation
 	return r
 }
 
-func InitializeRoutes(r *gin.Engine, courseController *controller.CourseController, assignmentsController *controller.AssignmentsController, submissionController *controller.SubmissionController, enrollmentController *controller.EnrollmentController) {
+func InitializeRoutes(
+	r *gin.Engine,
+	courseController *controller.CourseController,
+	assignmentsController *controller.AssignmentsController,
+	submissionController *controller.SubmissionController,
+	enrollmentController *controller.EnrollmentController,
+	moduleController *controller.ModuleController,
+) {
 	InitializeCoursesRoutes(r, courseController)
 	InitializeSubmissionRoutes(r, submissionController)
 	InitializeAssignmentsRoutes(r, assignmentsController)
 	InitializeEnrollmentsRoutes(r, enrollmentController)
+	InitializeModulesRoutes(r, moduleController)
 }
