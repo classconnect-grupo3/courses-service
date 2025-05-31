@@ -226,3 +226,24 @@ func (r *CourseRepository) AddAuxTeacherToCourse(course *model.Course, auxTeache
 
 	return r.UpdateCourse(course.ID.Hex(), updateCourseRequest)
 }
+
+func (r *CourseRepository) RemoveAuxTeacherFromCourse(course *model.Course, auxTeacherId string) (*model.Course, error) {
+	// Buscar y eliminar el auxTeacherId del slice
+	for i, teacher := range course.AuxTeachers {
+		if teacher == auxTeacherId {
+			// Eliminar el elemento del slice
+			course.AuxTeachers = append(course.AuxTeachers[:i], course.AuxTeachers[i+1:]...)
+			break
+		}
+	}
+
+	course.UpdatedAt = time.Now()
+
+	updateCourseRequest := model.Course{
+		ID:          course.ID,
+		AuxTeachers: course.AuxTeachers,
+		UpdatedAt:   course.UpdatedAt,
+	}
+
+	return r.UpdateCourse(course.ID.Hex(), updateCourseRequest)
+}

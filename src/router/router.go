@@ -62,7 +62,8 @@ func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseControl
 	r.GET("/courses/:id", controller.GetCourseById)
 	r.DELETE("/courses/:id", controller.DeleteCourse)
 	r.PUT("/courses/:id", controller.UpdateCourse)
-	r.POST("/courses/:id/add-aux-teacher", controller.AddAuxTeacherToCourse)
+	r.POST("/courses/:id/aux-teacher/add", controller.AddAuxTeacherToCourse)
+	r.DELETE("/courses/:id/aux-teacher/remove", controller.RemoveAuxTeacherFromCourse)
 }
 
 func InitializeModulesRoutes(r *gin.Engine, controller *controller.ModuleController) {

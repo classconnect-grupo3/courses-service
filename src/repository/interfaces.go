@@ -15,6 +15,7 @@ type CourseRepositoryInterface interface {
 	GetCourseByTitle(title string) ([]*model.Course, error)
 	UpdateCourse(id string, updateCourseRequest model.Course) (*model.Course, error)
 	AddAuxTeacherToCourse(course *model.Course, auxTeacherId string) (*model.Course, error)
+	RemoveAuxTeacherFromCourse(course *model.Course, auxTeacherId string) (*model.Course, error)
 }
 
 type AssignmentRepositoryInterface interface {

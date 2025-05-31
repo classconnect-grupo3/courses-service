@@ -58,6 +58,11 @@ type AddAuxTeacherToCourseRequest struct {
 	AuxTeacherID string `json:"aux_teacher_id" binding:"required"`
 }
 
+type RemoveAuxTeacherFromCourseRequest struct {
+	TeacherID    string `json:"teacher_id" binding:"required"`
+	AuxTeacherID string `json:"aux_teacher_id" binding:"required"`
+}
+
 type DeleteCourseResponse struct {
 	Message string `json:"message"`
 }

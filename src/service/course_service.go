@@ -134,3 +134,27 @@ func (s *CourseService) AddAuxTeacherToCourse(id string, titularTeacherId string
 	}
 	return s.courseRepository.AddAuxTeacherToCourse(course, auxTeacherId)
 }
+
+func (s *CourseService) RemoveAuxTeacherFromCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error) {
+	course, err := s.courseRepository.GetCourseById(id)
+	if err != nil {
+		return nil, err
+	}
+	if course.TeacherUUID != titularTeacherId {
+		return nil, errors.New("the teacher trying to remove an aux teacher is not the owner of the course")
+	}
+	if course.TeacherUUID == auxTeacherId {
+		return nil, errors.New("the titular teacher cannot be removed as aux teacher from his own course")
+	}
+	if !slices.Contains(course.AuxTeachers, auxTeacherId) {
+		return nil, errors.New("aux teacher is not assigned to this course")
+	}
+	enrolled, err := s.enrollmentRepository.IsEnrolled(auxTeacherId, id)
+	if err != nil {
+		return nil, err
+	}
+	if enrolled {
+		return nil, errors.New("the aux teacher is already enrolled in the course")
+	}
+	return s.courseRepository.RemoveAuxTeacherFromCourse(course, auxTeacherId)
+}

@@ -27,6 +27,11 @@ func (m *MockEnrollmentRepository) DeleteEnrollment(studentID string, course *mo
 
 type MockCourseRepository struct{}
 
+// RemoveAuxTeacherFromCourse implements repository.CourseRepositoryInterface.
+func (m *MockCourseRepository) RemoveAuxTeacherFromCourse(course *model.Course, auxTeacherId string) (*model.Course, error) {
+	return &model.Course{}, nil
+}
+
 // AddAuxTeacherToCourse implements service.CourseRepository.
 func (m *MockCourseRepository) AddAuxTeacherToCourse(course *model.Course, auxTeacherId string) (*model.Course, error) {
 	return &model.Course{}, nil
