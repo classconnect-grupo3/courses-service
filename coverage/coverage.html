@@ -144,26 +144,17 @@ import (
         "log/slog"
         "net/http"
 
-        "courses-service/src/model"
         "courses-service/src/schemas"
+        "courses-service/src/service"
 
         "github.com/gin-gonic/gin"
 )
 
-type AssignmentService interface {
-        CreateAssignment(c schemas.CreateAssignmentRequest) (*model.Assignment, error)
-        GetAssignments() ([]*model.Assignment, error)
-        GetAssignmentById(id string) (*model.Assignment, error)
-        GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error)
-        UpdateAssignment(id string, updateAssignmentRequest schemas.UpdateAssignmentRequest) (*model.Assignment, error)
-        DeleteAssignment(id string) error
-}
-
 type AssignmentsController struct {
-        service AssignmentService
+        service service.AssignmentServiceInterface
 }
 
-func NewAssignmentsController(service AssignmentService) *AssignmentsController <span class="cov8" title="1">{
+func NewAssignmentsController(service service.AssignmentServiceInterface) *AssignmentsController <span class="cov8" title="1">{
         return &amp;AssignmentsController{service: service}
 }</span>
 
@@ -328,30 +319,17 @@ import (
         "log/slog"
         "net/http"
 
-        "courses-service/src/model"
         "courses-service/src/schemas"
+        "courses-service/src/service"
 
         "github.com/gin-gonic/gin"
 )
 
-type CourseService interface {
-        GetCourses() ([]*model.Course, error)
-        CreateCourse(c schemas.CreateCourseRequest) (*model.Course, error)
-        GetCourseById(id string) (*model.Course, error)
-        DeleteCourse(id string) error
-        GetCourseByTeacherId(teacherId string) ([]*model.Course, error)
-        GetCoursesByStudentId(studentId string) ([]*model.Course, error)
-        GetCoursesByUserId(userId string) (*schemas.GetCoursesByUserIdResponse, error)
-        GetCourseByTitle(title string) ([]*model.Course, error)
-        UpdateCourse(id string, updateCourseRequest schemas.UpdateCourseRequest) (*model.Course, error)
-        AddAuxTeacherToCourse(id string, teacherId string, auxTeacherId string) (*model.Course, error)
-}
-
 type CourseController struct {
-        service CourseService
+        service service.CourseServiceInterface
 }
 
-func NewCourseController(service CourseService) *CourseController <span class="cov8" title="1">{
+func NewCourseController(service service.CourseServiceInterface) *CourseController <span class="cov8" title="1">{
         return &amp;CourseController{service: service}
 }</span>
 
@@ -599,22 +577,18 @@ func (c *CourseController) AddAuxTeacherToCourse(ctx *gin.Context) <span class="
 
 import (
         "courses-service/src/schemas"
+        "courses-service/src/service"
         "log/slog"
         "net/http"
 
         "github.com/gin-gonic/gin"
 )
 
-type EnrollmentService interface {
-        EnrollStudent(studentID, courseID string) error
-        UnenrollStudent(studentID, courseID string) error
-}
-
 type EnrollmentController struct {
-        enrollmentService EnrollmentService
+        enrollmentService service.EnrollmentServiceInterface
 }
 
-func NewEnrollmentController(enrollmentService EnrollmentService) *EnrollmentController <span class="cov8" title="1">{
+func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface) *EnrollmentController <span class="cov8" title="1">{
         return &amp;EnrollmentController{enrollmentService: enrollmentService}
 }</span>
 
@@ -691,6 +665,7 @@ func (c *EnrollmentController) UnenrollStudent(ctx *gin.Context) <span class="co
 import (
         "courses-service/src/model"
         "courses-service/src/schemas"
+        "courses-service/src/service"
         "log/slog"
         "net/http"
 
@@ -698,18 +673,10 @@ import (
 )
 
 type ModuleController struct {
-        service ModuleService
+        service service.ModuleServiceInterface
 }
 
-type ModuleService interface {
-        CreateModule(module schemas.CreateModuleRequest) (*model.Module, error)
-        GetModuleById(id string) (*model.Module, error)
-        GetModulesByCourseId(courseId string) ([]model.Module, error)
-        UpdateModule(id string, module model.Module) (*model.Module, error)
-        DeleteModule(id string) error
-}
-
-func NewModuleController(service ModuleService) *ModuleController <span class="cov8" title="1">{
+func NewModuleController(service service.ModuleServiceInterface) *ModuleController <span class="cov8" title="1">{
         return &amp;ModuleController{
                 service: service,
         }
@@ -2691,30 +2658,21 @@ import (
         "go.mongodb.org/mongo-driver/mongo"
 )
 
-type AssignmentRepository interface {
-        CreateAssignment(assignment model.Assignment) (*model.Assignment, error)
-        GetAssignments() ([]*model.Assignment, error)
-        GetByID(ctx context.Context, id string) (*model.Assignment, error)
-        GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error)
-        UpdateAssignment(id string, updateAssignment model.Assignment) (*model.Assignment, error)
-        DeleteAssignment(id string) error
-}
-
-type MongoAssignmentRepository struct {
+type AssignmentRepository struct {
         db                   *mongo.Client
         dbName               string
         assignmentCollection *mongo.Collection
 }
 
-func NewAssignmentRepository(db *mongo.Client, dbName string) AssignmentRepository <span class="cov8" title="1">{
-        return &amp;MongoAssignmentRepository{
+func NewAssignmentRepository(db *mongo.Client, dbName string) AssignmentRepositoryInterface <span class="cov8" title="1">{
+        return &amp;AssignmentRepository{
                 db:                   db,
                 dbName:               dbName,
                 assignmentCollection: db.Database(dbName).Collection("assignments"),
         }
 }</span>
 
-func (r *MongoAssignmentRepository) CreateAssignment(assignment model.Assignment) (*model.Assignment, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) CreateAssignment(assignment model.Assignment) (*model.Assignment, error) <span class="cov0" title="0">{
         result, err := r.assignmentCollection.InsertOne(context.TODO(), assignment)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to create assignment: %v", err)
@@ -2724,7 +2682,7 @@ func (r *MongoAssignmentRepository) CreateAssignment(assignment model.Assignment
         return &amp;assignment, nil</span>
 }
 
-func (r *MongoAssignmentRepository) GetAssignments() ([]*model.Assignment, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) GetAssignments() ([]*model.Assignment, error) <span class="cov0" title="0">{
         cursor, err := r.assignmentCollection.Find(context.TODO(), bson.M{})
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to get assignments: %v", err)
@@ -2738,7 +2696,7 @@ func (r *MongoAssignmentRepository) GetAssignments() ([]*model.Assignment, error
         <span class="cov0" title="0">return assignments, nil</span>
 }
 
-func (r *MongoAssignmentRepository) GetByID(ctx context.Context, id string) (*model.Assignment, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) GetByID(ctx context.Context, id string) (*model.Assignment, error) <span class="cov0" title="0">{
         var assignment model.Assignment
         objectId, err := primitive.ObjectIDFromHex(id)
         if err != nil </span><span class="cov0" title="0">{
@@ -2756,7 +2714,7 @@ func (r *MongoAssignmentRepository) GetByID(ctx context.Context, id string) (*mo
         <span class="cov0" title="0">return &amp;assignment, nil</span>
 }
 
-func (r *MongoAssignmentRepository) GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error) <span class="cov0" title="0">{
         cursor, err := r.assignmentCollection.Find(context.TODO(), bson.M{"course_id": courseId})
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to get assignments by course id: %v", err)
@@ -2811,7 +2769,7 @@ func filterEmptyAssignmentFields(assignment model.Assignment) bson.M <span class
         return update</span>
 }
 
-func (r *MongoAssignmentRepository) UpdateAssignment(id string, updateAssignment model.Assignment) (*model.Assignment, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) UpdateAssignment(id string, updateAssignment model.Assignment) (*model.Assignment, error) <span class="cov0" title="0">{
         objectId, err := primitive.ObjectIDFromHex(id)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to update assignment: %v", err)
@@ -2832,7 +2790,7 @@ func (r *MongoAssignmentRepository) UpdateAssignment(id string, updateAssignment
         <span class="cov0" title="0">return updatedAssignment, nil</span>
 }
 
-func (r *MongoAssignmentRepository) DeleteAssignment(id string) error <span class="cov0" title="0">{
+func (r *AssignmentRepository) DeleteAssignment(id string) error <span class="cov0" title="0">{
         objectId, err := primitive.ObjectIDFromHex(id)
         if err != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("failed to delete assignment: %v", err)
@@ -3329,25 +3287,17 @@ import (
         "context"
 
         "courses-service/src/model"
+
         "go.mongodb.org/mongo-driver/bson"
         "go.mongodb.org/mongo-driver/bson/primitive"
         "go.mongodb.org/mongo-driver/mongo"
 )
 
-type SubmissionRepository interface {
-        Create(ctx context.Context, submission *model.Submission) error
-        Update(ctx context.Context, submission *model.Submission) error
-        GetByID(ctx context.Context, id string) (*model.Submission, error)
-        GetByAssignmentAndStudent(ctx context.Context, assignmentID, studentUUID string) (*model.Submission, error)
-        GetByAssignment(ctx context.Context, assignmentID string) ([]model.Submission, error)
-        GetByStudent(ctx context.Context, studentUUID string) ([]model.Submission, error)
-}
-
 type MongoSubmissionRepository struct {
         collection *mongo.Collection
 }
 
-func NewMongoSubmissionRepository(db *mongo.Database) SubmissionRepository <span class="cov8" title="1">{
+func NewMongoSubmissionRepository(db *mongo.Database) SubmissionRepositoryInterface <span class="cov8" title="1">{
         return &amp;MongoSubmissionRepository{
                 collection: db.Collection("submissions"),
         }
@@ -3555,14 +3505,14 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
 
         courseService := service.NewCourseService(courseRepo, enrollmentRepo)
         enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
-        assignmentService := service.NewAssignmentService(assignmentRepository, *courseService)
+        assignmentService := service.NewAssignmentService(assignmentRepository, courseService)
         submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository)
         moduleService := service.NewModuleService(moduleRepository)
 
         courseController := controller.NewCourseController(courseService)
         enrollmentController := controller.NewEnrollmentController(enrollmentService)
         assignmentsController := controller.NewAssignmentsController(assignmentService)
-        submissionController := controller.NewSubmissionController(submissionService)
+        submissionController := controller.NewSubmissionController(submissionService) // TODO change this when interface is added
         moduleController := controller.NewModuleController(moduleService)
 
         InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController, moduleController)
@@ -3598,11 +3548,11 @@ import (
 )
 
 type AssignmentService struct {
-        assignmentRepository repository.AssignmentRepository
-        courseService        CourseService
+        assignmentRepository repository.AssignmentRepositoryInterface
+        courseService        CourseServiceInterface
 }
 
-func NewAssignmentService(assignmentRepository repository.AssignmentRepository, courseService CourseService) *AssignmentService <span class="cov8" title="1">{
+func NewAssignmentService(assignmentRepository repository.AssignmentRepositoryInterface, courseService CourseServiceInterface) *AssignmentService <span class="cov8" title="1">{
         return &amp;AssignmentService{assignmentRepository: assignmentRepository, courseService: courseService}
 }</span>
 
@@ -3697,30 +3647,19 @@ func (s *AssignmentService) GetAssignmentsByCourseId(courseId string) ([]*model.
 
 import (
         "courses-service/src/model"
+        "courses-service/src/repository"
         "courses-service/src/schemas"
         "errors"
         "slices"
         "time"
 )
 
-type CourseRepository interface {
-        GetCourses() ([]*model.Course, error)
-        CreateCourse(c model.Course) (*model.Course, error)
-        GetCourseById(id string) (*model.Course, error)
-        DeleteCourse(id string) error
-        GetCourseByTeacherId(teacherId string) ([]*model.Course, error)
-        GetCoursesByStudentId(studentId string) ([]*model.Course, error)
-        GetCourseByTitle(title string) ([]*model.Course, error)
-        UpdateCourse(id string, updateCourseRequest model.Course) (*model.Course, error)
-        AddAuxTeacherToCourse(course *model.Course, auxTeacherId string) (*model.Course, error)
-}
-
 type CourseService struct {
-        courseRepository CourseRepository
-        enrollmentRepository EnrollmentRepository
+        courseRepository     repository.CourseRepositoryInterface
+        enrollmentRepository repository.EnrollmentRepositoryInterface
 }
 
-func NewCourseService(courseRepository CourseRepository, enrollmentRepository EnrollmentRepository) *CourseService <span class="cov8" title="1">{
+func NewCourseService(courseRepository repository.CourseRepositoryInterface, enrollmentRepository repository.EnrollmentRepositoryInterface) *CourseService <span class="cov8" title="1">{
         return &amp;CourseService{courseRepository: courseRepository, enrollmentRepository: enrollmentRepository}
 }</span>
 
@@ -3846,24 +3785,19 @@ func (s *CourseService) AddAuxTeacherToCourse(id string, titularTeacherId string
 
 import (
         "courses-service/src/model"
+        "courses-service/src/repository"
         "fmt"
         "time"
 
         "go.mongodb.org/mongo-driver/mongo"
 )
 
-type EnrollmentRepository interface {
-        CreateEnrollment(enrollment model.Enrollment, course *model.Course) error
-        IsEnrolled(studentID, courseID string) (bool, error)
-        DeleteEnrollment(studentID string, course *model.Course) error
-}
-
 type EnrollmentService struct {
-        enrollmentRepository EnrollmentRepository
-        courseRepository     CourseRepository
+        enrollmentRepository repository.EnrollmentRepositoryInterface
+        courseRepository     repository.CourseRepositoryInterface
 }
 
-func NewEnrollmentService(enrollmentRepository EnrollmentRepository, courseRepository CourseRepository) *EnrollmentService <span class="cov8" title="1">{
+func NewEnrollmentService(enrollmentRepository repository.EnrollmentRepositoryInterface, courseRepository repository.CourseRepositoryInterface) *EnrollmentService <span class="cov8" title="1">{
         return &amp;EnrollmentService{enrollmentRepository: enrollmentRepository, courseRepository: courseRepository}
 }</span>
 
@@ -3944,6 +3878,7 @@ func (s *EnrollmentService) UnenrollStudent(studentID, courseID string) error <s
 
 import (
         "courses-service/src/model"
+        "courses-service/src/repository"
         "courses-service/src/schemas"
         "errors"
         "fmt"
@@ -3951,21 +3886,10 @@ import (
 )
 
 type ModuleService struct {
-        moduleRepository ModuleRepository
+        moduleRepository repository.ModuleRepositoryInterface
 }
 
-type ModuleRepository interface {
-        GetNextModuleOrder(courseID string) (int, error)
-        CreateModule(courseID string, module model.Module) (*model.Module, error)
-        GetModuleById(id string) (*model.Module, error)
-        UpdateModule(id string, module model.Module) (*model.Module, error)
-        DeleteModule(id string) error
-        GetModulesByCourseId(courseId string) ([]model.Module, error)
-        GetModuleByName(courseID string, moduleName string) (*model.Module, error)
-        GetModuleByOrder(courseID string, order int) (*model.Module, error)
-}
-
-func NewModuleService(moduleRepository ModuleRepository) *ModuleService <span class="cov8" title="1">{
+func NewModuleService(moduleRepository repository.ModuleRepositoryInterface) *ModuleService <span class="cov8" title="1">{
         return &amp;ModuleService{moduleRepository: moduleRepository}
 }</span>
 
@@ -4052,11 +3976,11 @@ import (
 )
 
 type SubmissionService struct {
-        submissionRepo repository.SubmissionRepository
-        assignmentRepo repository.AssignmentRepository
+        submissionRepo repository.SubmissionRepositoryInterface
+        assignmentRepo repository.AssignmentRepositoryInterface
 }
 
-func NewSubmissionService(submissionRepo repository.SubmissionRepository, assignmentRepo repository.AssignmentRepository) *SubmissionService <span class="cov8" title="1">{
+func NewSubmissionService(submissionRepo repository.SubmissionRepositoryInterface, assignmentRepo repository.AssignmentRepositoryInterface) *SubmissionService <span class="cov8" title="1">{
         return &amp;SubmissionService{
                 submissionRepo: submissionRepo,
                 assignmentRepo: assignmentRepo,

@@ -10,11 +10,11 @@ import (
 )
 
 type AssignmentService struct {
-	assignmentRepository repository.AssignmentRepository
-	courseService        CourseService
+	assignmentRepository repository.AssignmentRepositoryInterface
+	courseService        CourseServiceInterface
 }
 
-func NewAssignmentService(assignmentRepository repository.AssignmentRepository, courseService CourseService) *AssignmentService {
+func NewAssignmentService(assignmentRepository repository.AssignmentRepositoryInterface, courseService CourseServiceInterface) *AssignmentService {
 	return &AssignmentService{assignmentRepository: assignmentRepository, courseService: courseService}
 }
 

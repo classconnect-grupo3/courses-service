@@ -4,26 +4,17 @@ import (
 	"log/slog"
 	"net/http"
 
-	"courses-service/src/model"
 	"courses-service/src/schemas"
+	"courses-service/src/service"
 
 	"github.com/gin-gonic/gin"
 )
 
-type AssignmentService interface {
-	CreateAssignment(c schemas.CreateAssignmentRequest) (*model.Assignment, error)
-	GetAssignments() ([]*model.Assignment, error)
-	GetAssignmentById(id string) (*model.Assignment, error)
-	GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error)
-	UpdateAssignment(id string, updateAssignmentRequest schemas.UpdateAssignmentRequest) (*model.Assignment, error)
-	DeleteAssignment(id string) error
-}
-
 type AssignmentsController struct {
-	service AssignmentService
+	service service.AssignmentServiceInterface
 }
 
-func NewAssignmentsController(service AssignmentService) *AssignmentsController {
+func NewAssignmentsController(service service.AssignmentServiceInterface) *AssignmentsController {
 	return &AssignmentsController{service: service}
 }
 

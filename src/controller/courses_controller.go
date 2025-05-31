@@ -4,30 +4,17 @@ import (
 	"log/slog"
 	"net/http"
 
-	"courses-service/src/model"
 	"courses-service/src/schemas"
+	"courses-service/src/service"
 
 	"github.com/gin-gonic/gin"
 )
 
-type CourseService interface {
-	GetCourses() ([]*model.Course, error)
-	CreateCourse(c schemas.CreateCourseRequest) (*model.Course, error)
-	GetCourseById(id string) (*model.Course, error)
-	DeleteCourse(id string) error
-	GetCourseByTeacherId(teacherId string) ([]*model.Course, error)
-	GetCoursesByStudentId(studentId string) ([]*model.Course, error)
-	GetCoursesByUserId(userId string) (*schemas.GetCoursesByUserIdResponse, error)
-	GetCourseByTitle(title string) ([]*model.Course, error)
-	UpdateCourse(id string, updateCourseRequest schemas.UpdateCourseRequest) (*model.Course, error)
-	AddAuxTeacherToCourse(id string, teacherId string, auxTeacherId string) (*model.Course, error)
-}
-
 type CourseController struct {
-	service CourseService
+	service service.CourseServiceInterface
 }
 
-func NewCourseController(service CourseService) *CourseController {
+func NewCourseController(service service.CourseServiceInterface) *CourseController {
 	return &CourseController{service: service}
 }
 

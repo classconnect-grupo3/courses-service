@@ -2,30 +2,19 @@ package service
 
 import (
 	"courses-service/src/model"
+	"courses-service/src/repository"
 	"courses-service/src/schemas"
 	"errors"
 	"slices"
 	"time"
 )
 
-type CourseRepository interface {
-	GetCourses() ([]*model.Course, error)
-	CreateCourse(c model.Course) (*model.Course, error)
-	GetCourseById(id string) (*model.Course, error)
-	DeleteCourse(id string) error
-	GetCourseByTeacherId(teacherId string) ([]*model.Course, error)
-	GetCoursesByStudentId(studentId string) ([]*model.Course, error)
-	GetCourseByTitle(title string) ([]*model.Course, error)
-	UpdateCourse(id string, updateCourseRequest model.Course) (*model.Course, error)
-	AddAuxTeacherToCourse(course *model.Course, auxTeacherId string) (*model.Course, error)
-}
-
 type CourseService struct {
-	courseRepository CourseRepository
-	enrollmentRepository EnrollmentRepository
+	courseRepository     repository.CourseRepositoryInterface
+	enrollmentRepository repository.EnrollmentRepositoryInterface
 }
 
-func NewCourseService(courseRepository CourseRepository, enrollmentRepository EnrollmentRepository) *CourseService {
+func NewCourseService(courseRepository repository.CourseRepositoryInterface, enrollmentRepository repository.EnrollmentRepositoryInterface) *CourseService {
 	return &CourseService{courseRepository: courseRepository, enrollmentRepository: enrollmentRepository}
 }
 

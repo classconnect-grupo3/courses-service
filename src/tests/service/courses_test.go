@@ -25,7 +25,6 @@ func (m *MockEnrollmentRepository) DeleteEnrollment(studentID string, course *mo
 	return nil
 }
 
-
 type MockCourseRepository struct{}
 
 // AddAuxTeacherToCourse implements service.CourseRepository.

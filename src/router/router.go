@@ -124,14 +124,14 @@ func NewRouter(config *config.Config) *gin.Engine {
 
 	courseService := service.NewCourseService(courseRepo, enrollmentRepo)
 	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
-	assignmentService := service.NewAssignmentService(assignmentRepository, *courseService)
+	assignmentService := service.NewAssignmentService(assignmentRepository, courseService)
 	submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository)
 	moduleService := service.NewModuleService(moduleRepository)
 
 	courseController := controller.NewCourseController(courseService)
 	enrollmentController := controller.NewEnrollmentController(enrollmentService)
 	assignmentsController := controller.NewAssignmentsController(assignmentService)
-	submissionController := controller.NewSubmissionController(submissionService)
+	submissionController := controller.NewSubmissionController(submissionService) // TODO change this when interface is added
 	moduleController := controller.NewModuleController(moduleService)
 
 	InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController, moduleController)

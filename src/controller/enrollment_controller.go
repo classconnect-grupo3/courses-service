@@ -2,22 +2,18 @@ package controller
 
 import (
 	"courses-service/src/schemas"
+	"courses-service/src/service"
 	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-type EnrollmentService interface {
-	EnrollStudent(studentID, courseID string) error
-	UnenrollStudent(studentID, courseID string) error
-}
-
 type EnrollmentController struct {
-	enrollmentService EnrollmentService
+	enrollmentService service.EnrollmentServiceInterface
 }
 
-func NewEnrollmentController(enrollmentService EnrollmentService) *EnrollmentController {
+func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface) *EnrollmentController {
 	return &EnrollmentController{enrollmentService: enrollmentService}
 }
 

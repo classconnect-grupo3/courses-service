@@ -4,25 +4,17 @@ import (
 	"context"
 
 	"courses-service/src/model"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type SubmissionRepository interface {
-	Create(ctx context.Context, submission *model.Submission) error
-	Update(ctx context.Context, submission *model.Submission) error
-	GetByID(ctx context.Context, id string) (*model.Submission, error)
-	GetByAssignmentAndStudent(ctx context.Context, assignmentID, studentUUID string) (*model.Submission, error)
-	GetByAssignment(ctx context.Context, assignmentID string) ([]model.Submission, error)
-	GetByStudent(ctx context.Context, studentUUID string) ([]model.Submission, error)
-}
-
 type MongoSubmissionRepository struct {
 	collection *mongo.Collection
 }
 
-func NewMongoSubmissionRepository(db *mongo.Database) SubmissionRepository {
+func NewMongoSubmissionRepository(db *mongo.Database) SubmissionRepositoryInterface {
 	return &MongoSubmissionRepository{
 		collection: db.Collection("submissions"),
 	}
