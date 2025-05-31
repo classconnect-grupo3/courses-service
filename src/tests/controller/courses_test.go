@@ -33,6 +33,16 @@ func init() {
 
 type MockCourseService struct{}
 
+// RemoveAuxTeacherFromCourse implements service.CourseServiceInterface.
+func (m *MockCourseService) RemoveAuxTeacherFromCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error) {
+	return &model.Course{}, nil
+}
+
+// AddAuxTeacherToCourse implements controller.CourseService.
+func (m *MockCourseService) AddAuxTeacherToCourse(id string, teacherId string, auxTeacherId string) (*model.Course, error) {
+	return &model.Course{}, nil
+}
+
 // GetCoursesByStudentId implements controller.CourseService.
 func (m *MockCourseService) GetCoursesByStudentId(studentId string) ([]*model.Course, error) {
 	return []*model.Course{}, nil
@@ -89,6 +99,16 @@ func (m *MockCourseService) UpdateCourse(id string, updateCourseRequest schemas.
 }
 
 type MockCourseServiceWithError struct{}
+
+// RemoveAuxTeacherFromCourse implements service.CourseServiceInterface.
+func (m *MockCourseServiceWithError) RemoveAuxTeacherFromCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error) {
+	return nil, errors.New("Error removing aux teacher from course")
+}
+
+// AddAuxTeacherToCourse implements controller.CourseService.
+func (m *MockCourseServiceWithError) AddAuxTeacherToCourse(id string, teacherId string, auxTeacherId string) (*model.Course, error) {
+	return nil, errors.New("Error adding aux teacher to course")
+}
 
 // GetCoursesByStudentId implements controller.CourseService.
 func (m *MockCourseServiceWithError) GetCoursesByStudentId(studentId string) ([]*model.Course, error) {
@@ -311,3 +331,5 @@ func TestUpdateCourseWithError(t *testing.T) {
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
+
+// TODO add tests for aux teachers

@@ -3,6 +3,7 @@ package controller
 import (
 	"courses-service/src/model"
 	"courses-service/src/schemas"
+	"courses-service/src/service"
 	"log/slog"
 	"net/http"
 
@@ -10,18 +11,10 @@ import (
 )
 
 type ModuleController struct {
-	service ModuleService
+	service service.ModuleServiceInterface
 }
 
-type ModuleService interface {
-	CreateModule(module schemas.CreateModuleRequest) (*model.Module, error)
-	GetModuleById(id string) (*model.Module, error)
-	GetModulesByCourseId(courseId string) ([]model.Module, error)
-	UpdateModule(id string, module model.Module) (*model.Module, error)
-	DeleteModule(id string) error
-}
-
-func NewModuleController(service ModuleService) *ModuleController {
+func NewModuleController(service service.ModuleServiceInterface) *ModuleController {
 	return &ModuleController{
 		service: service,
 	}

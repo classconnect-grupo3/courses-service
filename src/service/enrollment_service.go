@@ -2,24 +2,19 @@ package service
 
 import (
 	"courses-service/src/model"
+	"courses-service/src/repository"
 	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type EnrollmentRepository interface {
-	CreateEnrollment(enrollment model.Enrollment, course *model.Course) error
-	IsEnrolled(studentID, courseID string) (bool, error)
-	DeleteEnrollment(studentID string, course *model.Course) error
-}
-
 type EnrollmentService struct {
-	enrollmentRepository EnrollmentRepository
-	courseRepository     CourseRepository
+	enrollmentRepository repository.EnrollmentRepositoryInterface
+	courseRepository     repository.CourseRepositoryInterface
 }
 
-func NewEnrollmentService(enrollmentRepository EnrollmentRepository, courseRepository CourseRepository) *EnrollmentService {
+func NewEnrollmentService(enrollmentRepository repository.EnrollmentRepositoryInterface, courseRepository repository.CourseRepositoryInterface) *EnrollmentService {
 	return &EnrollmentService{enrollmentRepository: enrollmentRepository, courseRepository: courseRepository}
 }
 

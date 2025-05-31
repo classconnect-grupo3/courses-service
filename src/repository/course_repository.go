@@ -4,6 +4,7 @@ import (
 	"context"
 	"courses-service/src/model"
 	"fmt"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -211,4 +212,38 @@ func (r *CourseRepository) UpdateCourse(id string, updateCourseRequest model.Cou
 	}
 
 	return updatedCourse, nil
+}
+
+func (r *CourseRepository) AddAuxTeacherToCourse(course *model.Course, auxTeacherId string) (*model.Course, error) {
+	course.AuxTeachers = append(course.AuxTeachers, auxTeacherId)
+	course.UpdatedAt = time.Now()
+
+	updateCourseRequest := model.Course{
+		ID:          course.ID,
+		AuxTeachers: course.AuxTeachers,
+		UpdatedAt:   course.UpdatedAt,
+	}
+
+	return r.UpdateCourse(course.ID.Hex(), updateCourseRequest)
+}
+
+func (r *CourseRepository) RemoveAuxTeacherFromCourse(course *model.Course, auxTeacherId string) (*model.Course, error) {
+	// Buscar y eliminar el auxTeacherId del slice
+	for i, teacher := range course.AuxTeachers {
+		if teacher == auxTeacherId {
+			// Eliminar el elemento del slice
+			course.AuxTeachers = append(course.AuxTeachers[:i], course.AuxTeachers[i+1:]...)
+			break
+		}
+	}
+
+	course.UpdatedAt = time.Now()
+
+	updateCourseRequest := model.Course{
+		ID:          course.ID,
+		AuxTeachers: course.AuxTeachers,
+		UpdatedAt:   course.UpdatedAt,
+	}
+
+	return r.UpdateCourse(course.ID.Hex(), updateCourseRequest)
 }

@@ -1,16 +1,41 @@
-package tests
+package service_test
 
 import (
 	"courses-service/src/model"
 	"courses-service/src/schemas"
 	"courses-service/src/service"
+
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type MockEnrollmentRepository struct{}
+
+func (m *MockEnrollmentRepository) IsEnrolled(studentID, courseID string) (bool, error) {
+	return true, nil
+}
+
+func (m *MockEnrollmentRepository) CreateEnrollment(enrollment model.Enrollment, course *model.Course) error {
+	return nil
+}
+
+func (m *MockEnrollmentRepository) DeleteEnrollment(studentID string, course *model.Course) error {
+	return nil
+}
+
 type MockCourseRepository struct{}
+
+// RemoveAuxTeacherFromCourse implements repository.CourseRepositoryInterface.
+func (m *MockCourseRepository) RemoveAuxTeacherFromCourse(course *model.Course, auxTeacherId string) (*model.Course, error) {
+	return &model.Course{}, nil
+}
+
+// AddAuxTeacherToCourse implements service.CourseRepository.
+func (m *MockCourseRepository) AddAuxTeacherToCourse(course *model.Course, auxTeacherId string) (*model.Course, error) {
+	return &model.Course{}, nil
+}
 
 // GetCoursesByStudentId implements service.CourseRepository.
 func (m *MockCourseRepository) GetCoursesByStudentId(studentId string) ([]*model.Course, error) {
@@ -87,7 +112,7 @@ func (m *MockCourseRepository) UpdateCourse(id string, updateCourseRequest model
 }
 
 func TestCreateCourseWithInvalidCapacity(t *testing.T) {
-	courseService := service.NewCourseService(&MockCourseRepository{})
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
 	course, err := courseService.CreateCourse(schemas.CreateCourseRequest{
 		Title:       "Test Course",
 		Description: "Test Description",
@@ -99,7 +124,7 @@ func TestCreateCourseWithInvalidCapacity(t *testing.T) {
 }
 
 func TestCreateCourseWithValidCapacity(t *testing.T) {
-	courseService := service.NewCourseService(&MockCourseRepository{})
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
 	_, err := courseService.CreateCourse(schemas.CreateCourseRequest{
 		Title:       "Test Course",
 		Description: "Test Description",
@@ -110,75 +135,75 @@ func TestCreateCourseWithValidCapacity(t *testing.T) {
 }
 
 func TestGetCourseById(t *testing.T) {
-	courseService := service.NewCourseService(&MockCourseRepository{})
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
 	course, err := courseService.GetCourseById("123e4567-e89b-12d3-a456-426614174000")
 	assert.NoError(t, err)
 	assert.NotNil(t, course)
 }
 
 func TestGetCourseByIdWithNonExistentId(t *testing.T) {
-	courseService := service.NewCourseService(&MockCourseRepository{})
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
 	course, err := courseService.GetCourseById("123e4567-e89b-12d3-a456-426614174001")
 	assert.NoError(t, err)
 	assert.Nil(t, course)
 }
 
 func TestGetCourseByIdWithEmptyId(t *testing.T) {
-	courseService := service.NewCourseService(&MockCourseRepository{})
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
 	course, err := courseService.GetCourseById("")
 	assert.Error(t, err)
 	assert.Nil(t, course)
 }
 
 func TestGetCourseByTeacherId(t *testing.T) {
-	courseService := service.NewCourseService(&MockCourseRepository{})
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
 	courses, err := courseService.GetCourseByTeacherId("123e4567-e89b-12d3-a456-426614174000")
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(courses))
 }
 
 func TestGetCourseByTeacherIdWithNonExistentId(t *testing.T) {
-	courseService := service.NewCourseService(&MockCourseRepository{})
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
 	courses, err := courseService.GetCourseByTeacherId("123e4567-e89b-12d3-a456-426614174001")
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(courses))
 }
 
 func TestGetCourseByTeacherIdWithEmptyId(t *testing.T) {
-	courseService := service.NewCourseService(&MockCourseRepository{})
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
 	courses, err := courseService.GetCourseByTeacherId("")
 	assert.Error(t, err)
 	assert.Equal(t, 0, len(courses))
 }
 
 func TestGetCourseByTitle(t *testing.T) {
-	courseService := service.NewCourseService(&MockCourseRepository{})
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
 	courses, err := courseService.GetCourseByTitle("Test Course")
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(courses))
 }
 
 func TestGetCourseByTitleWithNonExistentTitle(t *testing.T) {
-	courseService := service.NewCourseService(&MockCourseRepository{})
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
 	courses, err := courseService.GetCourseByTitle("Non Existent Title")
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(courses))
 }
 
 func TestDeleteCourse(t *testing.T) {
-	courseService := service.NewCourseService(&MockCourseRepository{})
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
 	err := courseService.DeleteCourse("123e4567-e89b-12d3-a456-426614174000")
 	assert.NoError(t, err)
 }
 
 func TestDeleteCourseWithEmptyId(t *testing.T) {
-	courseService := service.NewCourseService(&MockCourseRepository{})
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
 	err := courseService.DeleteCourse("")
 	assert.Error(t, err)
 }
 
 func TestUpdateCourse(t *testing.T) {
-	courseService := service.NewCourseService(&MockCourseRepository{})
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
 	course, err := courseService.UpdateCourse("123e4567-e89b-12d3-a456-426614174000", schemas.UpdateCourseRequest{
 		Title:       "Test Course",
 		Description: "Test Description",
@@ -190,7 +215,7 @@ func TestUpdateCourse(t *testing.T) {
 }
 
 func TestUpdateCourseWithEmptyId(t *testing.T) {
-	courseService := service.NewCourseService(&MockCourseRepository{})
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
 	course, err := courseService.UpdateCourse("", schemas.UpdateCourseRequest{
 		Title:       "Test Course",
 		Description: "Test Description",
@@ -202,14 +227,14 @@ func TestUpdateCourseWithEmptyId(t *testing.T) {
 }
 
 func TestGetCoursesByStudentId(t *testing.T) {
-	courseService := service.NewCourseService(&MockCourseRepository{})
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
 	courses, err := courseService.GetCoursesByStudentId("123e4567-e89b-12d3-a456-426614174000")
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(courses))
 }
 
 func TestGetCoursesByStudentIdWithEmptyId(t *testing.T) {
-	courseService := service.NewCourseService(&MockCourseRepository{})
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
 	courses, err := courseService.GetCoursesByStudentId("")
 	assert.Error(t, err)
 	assert.Nil(t, courses)

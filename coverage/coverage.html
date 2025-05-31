@@ -59,7 +59,7 @@
 				
 				<option value="file1">courses-service/src/controller/assignments_controller.go (1.5%)</option>
 				
-				<option value="file2">courses-service/src/controller/courses_controller.go (100.0%)</option>
+				<option value="file2">courses-service/src/controller/courses_controller.go (69.2%)</option>
 				
 				<option value="file3">courses-service/src/controller/enrollment_controller.go (30.3%)</option>
 				
@@ -77,23 +77,23 @@
 				
 				<option value="file10">courses-service/src/repository/assignment_repository.go (1.4%)</option>
 				
-				<option value="file11">courses-service/src/repository/course_repository.go (78.9%)</option>
+				<option value="file11">courses-service/src/repository/course_repository.go (70.8%)</option>
 				
 				<option value="file12">courses-service/src/repository/enrollment_repository.go (47.4%)</option>
 				
-				<option value="file13">courses-service/src/repository/module_repository.go (0.0%)</option>
+				<option value="file13">courses-service/src/repository/module_repository.go (1.6%)</option>
 				
 				<option value="file14">courses-service/src/repository/submission_repository.go (2.4%)</option>
 				
-				<option value="file15">courses-service/src/router/router.go (95.7%)</option>
+				<option value="file15">courses-service/src/router/router.go (96.1%)</option>
 				
 				<option value="file16">courses-service/src/service/assignment_service.go (3.7%)</option>
 				
-				<option value="file17">courses-service/src/service/course_service.go (89.2%)</option>
+				<option value="file17">courses-service/src/service/course_service.go (49.3%)</option>
 				
 				<option value="file18">courses-service/src/service/enrollment_service.go (35.3%)</option>
 				
-				<option value="file19">courses-service/src/service/module_service.go (0.0%)</option>
+				<option value="file19">courses-service/src/service/module_service.go (2.9%)</option>
 				
 				<option value="file20">courses-service/src/service/submission_service.go (2.0%)</option>
 				
@@ -144,26 +144,17 @@ import (
         "log/slog"
         "net/http"
 
-        "courses-service/src/model"
         "courses-service/src/schemas"
+        "courses-service/src/service"
 
         "github.com/gin-gonic/gin"
 )
 
-type AssignmentService interface {
-        CreateAssignment(c schemas.CreateAssignmentRequest) (*model.Assignment, error)
-        GetAssignments() ([]*model.Assignment, error)
-        GetAssignmentById(id string) (*model.Assignment, error)
-        GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error)
-        UpdateAssignment(id string, updateAssignmentRequest schemas.UpdateAssignmentRequest) (*model.Assignment, error)
-        DeleteAssignment(id string) error
-}
-
 type AssignmentsController struct {
-        service AssignmentService
+        service service.AssignmentServiceInterface
 }
 
-func NewAssignmentsController(service AssignmentService) *AssignmentsController <span class="cov8" title="1">{
+func NewAssignmentsController(service service.AssignmentServiceInterface) *AssignmentsController <span class="cov8" title="1">{
         return &amp;AssignmentsController{service: service}
 }</span>
 
@@ -328,29 +319,17 @@ import (
         "log/slog"
         "net/http"
 
-        "courses-service/src/model"
         "courses-service/src/schemas"
+        "courses-service/src/service"
 
         "github.com/gin-gonic/gin"
 )
 
-type CourseService interface {
-        GetCourses() ([]*model.Course, error)
-        CreateCourse(c schemas.CreateCourseRequest) (*model.Course, error)
-        GetCourseById(id string) (*model.Course, error)
-        DeleteCourse(id string) error
-        GetCourseByTeacherId(teacherId string) ([]*model.Course, error)
-        GetCoursesByStudentId(studentId string) ([]*model.Course, error)
-        GetCoursesByUserId(userId string) (*schemas.GetCoursesByUserIdResponse, error)
-        GetCourseByTitle(title string) ([]*model.Course, error)
-        UpdateCourse(id string, updateCourseRequest schemas.UpdateCourseRequest) (*model.Course, error)
-}
-
 type CourseController struct {
-        service CourseService
+        service service.CourseServiceInterface
 }
 
-func NewCourseController(service CourseService) *CourseController <span class="cov8" title="1">{
+func NewCourseController(service service.CourseServiceInterface) *CourseController <span class="cov8" title="1">{
         return &amp;CourseController{service: service}
 }</span>
 
@@ -559,28 +538,95 @@ func (c *CourseController) GetCoursesByUserId(ctx *gin.Context) <span class="cov
         <span class="cov8" title="1">slog.Debug("Courses retrieved", "courses", courses)
         ctx.JSON(http.StatusOK, courses)</span>
 }
+
+// @Summary Add an aux teacher to a course
+// @Description Add an aux teacher to a course by ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+func (c *CourseController) AddAuxTeacherToCourse(ctx *gin.Context) <span class="cov0" title="0">{
+        slog.Debug("Adding aux teacher to course")
+        id := ctx.Param("id")
+        if id == "" </span><span class="cov0" title="0">{
+                slog.Error("Course ID is required")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">var auxTeacherRequest schemas.AddAuxTeacherToCourseRequest
+        if err := ctx.ShouldBindJSON(&amp;auxTeacherRequest); err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error binding JSON", "error", err)
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">teacherId := auxTeacherRequest.TeacherID
+        auxTeacherId := auxTeacherRequest.AuxTeacherID
+        course, err := c.service.AddAuxTeacherToCourse(id, teacherId, auxTeacherId)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error adding aux teacher to course", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov0" title="0">slog.Debug("Aux teacher added to course", "course", course)
+        ctx.JSON(http.StatusOK, course)</span>
+}
+
+// @Summary Remove an aux teacher from a course
+// @Description Remove an aux teacher from a course by ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param removeAuxTeacherRequest body schemas.RemoveAuxTeacherFromCourseRequest true "Remove aux teacher from course request"
+// @Success 200 {object} model.Course
+// @Router /courses/{id}/remove-aux-teacher [delete]
+func (c *CourseController) RemoveAuxTeacherFromCourse(ctx *gin.Context) <span class="cov0" title="0">{
+        slog.Debug("Removing aux teacher from course")
+        id := ctx.Param("id")
+        if id == "" </span><span class="cov0" title="0">{
+                slog.Error("Course ID is required")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">var removeAuxTeacherRequest schemas.RemoveAuxTeacherFromCourseRequest
+        if err := ctx.ShouldBindJSON(&amp;removeAuxTeacherRequest); err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error binding JSON", "error", err)
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">teacherId := removeAuxTeacherRequest.TeacherID
+        auxTeacherId := removeAuxTeacherRequest.AuxTeacherID
+        course, err := c.service.RemoveAuxTeacherFromCourse(id, teacherId, auxTeacherId)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error removing aux teacher from course", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov0" title="0">slog.Debug("Aux teacher removed from course", "course", course)
+        ctx.JSON(http.StatusOK, course)</span>
+}
 </pre>
 		
 		<pre class="file" id="file3" style="display: none">package controller
 
 import (
         "courses-service/src/schemas"
+        "courses-service/src/service"
         "log/slog"
         "net/http"
 
         "github.com/gin-gonic/gin"
 )
 
-type EnrollmentService interface {
-        EnrollStudent(studentID, courseID string) error
-        UnenrollStudent(studentID, courseID string) error
-}
-
 type EnrollmentController struct {
-        enrollmentService EnrollmentService
+        enrollmentService service.EnrollmentServiceInterface
 }
 
-func NewEnrollmentController(enrollmentService EnrollmentService) *EnrollmentController <span class="cov8" title="1">{
+func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface) *EnrollmentController <span class="cov8" title="1">{
         return &amp;EnrollmentController{enrollmentService: enrollmentService}
 }</span>
 
@@ -589,12 +635,12 @@ func NewEnrollmentController(enrollmentService EnrollmentService) *EnrollmentCon
 // @Tags enrollments
 // @Accept json
 // @Produce json
-// @Param courseId path string true "Course ID"
+// @Param id path string true "Course ID"
 // @Param enrollmentRequest body schemas.EnrollStudentRequest true "Enrollment request"
-// @Router /courses/{courseId}/enroll [post]
+// @Router /courses/{id}/enroll [post]
 func (c *EnrollmentController) EnrollStudent(ctx *gin.Context) <span class="cov8" title="1">{
-        slog.Debug("Enrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("courseId"))
-        courseID := ctx.Param("courseId")
+        slog.Debug("Enrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("id"))
+        courseID := ctx.Param("id")
 
         if courseID == "" </span><span class="cov0" title="0">{
                 slog.Error("Invalid course ID", "courseId", courseID)
@@ -625,13 +671,13 @@ func (c *EnrollmentController) EnrollStudent(ctx *gin.Context) <span class="cov8
 // @Tags enrollments
 // @Accept json
 // @Produce json
-// @Param courseId path string true "Course ID"
+// @Param id path string true "Course ID"
 // @Param unenrollmentRequest body schemas.UnenrollStudentRequest true "Unenrollment request"
 // @Success 200 {object} schemas.UnenrollStudentResponse
-// @Router /courses/{courseId}/unenroll [delete]
+// @Router /courses/{id}/unenroll [delete]
 func (c *EnrollmentController) UnenrollStudent(ctx *gin.Context) <span class="cov0" title="0">{
-        slog.Debug("Unenrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("courseId"))
-        courseID := ctx.Param("courseId")
+        slog.Debug("Unenrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("id"))
+        courseID := ctx.Param("id")
         studentID := ctx.Param("studentId")
 
         if studentID == "" || courseID == "" </span><span class="cov0" title="0">{
@@ -657,6 +703,7 @@ func (c *EnrollmentController) UnenrollStudent(ctx *gin.Context) <span class="co
 import (
         "courses-service/src/model"
         "courses-service/src/schemas"
+        "courses-service/src/service"
         "log/slog"
         "net/http"
 
@@ -664,18 +711,10 @@ import (
 )
 
 type ModuleController struct {
-        service ModuleService
+        service service.ModuleServiceInterface
 }
 
-type ModuleService interface {
-        CreateModule(module schemas.CreateModuleRequest) (*model.Module, error)
-        GetModuleById(id string) (*model.Module, error)
-        GetModulesByCourseId(courseId string) ([]model.Module, error)
-        UpdateModule(id string, module model.Module) (*model.Module, error)
-        DeleteModule(id string) error
-}
-
-func NewModuleController(service ModuleService) *ModuleController <span class="cov8" title="1">{
+func NewModuleController(service service.ModuleServiceInterface) *ModuleController <span class="cov8" title="1">{
         return &amp;ModuleController{
                 service: service,
         }
@@ -2606,8 +2645,6 @@ import (
 // @contact.url    https://github.com/classconnect-grupo3
 // @contact.email  classconnectingsoft2@gmail.com
 
-
-
 func main() <span class="cov0" title="0">{
         config := config.NewConfig()
         r := router.NewRouter(config)
@@ -2659,30 +2696,21 @@ import (
         "go.mongodb.org/mongo-driver/mongo"
 )
 
-type AssignmentRepository interface {
-        CreateAssignment(assignment model.Assignment) (*model.Assignment, error)
-        GetAssignments() ([]*model.Assignment, error)
-        GetByID(ctx context.Context, id string) (*model.Assignment, error)
-        GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error)
-        UpdateAssignment(id string, updateAssignment model.Assignment) (*model.Assignment, error)
-        DeleteAssignment(id string) error
-}
-
-type MongoAssignmentRepository struct {
+type AssignmentRepository struct {
         db                   *mongo.Client
         dbName               string
         assignmentCollection *mongo.Collection
 }
 
-func NewAssignmentRepository(db *mongo.Client, dbName string) AssignmentRepository <span class="cov8" title="1">{
-        return &amp;MongoAssignmentRepository{
+func NewAssignmentRepository(db *mongo.Client, dbName string) AssignmentRepositoryInterface <span class="cov8" title="1">{
+        return &amp;AssignmentRepository{
                 db:                   db,
                 dbName:               dbName,
                 assignmentCollection: db.Database(dbName).Collection("assignments"),
         }
 }</span>
 
-func (r *MongoAssignmentRepository) CreateAssignment(assignment model.Assignment) (*model.Assignment, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) CreateAssignment(assignment model.Assignment) (*model.Assignment, error) <span class="cov0" title="0">{
         result, err := r.assignmentCollection.InsertOne(context.TODO(), assignment)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to create assignment: %v", err)
@@ -2692,7 +2720,7 @@ func (r *MongoAssignmentRepository) CreateAssignment(assignment model.Assignment
         return &amp;assignment, nil</span>
 }
 
-func (r *MongoAssignmentRepository) GetAssignments() ([]*model.Assignment, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) GetAssignments() ([]*model.Assignment, error) <span class="cov0" title="0">{
         cursor, err := r.assignmentCollection.Find(context.TODO(), bson.M{})
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to get assignments: %v", err)
@@ -2706,7 +2734,7 @@ func (r *MongoAssignmentRepository) GetAssignments() ([]*model.Assignment, error
         <span class="cov0" title="0">return assignments, nil</span>
 }
 
-func (r *MongoAssignmentRepository) GetByID(ctx context.Context, id string) (*model.Assignment, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) GetByID(ctx context.Context, id string) (*model.Assignment, error) <span class="cov0" title="0">{
         var assignment model.Assignment
         objectId, err := primitive.ObjectIDFromHex(id)
         if err != nil </span><span class="cov0" title="0">{
@@ -2724,7 +2752,7 @@ func (r *MongoAssignmentRepository) GetByID(ctx context.Context, id string) (*mo
         <span class="cov0" title="0">return &amp;assignment, nil</span>
 }
 
-func (r *MongoAssignmentRepository) GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error) <span class="cov0" title="0">{
         cursor, err := r.assignmentCollection.Find(context.TODO(), bson.M{"course_id": courseId})
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to get assignments by course id: %v", err)
@@ -2779,7 +2807,7 @@ func filterEmptyAssignmentFields(assignment model.Assignment) bson.M <span class
         return update</span>
 }
 
-func (r *MongoAssignmentRepository) UpdateAssignment(id string, updateAssignment model.Assignment) (*model.Assignment, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) UpdateAssignment(id string, updateAssignment model.Assignment) (*model.Assignment, error) <span class="cov0" title="0">{
         objectId, err := primitive.ObjectIDFromHex(id)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to update assignment: %v", err)
@@ -2800,7 +2828,7 @@ func (r *MongoAssignmentRepository) UpdateAssignment(id string, updateAssignment
         <span class="cov0" title="0">return updatedAssignment, nil</span>
 }
 
-func (r *MongoAssignmentRepository) DeleteAssignment(id string) error <span class="cov0" title="0">{
+func (r *AssignmentRepository) DeleteAssignment(id string) error <span class="cov0" title="0">{
         objectId, err := primitive.ObjectIDFromHex(id)
         if err != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("failed to delete assignment: %v", err)
@@ -2821,6 +2849,7 @@ import (
         "context"
         "courses-service/src/model"
         "fmt"
+        "time"
 
         "go.mongodb.org/mongo-driver/bson"
         "go.mongodb.org/mongo-driver/bson/primitive"
@@ -3029,6 +3058,40 @@ func (r *CourseRepository) UpdateCourse(id string, updateCourseRequest model.Cou
 
         <span class="cov8" title="1">return updatedCourse, nil</span>
 }
+
+func (r *CourseRepository) AddAuxTeacherToCourse(course *model.Course, auxTeacherId string) (*model.Course, error) <span class="cov0" title="0">{
+        course.AuxTeachers = append(course.AuxTeachers, auxTeacherId)
+        course.UpdatedAt = time.Now()
+
+        updateCourseRequest := model.Course{
+                ID:          course.ID,
+                AuxTeachers: course.AuxTeachers,
+                UpdatedAt:   course.UpdatedAt,
+        }
+
+        return r.UpdateCourse(course.ID.Hex(), updateCourseRequest)
+}</span>
+
+func (r *CourseRepository) RemoveAuxTeacherFromCourse(course *model.Course, auxTeacherId string) (*model.Course, error) <span class="cov0" title="0">{
+        // Buscar y eliminar el auxTeacherId del slice
+        for i, teacher := range course.AuxTeachers </span><span class="cov0" title="0">{
+                if teacher == auxTeacherId </span><span class="cov0" title="0">{
+                        // Eliminar el elemento del slice
+                        course.AuxTeachers = append(course.AuxTeachers[:i], course.AuxTeachers[i+1:]...)
+                        break</span>
+                }
+        }
+
+        <span class="cov0" title="0">course.UpdatedAt = time.Now()
+
+        updateCourseRequest := model.Course{
+                ID:          course.ID,
+                AuxTeachers: course.AuxTeachers,
+                UpdatedAt:   course.UpdatedAt,
+        }
+
+        return r.UpdateCourse(course.ID.Hex(), updateCourseRequest)</span>
+}
 </pre>
 		
 		<pre class="file" id="file12" style="display: none">package repository
@@ -3152,7 +3215,7 @@ type ModuleRepository struct {
         moduleCollection *mongo.Collection
 }
 
-func NewModuleRepository(db *mongo.Client, dbName string) *ModuleRepository <span class="cov0" title="0">{
+func NewModuleRepository(db *mongo.Client, dbName string) *ModuleRepository <span class="cov8" title="1">{
         return &amp;ModuleRepository{db: db, dbName: dbName, moduleCollection: db.Database(dbName).Collection("courses")}
 }</span>
 
@@ -3283,25 +3346,17 @@ import (
         "context"
 
         "courses-service/src/model"
+
         "go.mongodb.org/mongo-driver/bson"
         "go.mongodb.org/mongo-driver/bson/primitive"
         "go.mongodb.org/mongo-driver/mongo"
 )
 
-type SubmissionRepository interface {
-        Create(ctx context.Context, submission *model.Submission) error
-        Update(ctx context.Context, submission *model.Submission) error
-        GetByID(ctx context.Context, id string) (*model.Submission, error)
-        GetByAssignmentAndStudent(ctx context.Context, assignmentID, studentUUID string) (*model.Submission, error)
-        GetByAssignment(ctx context.Context, assignmentID string) ([]model.Submission, error)
-        GetByStudent(ctx context.Context, studentUUID string) ([]model.Submission, error)
-}
-
 type MongoSubmissionRepository struct {
         collection *mongo.Collection
 }
 
-func NewMongoSubmissionRepository(db *mongo.Database) SubmissionRepository <span class="cov8" title="1">{
+func NewMongoSubmissionRepository(db *mongo.Database) SubmissionRepositoryInterface <span class="cov8" title="1">{
         return &amp;MongoSubmissionRepository{
                 collection: db.Collection("submissions"),
         }
@@ -3447,6 +3502,8 @@ func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseControl
         r.GET("/courses/:id", controller.GetCourseById)
         r.DELETE("/courses/:id", controller.DeleteCourse)
         r.PUT("/courses/:id", controller.UpdateCourse)
+        r.POST("/courses/:id/aux-teacher/add", controller.AddAuxTeacherToCourse)
+        r.DELETE("/courses/:id/aux-teacher/remove", controller.RemoveAuxTeacherFromCourse)
 }</span>
 
 func InitializeModulesRoutes(r *gin.Engine, controller *controller.ModuleController) <span class="cov8" title="1">{
@@ -3482,8 +3539,8 @@ func InitializeSubmissionRoutes(r *gin.Engine, controller *controller.Submission
 }</span>
 
 func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.EnrollmentController) <span class="cov8" title="1">{
-        r.POST("/courses/:courseId/enroll", controller.EnrollStudent)
-        r.POST("/courses/:courseId/unenroll", controller.UnenrollStudent)
+        r.POST("/courses/:id/enroll", controller.EnrollStudent)
+        r.POST("/courses/:id/unenroll", controller.UnenrollStudent)
 }</span>
 
 func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
@@ -3501,31 +3558,41 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
         <span class="cov8" title="1">slog.Debug("Connected to database")
 
         courseRepo := repository.NewCourseRepository(dbClient, config.DBName)
-        courseService := service.NewCourseService(courseRepo)
-        courseController := controller.NewCourseController(courseService)
-
-        assignmentRepository := repository.NewAssignmentRepository(dbClient, config.DBName)
-        assignmentService := service.NewAssignmentService(assignmentRepository, *courseService)
-        assignmentsController := controller.NewAssignmentsController(assignmentService)
-
-        submissionRepository := repository.NewMongoSubmissionRepository(dbClient.Database(config.DBName))
-        submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository)
-        submissionController := controller.NewSubmissionController(submissionService)
-
         enrollmentRepo := repository.NewEnrollmentRepository(dbClient, config.DBName, courseRepo)
-        enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
-        enrollmentController := controller.NewEnrollmentController(enrollmentService)
+        assignmentRepository := repository.NewAssignmentRepository(dbClient, config.DBName)
+        submissionRepository := repository.NewMongoSubmissionRepository(dbClient.Database(config.DBName))
+        moduleRepository := repository.NewModuleRepository(dbClient, config.DBName)
 
-        InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController)
+        courseService := service.NewCourseService(courseRepo, enrollmentRepo)
+        enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
+        assignmentService := service.NewAssignmentService(assignmentRepository, courseService)
+        submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository)
+        moduleService := service.NewModuleService(moduleRepository)
+
+        courseController := controller.NewCourseController(courseService)
+        enrollmentController := controller.NewEnrollmentController(enrollmentService)
+        assignmentsController := controller.NewAssignmentsController(assignmentService)
+        submissionController := controller.NewSubmissionController(submissionService) // TODO change this when interface is added
+        moduleController := controller.NewModuleController(moduleService)
+
+        InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController, moduleController)
         r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler)) // endpoint to consult the swagger documentation
         return r</span>
 }
 
-func InitializeRoutes(r *gin.Engine, courseController *controller.CourseController, assignmentsController *controller.AssignmentsController, submissionController *controller.SubmissionController, enrollmentController *controller.EnrollmentController) <span class="cov8" title="1">{
+func InitializeRoutes(
+        r *gin.Engine,
+        courseController *controller.CourseController,
+        assignmentsController *controller.AssignmentsController,
+        submissionController *controller.SubmissionController,
+        enrollmentController *controller.EnrollmentController,
+        moduleController *controller.ModuleController,
+) <span class="cov8" title="1">{
         InitializeCoursesRoutes(r, courseController)
         InitializeSubmissionRoutes(r, submissionController)
         InitializeAssignmentsRoutes(r, assignmentsController)
         InitializeEnrollmentsRoutes(r, enrollmentController)
+        InitializeModulesRoutes(r, moduleController)
 }</span>
 </pre>
 		
@@ -3541,11 +3608,11 @@ import (
 )
 
 type AssignmentService struct {
-        assignmentRepository repository.AssignmentRepository
-        courseService        CourseService
+        assignmentRepository repository.AssignmentRepositoryInterface
+        courseService        CourseServiceInterface
 }
 
-func NewAssignmentService(assignmentRepository repository.AssignmentRepository, courseService CourseService) *AssignmentService <span class="cov8" title="1">{
+func NewAssignmentService(assignmentRepository repository.AssignmentRepositoryInterface, courseService CourseServiceInterface) *AssignmentService <span class="cov8" title="1">{
         return &amp;AssignmentService{assignmentRepository: assignmentRepository, courseService: courseService}
 }</span>
 
@@ -3640,28 +3707,20 @@ func (s *AssignmentService) GetAssignmentsByCourseId(courseId string) ([]*model.
 
 import (
         "courses-service/src/model"
+        "courses-service/src/repository"
         "courses-service/src/schemas"
         "errors"
+        "slices"
         "time"
 )
 
-type CourseRepository interface {
-        GetCourses() ([]*model.Course, error)
-        CreateCourse(c model.Course) (*model.Course, error)
-        GetCourseById(id string) (*model.Course, error)
-        DeleteCourse(id string) error
-        GetCourseByTeacherId(teacherId string) ([]*model.Course, error)
-        GetCoursesByStudentId(studentId string) ([]*model.Course, error)
-        GetCourseByTitle(title string) ([]*model.Course, error)
-        UpdateCourse(id string, updateCourseRequest model.Course) (*model.Course, error)
-}
-
 type CourseService struct {
-        courseRepository CourseRepository
+        courseRepository     repository.CourseRepositoryInterface
+        enrollmentRepository repository.EnrollmentRepositoryInterface
 }
 
-func NewCourseService(courseRepository CourseRepository) *CourseService <span class="cov8" title="1">{
-        return &amp;CourseService{courseRepository: courseRepository}
+func NewCourseService(courseRepository repository.CourseRepositoryInterface, enrollmentRepository repository.EnrollmentRepositoryInterface) *CourseService <span class="cov8" title="1">{
+        return &amp;CourseService{courseRepository: courseRepository, enrollmentRepository: enrollmentRepository}
 }</span>
 
 func (s *CourseService) GetCourses() ([]*model.Course, error) <span class="cov8" title="1">{
@@ -3756,30 +3815,73 @@ func (s *CourseService) UpdateCourse(id string, updateCourseRequest schemas.Upda
         }
         return s.courseRepository.UpdateCourse(id, course)</span>
 }
+
+func (s *CourseService) AddAuxTeacherToCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error) <span class="cov0" title="0">{
+        course, err := s.courseRepository.GetCourseById(id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if course.TeacherUUID != titularTeacherId </span><span class="cov0" title="0">{
+                return nil, errors.New("the teacher trying to add an aux teacher is not the owner of the course")
+        }</span>
+        <span class="cov0" title="0">if course.TeacherUUID == auxTeacherId </span><span class="cov0" title="0">{
+                return nil, errors.New("the titular teacher cannot be an aux teacher for his own course")
+        }</span>
+        <span class="cov0" title="0">if slices.Contains(course.AuxTeachers, auxTeacherId) </span><span class="cov0" title="0">{
+                return nil, errors.New("aux teacher already exists")
+        }</span>
+        <span class="cov0" title="0">enrolled, err := s.enrollmentRepository.IsEnrolled(auxTeacherId, id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if enrolled </span><span class="cov0" title="0">{
+                return nil, errors.New("the aux teacher is already enrolled in the course")
+        }</span>
+        <span class="cov0" title="0">return s.courseRepository.AddAuxTeacherToCourse(course, auxTeacherId)</span>
+}
+
+func (s *CourseService) RemoveAuxTeacherFromCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error) <span class="cov0" title="0">{
+        course, err := s.courseRepository.GetCourseById(id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if course.TeacherUUID != titularTeacherId </span><span class="cov0" title="0">{
+                return nil, errors.New("the teacher trying to remove an aux teacher is not the owner of the course")
+        }</span>
+        <span class="cov0" title="0">if course.TeacherUUID == auxTeacherId </span><span class="cov0" title="0">{
+                return nil, errors.New("the titular teacher cannot be removed as aux teacher from his own course")
+        }</span>
+        <span class="cov0" title="0">if !slices.Contains(course.AuxTeachers, auxTeacherId) </span><span class="cov0" title="0">{
+                return nil, errors.New("aux teacher is not assigned to this course")
+        }</span>
+        <span class="cov0" title="0">enrolled, err := s.enrollmentRepository.IsEnrolled(auxTeacherId, id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if enrolled </span><span class="cov0" title="0">{
+                return nil, errors.New("the aux teacher is already enrolled in the course")
+        }</span>
+        <span class="cov0" title="0">return s.courseRepository.RemoveAuxTeacherFromCourse(course, auxTeacherId)</span>
+}
 </pre>
 		
 		<pre class="file" id="file18" style="display: none">package service
 
 import (
         "courses-service/src/model"
+        "courses-service/src/repository"
         "fmt"
         "time"
 
         "go.mongodb.org/mongo-driver/mongo"
 )
 
-type EnrollmentRepository interface {
-        CreateEnrollment(enrollment model.Enrollment, course *model.Course) error
-        IsEnrolled(studentID, courseID string) (bool, error)
-        DeleteEnrollment(studentID string, course *model.Course) error
-}
-
 type EnrollmentService struct {
-        enrollmentRepository EnrollmentRepository
-        courseRepository     CourseRepository
+        enrollmentRepository repository.EnrollmentRepositoryInterface
+        courseRepository     repository.CourseRepositoryInterface
 }
 
-func NewEnrollmentService(enrollmentRepository EnrollmentRepository, courseRepository CourseRepository) *EnrollmentService <span class="cov8" title="1">{
+func NewEnrollmentService(enrollmentRepository repository.EnrollmentRepositoryInterface, courseRepository repository.CourseRepositoryInterface) *EnrollmentService <span class="cov8" title="1">{
         return &amp;EnrollmentService{enrollmentRepository: enrollmentRepository, courseRepository: courseRepository}
 }</span>
 
@@ -3860,6 +3962,7 @@ func (s *EnrollmentService) UnenrollStudent(studentID, courseID string) error <s
 
 import (
         "courses-service/src/model"
+        "courses-service/src/repository"
         "courses-service/src/schemas"
         "errors"
         "fmt"
@@ -3867,21 +3970,10 @@ import (
 )
 
 type ModuleService struct {
-        moduleRepository ModuleRepository
+        moduleRepository repository.ModuleRepositoryInterface
 }
 
-type ModuleRepository interface {
-        GetNextModuleOrder(courseID string) (int, error)
-        CreateModule(courseID string, module model.Module) (*model.Module, error)
-        GetModuleById(id string) (*model.Module, error)
-        UpdateModule(id string, module model.Module) (*model.Module, error)
-        DeleteModule(id string) error
-        GetModulesByCourseId(courseId string) ([]model.Module, error)
-        GetModuleByName(courseID string, moduleName string) (*model.Module, error)
-        GetModuleByOrder(courseID string, order int) (*model.Module, error)
-}
-
-func NewModuleService(moduleRepository ModuleRepository) *ModuleService <span class="cov0" title="0">{
+func NewModuleService(moduleRepository repository.ModuleRepositoryInterface) *ModuleService <span class="cov8" title="1">{
         return &amp;ModuleService{moduleRepository: moduleRepository}
 }</span>
 
@@ -3968,11 +4060,11 @@ import (
 )
 
 type SubmissionService struct {
-        submissionRepo repository.SubmissionRepository
-        assignmentRepo repository.AssignmentRepository
+        submissionRepo repository.SubmissionRepositoryInterface
+        assignmentRepo repository.AssignmentRepositoryInterface
 }
 
-func NewSubmissionService(submissionRepo repository.SubmissionRepository, assignmentRepo repository.AssignmentRepository) *SubmissionService <span class="cov8" title="1">{
+func NewSubmissionService(submissionRepo repository.SubmissionRepositoryInterface, assignmentRepo repository.AssignmentRepositoryInterface) *SubmissionService <span class="cov8" title="1">{
         return &amp;SubmissionService{
                 submissionRepo: submissionRepo,
                 assignmentRepo: assignmentRepo,

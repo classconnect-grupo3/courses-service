@@ -4,29 +4,17 @@ import (
 	"log/slog"
 	"net/http"
 
-	"courses-service/src/model"
 	"courses-service/src/schemas"
+	"courses-service/src/service"
 
 	"github.com/gin-gonic/gin"
 )
 
-type CourseService interface {
-	GetCourses() ([]*model.Course, error)
-	CreateCourse(c schemas.CreateCourseRequest) (*model.Course, error)
-	GetCourseById(id string) (*model.Course, error)
-	DeleteCourse(id string) error
-	GetCourseByTeacherId(teacherId string) ([]*model.Course, error)
-	GetCoursesByStudentId(studentId string) ([]*model.Course, error)
-	GetCoursesByUserId(userId string) (*schemas.GetCoursesByUserIdResponse, error)
-	GetCourseByTitle(title string) ([]*model.Course, error)
-	UpdateCourse(id string, updateCourseRequest schemas.UpdateCourseRequest) (*model.Course, error)
-}
-
 type CourseController struct {
-	service CourseService
+	service service.CourseServiceInterface
 }
 
-func NewCourseController(service CourseService) *CourseController {
+func NewCourseController(service service.CourseServiceInterface) *CourseController {
 	return &CourseController{service: service}
 }
 
@@ -234,4 +222,75 @@ func (c *CourseController) GetCoursesByUserId(ctx *gin.Context) {
 	}
 	slog.Debug("Courses retrieved", "courses", courses)
 	ctx.JSON(http.StatusOK, courses)
+}
+
+// @Summary Add an aux teacher to a course
+// @Description Add an aux teacher to a course by ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+func (c *CourseController) AddAuxTeacherToCourse(ctx *gin.Context) {
+	slog.Debug("Adding aux teacher to course")
+	id := ctx.Param("id")
+	if id == "" {
+		slog.Error("Course ID is required")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+		return
+	}
+
+	var auxTeacherRequest schemas.AddAuxTeacherToCourseRequest
+	if err := ctx.ShouldBindJSON(&auxTeacherRequest); err != nil {
+		slog.Error("Error binding JSON", "error", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	teacherId := auxTeacherRequest.TeacherID
+	auxTeacherId := auxTeacherRequest.AuxTeacherID
+	course, err := c.service.AddAuxTeacherToCourse(id, teacherId, auxTeacherId)
+	if err != nil {
+		slog.Error("Error adding aux teacher to course", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	slog.Debug("Aux teacher added to course", "course", course)
+	ctx.JSON(http.StatusOK, course)
+}
+
+// @Summary Remove an aux teacher from a course
+// @Description Remove an aux teacher from a course by ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param removeAuxTeacherRequest body schemas.RemoveAuxTeacherFromCourseRequest true "Remove aux teacher from course request"
+// @Success 200 {object} model.Course
+// @Router /courses/{id}/remove-aux-teacher [delete]
+func (c *CourseController) RemoveAuxTeacherFromCourse(ctx *gin.Context) {
+	slog.Debug("Removing aux teacher from course")
+	id := ctx.Param("id")
+	if id == "" {
+		slog.Error("Course ID is required")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+		return
+	}
+
+	var removeAuxTeacherRequest schemas.RemoveAuxTeacherFromCourseRequest
+	if err := ctx.ShouldBindJSON(&removeAuxTeacherRequest); err != nil {
+		slog.Error("Error binding JSON", "error", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	teacherId := removeAuxTeacherRequest.TeacherID
+	auxTeacherId := removeAuxTeacherRequest.AuxTeacherID
+	course, err := c.service.RemoveAuxTeacherFromCourse(id, teacherId, auxTeacherId)
+	if err != nil {
+		slog.Error("Error removing aux teacher from course", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	slog.Debug("Aux teacher removed from course", "course", course)
+	ctx.JSON(http.StatusOK, course)
 }
