@@ -14,5 +14,7 @@ db.createUser({
 db = db.getSiblingDB('courses_db');
 db.createCollection('courses');
 db.createCollection('enrollments');
+db.createCollection('submissions');
+db.createCollection('assignments');
 
 print("MongoDB initialization completed successfully!");
