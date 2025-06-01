@@ -4,6 +4,7 @@ import (
 	"courses-service/src/model"
 	"courses-service/src/schemas"
 	"courses-service/src/service"
+	"errors"
 
 	"testing"
 
@@ -14,7 +15,11 @@ import (
 type MockEnrollmentRepository struct{}
 
 func (m *MockEnrollmentRepository) IsEnrolled(studentID, courseID string) (bool, error) {
-	return true, nil
+	// Return true for specific cases to test enrolled scenarios
+	if studentID == "enrolled-teacher" {
+		return true, nil
+	}
+	return false, nil
 }
 
 func (m *MockEnrollmentRepository) CreateEnrollment(enrollment model.Enrollment, course *model.Course) error {
@@ -39,6 +44,17 @@ func (m *MockCourseRepository) AddAuxTeacherToCourse(course *model.Course, auxTe
 
 // GetCoursesByStudentId implements service.CourseRepository.
 func (m *MockCourseRepository) GetCoursesByStudentId(studentId string) ([]*model.Course, error) {
+	if studentId == "123e4567-e89b-12d3-a456-426614174000" {
+		return []*model.Course{
+			{
+				ID:          primitive.NewObjectID(),
+				Title:       "Student Course",
+				Description: "Course for student",
+				TeacherUUID: "teacher-123",
+				Capacity:    20,
+			},
+		}, nil
+	}
 	return []*model.Course{}, nil
 }
 
@@ -53,7 +69,22 @@ func (m *MockCourseRepository) CreateCourse(c model.Course) (*model.Course, erro
 }
 
 func (m *MockCourseRepository) GetCourses() ([]*model.Course, error) {
-	return []*model.Course{}, nil
+	return []*model.Course{
+		{
+			ID:          primitive.NewObjectID(),
+			Title:       "Test Course 1",
+			Description: "Test Description 1",
+			TeacherUUID: "teacher-1",
+			Capacity:    10,
+		},
+		{
+			ID:          primitive.NewObjectID(),
+			Title:       "Test Course 2",
+			Description: "Test Description 2",
+			TeacherUUID: "teacher-2",
+			Capacity:    15,
+		},
+	}, nil
 }
 
 func (m *MockCourseRepository) GetCourseById(id string) (*model.Course, error) {
@@ -62,9 +93,23 @@ func (m *MockCourseRepository) GetCourseById(id string) (*model.Course, error) {
 			ID:          primitive.NewObjectID(),
 			Title:       "Test Course",
 			Description: "Test Description",
+			TeacherUUID: "titular-teacher",
+			AuxTeachers: []string{"existing-aux-teacher"},
 		}, nil
 	}
-	return nil, nil
+	if id == "course-with-owner" {
+		return &model.Course{
+			ID:          primitive.NewObjectID(),
+			Title:       "Owner Course",
+			Description: "Course with owner",
+			TeacherUUID: "owner-teacher",
+			AuxTeachers: []string{"aux-teacher-1", "enrolled-teacher"},
+		}, nil
+	}
+	if id == "123e4567-e89b-12d3-a456-426614174001" {
+		return nil, nil
+	}
+	return nil, errors.New("course not found")
 }
 
 func (m *MockCourseRepository) DeleteCourse(id string) error {
@@ -230,7 +275,7 @@ func TestGetCoursesByStudentId(t *testing.T) {
 	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
 	courses, err := courseService.GetCoursesByStudentId("123e4567-e89b-12d3-a456-426614174000")
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(courses))
+	assert.Equal(t, 1, len(courses))
 }
 
 func TestGetCoursesByStudentIdWithEmptyId(t *testing.T) {
@@ -238,4 +283,128 @@ func TestGetCoursesByStudentIdWithEmptyId(t *testing.T) {
 	courses, err := courseService.GetCoursesByStudentId("")
 	assert.Error(t, err)
 	assert.Nil(t, courses)
+}
+
+func TestGetCourses(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	courses, err := courseService.GetCourses()
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(courses))
+}
+
+func TestGetCourseByTitleWithEmptyTitle(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	courses, err := courseService.GetCourseByTitle("")
+	assert.Error(t, err)
+	assert.Nil(t, courses)
+}
+
+func TestGetCoursesByUserId(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	response, err := courseService.GetCoursesByUserId("123e4567-e89b-12d3-a456-426614174000")
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+	assert.Equal(t, 1, len(response.Student))
+	assert.Equal(t, 1, len(response.Teacher))
+}
+
+func TestGetCoursesByUserIdWithEmptyId(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	response, err := courseService.GetCoursesByUserId("")
+	assert.Error(t, err)
+	assert.Nil(t, response)
+}
+
+func TestAddAuxTeacherToCourse(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	course, err := courseService.AddAuxTeacherToCourse("course-with-owner", "owner-teacher", "new-aux-teacher")
+	assert.NoError(t, err)
+	assert.NotNil(t, course)
+}
+
+func TestAddAuxTeacherToCourseWithNonExistentCourse(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	course, err := courseService.AddAuxTeacherToCourse("non-existent-course", "owner-teacher", "new-aux-teacher")
+	assert.Error(t, err)
+	assert.Nil(t, course)
+	assert.Contains(t, err.Error(), "course not found")
+}
+
+func TestAddAuxTeacherToCourseWithNonOwnerTeacher(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	course, err := courseService.AddAuxTeacherToCourse("course-with-owner", "non-owner-teacher", "new-aux-teacher")
+	assert.Error(t, err)
+	assert.Nil(t, course)
+	assert.Contains(t, err.Error(), "the teacher trying to add an aux teacher is not the owner of the course")
+}
+
+func TestAddAuxTeacherToCourseWithTitularTeacherAsAux(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	course, err := courseService.AddAuxTeacherToCourse("course-with-owner", "owner-teacher", "owner-teacher")
+	assert.Error(t, err)
+	assert.Nil(t, course)
+	assert.Contains(t, err.Error(), "the titular teacher cannot be an aux teacher for his own course")
+}
+
+func TestAddAuxTeacherToCourseWithExistingAuxTeacher(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	course, err := courseService.AddAuxTeacherToCourse("course-with-owner", "owner-teacher", "aux-teacher-1")
+	assert.Error(t, err)
+	assert.Nil(t, course)
+	assert.Contains(t, err.Error(), "aux teacher already exists")
+}
+
+func TestAddAuxTeacherToCourseWithEnrolledTeacher(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	course, err := courseService.AddAuxTeacherToCourse("course-with-owner", "owner-teacher", "enrolled-teacher")
+	assert.Error(t, err)
+	assert.Nil(t, course)
+	assert.Contains(t, err.Error(), "aux teacher already exists")
+}
+
+func TestRemoveAuxTeacherFromCourse(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	course, err := courseService.RemoveAuxTeacherFromCourse("course-with-owner", "owner-teacher", "aux-teacher-1")
+	assert.NoError(t, err)
+	assert.NotNil(t, course)
+}
+
+func TestRemoveAuxTeacherFromCourseWithNonExistentCourse(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	course, err := courseService.RemoveAuxTeacherFromCourse("non-existent-course", "owner-teacher", "aux-teacher-1")
+	assert.Error(t, err)
+	assert.Nil(t, course)
+	assert.Contains(t, err.Error(), "course not found")
+}
+
+func TestRemoveAuxTeacherFromCourseWithNonOwnerTeacher(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	course, err := courseService.RemoveAuxTeacherFromCourse("course-with-owner", "non-owner-teacher", "aux-teacher-1")
+	assert.Error(t, err)
+	assert.Nil(t, course)
+	assert.Contains(t, err.Error(), "the teacher trying to remove an aux teacher is not the owner of the course")
+}
+
+func TestRemoveAuxTeacherFromCourseWithTitularTeacherAsAux(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	course, err := courseService.RemoveAuxTeacherFromCourse("course-with-owner", "owner-teacher", "owner-teacher")
+	assert.Error(t, err)
+	assert.Nil(t, course)
+	assert.Contains(t, err.Error(), "the titular teacher cannot be removed as aux teacher from his own course")
+}
+
+func TestRemoveAuxTeacherFromCourseWithNonAssignedAuxTeacher(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	course, err := courseService.RemoveAuxTeacherFromCourse("course-with-owner", "owner-teacher", "non-assigned-aux")
+	assert.Error(t, err)
+	assert.Nil(t, course)
+	assert.Contains(t, err.Error(), "aux teacher is not assigned to this course")
+}
+
+func TestRemoveAuxTeacherFromCourseWithEnrolledTeacher(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	course, err := courseService.RemoveAuxTeacherFromCourse("course-with-owner", "owner-teacher", "enrolled-teacher")
+	assert.Error(t, err)
+	assert.Nil(t, course)
+	assert.Contains(t, err.Error(), "the aux teacher is already enrolled in the course")
 }

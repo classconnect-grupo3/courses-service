@@ -59,7 +59,7 @@
 				
 				<option value="file1">courses-service/src/controller/assignments_controller.go (1.5%)</option>
 				
-				<option value="file2">courses-service/src/controller/courses_controller.go (69.2%)</option>
+				<option value="file2">courses-service/src/controller/courses_controller.go (100.0%)</option>
 				
 				<option value="file3">courses-service/src/controller/enrollment_controller.go (30.3%)</option>
 				
@@ -89,7 +89,7 @@
 				
 				<option value="file16">courses-service/src/service/assignment_service.go (3.7%)</option>
 				
-				<option value="file17">courses-service/src/service/course_service.go (49.3%)</option>
+				<option value="file17">courses-service/src/service/course_service.go (92.5%)</option>
 				
 				<option value="file18">courses-service/src/service/enrollment_service.go (35.3%)</option>
 				
@@ -545,31 +545,31 @@ func (c *CourseController) GetCoursesByUserId(ctx *gin.Context) <span class="cov
 // @Accept json
 // @Produce json
 // @Param id path string true "Course ID"
-func (c *CourseController) AddAuxTeacherToCourse(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *CourseController) AddAuxTeacherToCourse(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Adding aux teacher to course")
         id := ctx.Param("id")
-        if id == "" </span><span class="cov0" title="0">{
+        if id == "" </span><span class="cov8" title="1">{
                 slog.Error("Course ID is required")
                 ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
                 return
         }</span>
 
-        <span class="cov0" title="0">var auxTeacherRequest schemas.AddAuxTeacherToCourseRequest
-        if err := ctx.ShouldBindJSON(&amp;auxTeacherRequest); err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">var auxTeacherRequest schemas.AddAuxTeacherToCourseRequest
+        if err := ctx.ShouldBindJSON(&amp;auxTeacherRequest); err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error binding JSON", "error", err)
                 ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">teacherId := auxTeacherRequest.TeacherID
+        <span class="cov8" title="1">teacherId := auxTeacherRequest.TeacherID
         auxTeacherId := auxTeacherRequest.AuxTeacherID
         course, err := c.service.AddAuxTeacherToCourse(id, teacherId, auxTeacherId)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error adding aux teacher to course", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
-        <span class="cov0" title="0">slog.Debug("Aux teacher added to course", "course", course)
+        <span class="cov8" title="1">slog.Debug("Aux teacher added to course", "course", course)
         ctx.JSON(http.StatusOK, course)</span>
 }
 
@@ -582,31 +582,31 @@ func (c *CourseController) AddAuxTeacherToCourse(ctx *gin.Context) <span class="
 // @Param removeAuxTeacherRequest body schemas.RemoveAuxTeacherFromCourseRequest true "Remove aux teacher from course request"
 // @Success 200 {object} model.Course
 // @Router /courses/{id}/remove-aux-teacher [delete]
-func (c *CourseController) RemoveAuxTeacherFromCourse(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *CourseController) RemoveAuxTeacherFromCourse(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Removing aux teacher from course")
         id := ctx.Param("id")
-        if id == "" </span><span class="cov0" title="0">{
+        if id == "" </span><span class="cov8" title="1">{
                 slog.Error("Course ID is required")
                 ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
                 return
         }</span>
 
-        <span class="cov0" title="0">var removeAuxTeacherRequest schemas.RemoveAuxTeacherFromCourseRequest
-        if err := ctx.ShouldBindJSON(&amp;removeAuxTeacherRequest); err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">var removeAuxTeacherRequest schemas.RemoveAuxTeacherFromCourseRequest
+        if err := ctx.ShouldBindJSON(&amp;removeAuxTeacherRequest); err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error binding JSON", "error", err)
                 ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">teacherId := removeAuxTeacherRequest.TeacherID
+        <span class="cov8" title="1">teacherId := removeAuxTeacherRequest.TeacherID
         auxTeacherId := removeAuxTeacherRequest.AuxTeacherID
         course, err := c.service.RemoveAuxTeacherFromCourse(id, teacherId, auxTeacherId)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error removing aux teacher from course", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
-        <span class="cov0" title="0">slog.Debug("Aux teacher removed from course", "course", course)
+        <span class="cov8" title="1">slog.Debug("Aux teacher removed from course", "course", course)
         ctx.JSON(http.StatusOK, course)</span>
 }
 </pre>
@@ -1724,81 +1724,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/courses/{courseId}/enroll": {
-            "post": {
-                "description": "Enroll a student in a course",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "enrollments"
-                ],
-                "summary": "Enroll a student in a course",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Course ID",
-                        "name": "courseId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Enrollment request",
-                        "name": "enrollmentRequest",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/schemas.EnrollStudentRequest"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/courses/{courseId}/unenroll": {
-            "delete": {
-                "description": "Unenroll a student from a course",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "enrollments"
-                ],
-                "summary": "Unenroll a student from a course",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Course ID",
-                        "name": "courseId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Unenrollment request",
-                        "name": "unenrollmentRequest",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/schemas.UnenrollStudentRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.UnenrollStudentResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/courses/{id}": {
             "get": {
                 "description": "Get a course by ID",
@@ -1895,6 +1820,122 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/schemas.DeleteCourseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/{id}/enroll": {
+            "post": {
+                "description": "Enroll a student in a course",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Enroll a student in a course",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Enrollment request",
+                        "name": "enrollmentRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.EnrollStudentRequest"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/courses/{id}/remove-aux-teacher": {
+            "delete": {
+                "description": "Remove an aux teacher from a course by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Remove an aux teacher from a course",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Remove aux teacher from course request",
+                        "name": "removeAuxTeacherRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.RemoveAuxTeacherFromCourseRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Course"
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/{id}/unenroll": {
+            "delete": {
+                "description": "Unenroll a student from a course",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Unenroll a student from a course",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Unenrollment request",
+                        "name": "unenrollmentRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.UnenrollStudentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.UnenrollStudentResponse"
                         }
                     }
                 }
@@ -2203,6 +2244,12 @@ const docTemplate = `{
         "model.Course": {
             "type": "object",
             "properties": {
+                "aux_teachers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "capacity": {
                     "type": "integer"
                 },
@@ -2500,6 +2547,21 @@ const docTemplate = `{
             ],
             "properties": {
                 "student_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.RemoveAuxTeacherFromCourseRequest": {
+            "type": "object",
+            "required": [
+                "aux_teacher_id",
+                "teacher_id"
+            ],
+            "properties": {
+                "aux_teacher_id": {
+                    "type": "string"
+                },
+                "teacher_id": {
                     "type": "string"
                 }
             }
@@ -3774,7 +3836,7 @@ func (s *CourseService) GetCoursesByStudentId(studentId string) ([]*model.Course
 }
 
 func (s *CourseService) GetCoursesByUserId(userId string) (*schemas.GetCoursesByUserIdResponse, error) <span class="cov8" title="1">{
-        if userId == "" </span><span class="cov0" title="0">{
+        if userId == "" </span><span class="cov8" title="1">{
                 return nil, errors.New("userId is required")
         }</span>
         <span class="cov8" title="1">result := schemas.GetCoursesByUserIdResponse{}
@@ -3796,7 +3858,7 @@ func (s *CourseService) GetCoursesByUserId(userId string) (*schemas.GetCoursesBy
 }
 
 func (s *CourseService) GetCourseByTitle(title string) ([]*model.Course, error) <span class="cov8" title="1">{
-        if title == "" </span><span class="cov0" title="0">{
+        if title == "" </span><span class="cov8" title="1">{
                 return nil, errors.New("title is required")
         }</span>
         <span class="cov8" title="1">return s.courseRepository.GetCourseByTitle(title)</span>
@@ -3816,52 +3878,52 @@ func (s *CourseService) UpdateCourse(id string, updateCourseRequest schemas.Upda
         return s.courseRepository.UpdateCourse(id, course)</span>
 }
 
-func (s *CourseService) AddAuxTeacherToCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error) <span class="cov0" title="0">{
+func (s *CourseService) AddAuxTeacherToCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error) <span class="cov8" title="1">{
         course, err := s.courseRepository.GetCourseById(id)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
-        <span class="cov0" title="0">if course.TeacherUUID != titularTeacherId </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if course.TeacherUUID != titularTeacherId </span><span class="cov8" title="1">{
                 return nil, errors.New("the teacher trying to add an aux teacher is not the owner of the course")
         }</span>
-        <span class="cov0" title="0">if course.TeacherUUID == auxTeacherId </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if course.TeacherUUID == auxTeacherId </span><span class="cov8" title="1">{
                 return nil, errors.New("the titular teacher cannot be an aux teacher for his own course")
         }</span>
-        <span class="cov0" title="0">if slices.Contains(course.AuxTeachers, auxTeacherId) </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if slices.Contains(course.AuxTeachers, auxTeacherId) </span><span class="cov8" title="1">{
                 return nil, errors.New("aux teacher already exists")
         }</span>
-        <span class="cov0" title="0">enrolled, err := s.enrollmentRepository.IsEnrolled(auxTeacherId, id)
+        <span class="cov8" title="1">enrolled, err := s.enrollmentRepository.IsEnrolled(auxTeacherId, id)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
-        <span class="cov0" title="0">if enrolled </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if enrolled </span><span class="cov0" title="0">{
                 return nil, errors.New("the aux teacher is already enrolled in the course")
         }</span>
-        <span class="cov0" title="0">return s.courseRepository.AddAuxTeacherToCourse(course, auxTeacherId)</span>
+        <span class="cov8" title="1">return s.courseRepository.AddAuxTeacherToCourse(course, auxTeacherId)</span>
 }
 
-func (s *CourseService) RemoveAuxTeacherFromCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error) <span class="cov0" title="0">{
+func (s *CourseService) RemoveAuxTeacherFromCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error) <span class="cov8" title="1">{
         course, err := s.courseRepository.GetCourseById(id)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
-        <span class="cov0" title="0">if course.TeacherUUID != titularTeacherId </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if course.TeacherUUID != titularTeacherId </span><span class="cov8" title="1">{
                 return nil, errors.New("the teacher trying to remove an aux teacher is not the owner of the course")
         }</span>
-        <span class="cov0" title="0">if course.TeacherUUID == auxTeacherId </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if course.TeacherUUID == auxTeacherId </span><span class="cov8" title="1">{
                 return nil, errors.New("the titular teacher cannot be removed as aux teacher from his own course")
         }</span>
-        <span class="cov0" title="0">if !slices.Contains(course.AuxTeachers, auxTeacherId) </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if !slices.Contains(course.AuxTeachers, auxTeacherId) </span><span class="cov8" title="1">{
                 return nil, errors.New("aux teacher is not assigned to this course")
         }</span>
-        <span class="cov0" title="0">enrolled, err := s.enrollmentRepository.IsEnrolled(auxTeacherId, id)
+        <span class="cov8" title="1">enrolled, err := s.enrollmentRepository.IsEnrolled(auxTeacherId, id)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
-        <span class="cov0" title="0">if enrolled </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if enrolled </span><span class="cov8" title="1">{
                 return nil, errors.New("the aux teacher is already enrolled in the course")
         }</span>
-        <span class="cov0" title="0">return s.courseRepository.RemoveAuxTeacherFromCourse(course, auxTeacherId)</span>
+        <span class="cov8" title="1">return s.courseRepository.RemoveAuxTeacherFromCourse(course, auxTeacherId)</span>
 }
 </pre>
 		
