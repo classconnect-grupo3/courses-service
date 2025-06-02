@@ -1,13 +1,18 @@
 package controller
 
 import (
+	"encoding/json"
+	"log"
 	"log/slog"
 	"net/http"
+	"os"
+	"time"
 
 	"courses-service/src/schemas"
 	"courses-service/src/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rabbitmq/amqp091-go"
 )
 
 type AssignmentsController struct {
@@ -47,22 +52,6 @@ func (c *AssignmentsController) GetAssignments(ctx *gin.Context) {
 // @Param assignment body schemas.CreateAssignmentRequest true "Assignment to create"
 // @Success 201 {object} model.Assignment
 // @Router /assignments [post]
-package controller
-
-import (
-	"encoding/json"
-	"log"
-	"net/http"
-	"os"
-	"time"
-
-	"github.com/gin-gonic/gin"
-	"github.com/rabbitmq/amqp091-go"
-	"your_project/model"
-	"your_project/schemas"
-	"your_project/service"
-)
-
 func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) {
 	log.Println("Creating assignment")
 
@@ -144,7 +133,6 @@ func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) {
 	log.Println("Assignment created:", createdAssignment.ID)
 	ctx.JSON(http.StatusCreated, createdAssignment)
 }
-
 
 // @Summary Get an assignment by ID
 // @Description Get an assignment by ID
