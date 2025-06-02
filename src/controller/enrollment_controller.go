@@ -2,22 +2,18 @@ package controller
 
 import (
 	"courses-service/src/schemas"
+	"courses-service/src/service"
 	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-type EnrollmentService interface {
-	EnrollStudent(studentID, courseID string) error
-	UnenrollStudent(studentID, courseID string) error
-}
-
 type EnrollmentController struct {
-	enrollmentService EnrollmentService
+	enrollmentService service.EnrollmentServiceInterface
 }
 
-func NewEnrollmentController(enrollmentService EnrollmentService) *EnrollmentController {
+func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface) *EnrollmentController {
 	return &EnrollmentController{enrollmentService: enrollmentService}
 }
 
@@ -26,12 +22,12 @@ func NewEnrollmentController(enrollmentService EnrollmentService) *EnrollmentCon
 // @Tags enrollments
 // @Accept json
 // @Produce json
-// @Param courseId path string true "Course ID"
+// @Param id path string true "Course ID"
 // @Param enrollmentRequest body schemas.EnrollStudentRequest true "Enrollment request"
-// @Router /courses/{courseId}/enroll [post]
+// @Router /courses/{id}/enroll [post]
 func (c *EnrollmentController) EnrollStudent(ctx *gin.Context) {
-	slog.Debug("Enrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("courseId"))
-	courseID := ctx.Param("courseId")
+	slog.Debug("Enrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("id"))
+	courseID := ctx.Param("id")
 
 	if courseID == "" {
 		slog.Error("Invalid course ID", "courseId", courseID)
@@ -62,28 +58,56 @@ func (c *EnrollmentController) EnrollStudent(ctx *gin.Context) {
 // @Tags enrollments
 // @Accept json
 // @Produce json
-// @Param courseId path string true "Course ID"
+// @Param id path string true "Course ID"
 // @Param unenrollmentRequest body schemas.UnenrollStudentRequest true "Unenrollment request"
 // @Success 200 {object} schemas.UnenrollStudentResponse
-// @Router /courses/{courseId}/unenroll [delete]
+// @Router /courses/{id}/unenroll [delete]
 func (c *EnrollmentController) UnenrollStudent(ctx *gin.Context) {
-	slog.Debug("Unenrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("courseId"))
-	courseID := ctx.Param("courseId")
-	studentID := ctx.Param("studentId")
+	slog.Debug("Unenrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("id"))
+	courseID := ctx.Param("id")
 
-	if studentID == "" || courseID == "" {
+	if courseID == "" {
 		slog.Error("Invalid student ID or course ID")
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid student ID or course ID"})
 		return
 	}
 
-	err := c.enrollmentService.UnenrollStudent(studentID, courseID)
+	var unenrollmentRequest schemas.UnenrollStudentRequest
+	if err := ctx.ShouldBindJSON(&unenrollmentRequest); err != nil {
+		slog.Error("Error binding unenrollment request", "error", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := c.enrollmentService.UnenrollStudent(unenrollmentRequest.StudentID, courseID)
 	if err != nil {
 		slog.Error("Error unenrolling student", "error", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	slog.Debug("Student unenrolled from course", "studentId", studentID, "courseId", courseID)
+	slog.Debug("Student unenrolled from course", "studentId", unenrollmentRequest.StudentID, "courseId", courseID)
 	ctx.JSON(http.StatusOK, gin.H{"message": "Student successfully unenrolled from course"})
+}
+
+// @Summary Get enrollments by course ID
+// @Description Get enrollments by course ID
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Success 200 {object} []schemas.Enrollment
+// @Router /courses/{id}/enrollments [get]
+func (c *EnrollmentController) GetEnrollmentsByCourseId(ctx *gin.Context) {
+	slog.Debug("Getting enrollments by course ID", "courseId", ctx.Param("id"))
+	courseID := ctx.Param("id")
+
+	enrollments, err := c.enrollmentService.GetEnrollmentsByCourseId(courseID)
+	if err != nil {
+		slog.Error("Error getting enrollments by course ID", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, enrollments)
 }

@@ -601,81 +601,6 @@
                 }
             }
         },
-        "/courses/{courseId}/enroll": {
-            "post": {
-                "description": "Enroll a student in a course",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "enrollments"
-                ],
-                "summary": "Enroll a student in a course",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Course ID",
-                        "name": "courseId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Enrollment request",
-                        "name": "enrollmentRequest",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/schemas.EnrollStudentRequest"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/courses/{courseId}/unenroll": {
-            "delete": {
-                "description": "Unenroll a student from a course",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "enrollments"
-                ],
-                "summary": "Unenroll a student from a course",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Course ID",
-                        "name": "courseId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Unenrollment request",
-                        "name": "unenrollmentRequest",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/schemas.UnenrollStudentRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.UnenrollStudentResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/courses/{id}": {
             "get": {
                 "description": "Get a course by ID",
@@ -772,6 +697,122 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/schemas.DeleteCourseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/{id}/enroll": {
+            "post": {
+                "description": "Enroll a student in a course",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Enroll a student in a course",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Enrollment request",
+                        "name": "enrollmentRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.EnrollStudentRequest"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/courses/{id}/remove-aux-teacher": {
+            "delete": {
+                "description": "Remove an aux teacher from a course by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Remove an aux teacher from a course",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Remove aux teacher from course request",
+                        "name": "removeAuxTeacherRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.RemoveAuxTeacherFromCourseRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Course"
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/{id}/unenroll": {
+            "delete": {
+                "description": "Unenroll a student from a course",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Unenroll a student from a course",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Unenrollment request",
+                        "name": "unenrollmentRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.UnenrollStudentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.UnenrollStudentResponse"
                         }
                     }
                 }
@@ -1080,6 +1121,12 @@
         "model.Course": {
             "type": "object",
             "properties": {
+                "aux_teachers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "capacity": {
                     "type": "integer"
                 },
@@ -1377,6 +1424,21 @@
             ],
             "properties": {
                 "student_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.RemoveAuxTeacherFromCourseRequest": {
+            "type": "object",
+            "required": [
+                "aux_teacher_id",
+                "teacher_id"
+            ],
+            "properties": {
+                "aux_teacher_id": {
+                    "type": "string"
+                },
+                "teacher_id": {
                     "type": "string"
                 }
             }

@@ -9,11 +9,11 @@ import (
 )
 
 type SubmissionService struct {
-	submissionRepo repository.SubmissionRepository
-	assignmentRepo repository.AssignmentRepository
+	submissionRepo repository.SubmissionRepositoryInterface
+	assignmentRepo repository.AssignmentRepositoryInterface
 }
 
-func NewSubmissionService(submissionRepo repository.SubmissionRepository, assignmentRepo repository.AssignmentRepository) *SubmissionService {
+func NewSubmissionService(submissionRepo repository.SubmissionRepositoryInterface, assignmentRepo repository.AssignmentRepositoryInterface) *SubmissionService {
 	return &SubmissionService{
 		submissionRepo: submissionRepo,
 		assignmentRepo: assignmentRepo,

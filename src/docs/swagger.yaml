@@ -64,6 +64,10 @@ definitions:
     type: object
   model.Course:
     properties:
+      aux_teachers:
+        items:
+          type: string
+        type: array
       capacity:
         type: integer
       created_at:
@@ -271,6 +275,16 @@ definitions:
         type: string
     required:
     - student_id
+    type: object
+  schemas.RemoveAuxTeacherFromCourseRequest:
+    properties:
+      aux_teacher_id:
+        type: string
+      teacher_id:
+        type: string
+    required:
+    - aux_teacher_id
+    - teacher_id
     type: object
   schemas.UnenrollStudentRequest:
     properties:
@@ -642,56 +656,6 @@ paths:
       summary: Course creation
       tags:
       - courses
-  /courses/{courseId}/enroll:
-    post:
-      consumes:
-      - application/json
-      description: Enroll a student in a course
-      parameters:
-      - description: Course ID
-        in: path
-        name: courseId
-        required: true
-        type: string
-      - description: Enrollment request
-        in: body
-        name: enrollmentRequest
-        required: true
-        schema:
-          $ref: '#/definitions/schemas.EnrollStudentRequest'
-      produces:
-      - application/json
-      responses: {}
-      summary: Enroll a student in a course
-      tags:
-      - enrollments
-  /courses/{courseId}/unenroll:
-    delete:
-      consumes:
-      - application/json
-      description: Unenroll a student from a course
-      parameters:
-      - description: Course ID
-        in: path
-        name: courseId
-        required: true
-        type: string
-      - description: Unenrollment request
-        in: body
-        name: unenrollmentRequest
-        required: true
-        schema:
-          $ref: '#/definitions/schemas.UnenrollStudentRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/schemas.UnenrollStudentResponse'
-      summary: Unenroll a student from a course
-      tags:
-      - enrollments
   /courses/{id}:
     delete:
       consumes:
@@ -759,6 +723,83 @@ paths:
       summary: Update a course
       tags:
       - courses
+  /courses/{id}/enroll:
+    post:
+      consumes:
+      - application/json
+      description: Enroll a student in a course
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Enrollment request
+        in: body
+        name: enrollmentRequest
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.EnrollStudentRequest'
+      produces:
+      - application/json
+      responses: {}
+      summary: Enroll a student in a course
+      tags:
+      - enrollments
+  /courses/{id}/remove-aux-teacher:
+    delete:
+      consumes:
+      - application/json
+      description: Remove an aux teacher from a course by ID
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Remove aux teacher from course request
+        in: body
+        name: removeAuxTeacherRequest
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.RemoveAuxTeacherFromCourseRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Course'
+      summary: Remove an aux teacher from a course
+      tags:
+      - courses
+  /courses/{id}/unenroll:
+    delete:
+      consumes:
+      - application/json
+      description: Unenroll a student from a course
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Unenrollment request
+        in: body
+        name: unenrollmentRequest
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.UnenrollStudentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.UnenrollStudentResponse'
+      summary: Unenroll a student from a course
+      tags:
+      - enrollments
   /courses/student/{studentId}:
     get:
       consumes:

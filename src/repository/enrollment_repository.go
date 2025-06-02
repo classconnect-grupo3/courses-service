@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"courses-service/src/model"
-	"fmt"
 	"log/slog"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -23,7 +22,6 @@ func NewEnrollmentRepository(db *mongo.Client, dbName string, courseRepository *
 }
 
 func (r *EnrollmentRepository) createEnrollmentAndModifyCourseCapacity(enrollment model.Enrollment, course *model.Course, ctx context.Context) (interface{}, error) {
-	fmt.Printf("enrollment: %v", enrollment)
 	res, err := r.enrollmentCollection.InsertOne(ctx, enrollment)
 	if err != nil {
 		slog.Error("Error creating enrollment", "error", err)
@@ -32,11 +30,7 @@ func (r *EnrollmentRepository) createEnrollmentAndModifyCourseCapacity(enrollmen
 
 	enrollment.ID = res.InsertedID.(primitive.ObjectID)
 
-	courseToUpdate := model.Course{
-		ID:             course.ID,
-		StudentsAmount: course.StudentsAmount + 1,
-	}
-	_, err = r.courseRepository.UpdateCourse(course.ID.Hex(), courseToUpdate)
+	err = r.courseRepository.UpdateStudentsAmount(course.ID.Hex(), course.StudentsAmount+1)
 	if err != nil {
 		slog.Error("Error updating course capacity", "error", err)
 		return nil, err
@@ -51,6 +45,30 @@ func (r *EnrollmentRepository) CreateEnrollment(enrollment model.Enrollment, cou
 		return err
 	}
 	return nil
+}
+
+func (r *EnrollmentRepository) GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error) {
+	filter := bson.M{
+		"course_id": courseID,
+	}
+
+	cursor, err := r.enrollmentCollection.Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+
+	var enrollments []*model.Enrollment
+	if err := cursor.All(context.TODO(), &enrollments); err != nil {
+		return nil, err
+	}
+
+	// Ensure we always return a non-nil slice
+	if enrollments == nil {
+		enrollments = []*model.Enrollment{}
+	}
+
+	return enrollments, nil
 }
 
 func (r *EnrollmentRepository) IsEnrolled(studentID, courseID string) (bool, error) {
@@ -76,19 +94,19 @@ func (r *EnrollmentRepository) deleteEnrollmentAndModifyCourseCapacity(studentID
 		"course_id":  course.ID.Hex(),
 	}
 
-	_, err := r.enrollmentCollection.DeleteOne(ctx, filter)
+	result, err := r.enrollmentCollection.DeleteOne(ctx, filter)
 	if err != nil {
 		return err
 	}
 
-	courseToUpdate := model.Course{
-		ID:             course.ID,
-		StudentsAmount: course.StudentsAmount - 1,
+	// Only update course capacity if we actually deleted an enrollment
+	if result.DeletedCount > 0 {
+		err = r.courseRepository.UpdateStudentsAmount(course.ID.Hex(), course.StudentsAmount-1)
+		if err != nil {
+			return err
+		}
 	}
-	_, err = r.courseRepository.UpdateCourse(course.ID.Hex(), courseToUpdate)
-	if err != nil {
-		return err
-	}
+
 	return nil
 }
 

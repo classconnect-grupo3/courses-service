@@ -2,6 +2,7 @@ package service
 
 import (
 	"courses-service/src/model"
+	"courses-service/src/repository"
 	"courses-service/src/schemas"
 	"errors"
 	"fmt"
@@ -9,21 +10,10 @@ import (
 )
 
 type ModuleService struct {
-	moduleRepository ModuleRepository
+	moduleRepository repository.ModuleRepositoryInterface
 }
 
-type ModuleRepository interface {
-	GetNextModuleOrder(courseID string) (int, error)
-	CreateModule(courseID string, module model.Module) (*model.Module, error)
-	GetModuleById(id string) (*model.Module, error)
-	UpdateModule(id string, module model.Module) (*model.Module, error)
-	DeleteModule(id string) error
-	GetModulesByCourseId(courseId string) ([]model.Module, error)
-	GetModuleByName(courseID string, moduleName string) (*model.Module, error)
-	GetModuleByOrder(courseID string, order int) (*model.Module, error)
-}
-
-func NewModuleService(moduleRepository ModuleRepository) *ModuleService {
+func NewModuleService(moduleRepository repository.ModuleRepositoryInterface) *ModuleService {
 	return &ModuleService{moduleRepository: moduleRepository}
 }
 

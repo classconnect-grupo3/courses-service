@@ -2,25 +2,42 @@ package service
 
 import (
 	"courses-service/src/model"
+	"courses-service/src/repository"
 	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type EnrollmentRepository interface {
-	CreateEnrollment(enrollment model.Enrollment, course *model.Course) error
-	IsEnrolled(studentID, courseID string) (bool, error)
-	DeleteEnrollment(studentID string, course *model.Course) error
-}
-
 type EnrollmentService struct {
-	enrollmentRepository EnrollmentRepository
-	courseRepository     CourseRepository
+	enrollmentRepository repository.EnrollmentRepositoryInterface
+	courseRepository     repository.CourseRepositoryInterface
 }
 
-func NewEnrollmentService(enrollmentRepository EnrollmentRepository, courseRepository CourseRepository) *EnrollmentService {
+func NewEnrollmentService(enrollmentRepository repository.EnrollmentRepositoryInterface, courseRepository repository.CourseRepositoryInterface) *EnrollmentService {
 	return &EnrollmentService{enrollmentRepository: enrollmentRepository, courseRepository: courseRepository}
+}
+
+func (s *EnrollmentService) GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error) {
+	if courseID == "" {
+		return nil, fmt.Errorf("course ID is required")
+	}
+
+	course, err := s.courseRepository.GetCourseById(courseID)
+	if err != nil {
+		return nil, fmt.Errorf("course %s not found", courseID)
+	}
+
+	if course.StudentsAmount <= 0 {
+		return []*model.Enrollment{}, nil
+	}
+
+	enrollments, err := s.enrollmentRepository.GetEnrollmentsByCourseId(courseID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting enrollments by course ID: %v", err)
+	}
+
+	return enrollments, nil
 }
 
 func (s *EnrollmentService) EnrollStudent(studentID, courseID string) error {

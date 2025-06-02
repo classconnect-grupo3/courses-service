@@ -4,6 +4,7 @@ import (
 	"context"
 	"courses-service/src/model"
 	"fmt"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -211,4 +212,74 @@ func (r *CourseRepository) UpdateCourse(id string, updateCourseRequest model.Cou
 	}
 
 	return updatedCourse, nil
+}
+
+func (r *CourseRepository) AddAuxTeacherToCourse(course *model.Course, auxTeacherId string) (*model.Course, error) {
+	course.AuxTeachers = append(course.AuxTeachers, auxTeacherId)
+	course.UpdatedAt = time.Now()
+
+	// Direct MongoDB update to ensure we can set the exact AuxTeachers array
+	update := bson.M{
+		"$set": bson.M{
+			"aux_teachers": course.AuxTeachers,
+			"updated_at":   course.UpdatedAt,
+		},
+	}
+
+	_, err := r.courseCollection.UpdateOne(context.TODO(), bson.M{"_id": course.ID}, update)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add aux teacher to course: %v", err)
+	}
+
+	return r.GetCourseById(course.ID.Hex())
+}
+
+func (r *CourseRepository) RemoveAuxTeacherFromCourse(course *model.Course, auxTeacherId string) (*model.Course, error) {
+	// Buscar y eliminar el auxTeacherId del slice
+	for i, teacher := range course.AuxTeachers {
+		if teacher == auxTeacherId {
+			// Eliminar el elemento del slice
+			course.AuxTeachers = append(course.AuxTeachers[:i], course.AuxTeachers[i+1:]...)
+			break
+		}
+	}
+
+	course.UpdatedAt = time.Now()
+
+	// Direct MongoDB update to ensure we can set empty arrays
+	update := bson.M{
+		"$set": bson.M{
+			"aux_teachers": course.AuxTeachers,
+			"updated_at":   course.UpdatedAt,
+		},
+	}
+
+	_, err := r.courseCollection.UpdateOne(context.TODO(), bson.M{"_id": course.ID}, update)
+	if err != nil {
+		return nil, fmt.Errorf("failed to remove aux teacher from course: %v", err)
+	}
+
+	return r.GetCourseById(course.ID.Hex())
+}
+
+func (r *CourseRepository) UpdateStudentsAmount(courseID string, newStudentsAmount int) error {
+	objectId, err := primitive.ObjectIDFromHex(courseID)
+	if err != nil {
+		return fmt.Errorf("failed to update students amount: %v", err)
+	}
+
+	// Direct MongoDB update to ensure we can set StudentsAmount to 0
+	update := bson.M{
+		"$set": bson.M{
+			"students_amount": newStudentsAmount,
+			"updated_at":      time.Now(),
+		},
+	}
+
+	_, err = r.courseCollection.UpdateOne(context.TODO(), bson.M{"_id": objectId}, update)
+	if err != nil {
+		return fmt.Errorf("failed to update students amount: %v", err)
+	}
+
+	return nil
 }
