@@ -6,6 +6,7 @@ import (
 
 	"courses-service/src/model"
 	"courses-service/src/service"
+	"courses-service/src/schemas"
 	"github.com/gin-gonic/gin"
 )
 
@@ -228,4 +229,58 @@ func (c *SubmissionController) GetSubmissionsByStudent(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, submissions)
+}
+
+// @Summary Grade a submission
+// @Description Grade a submission by ID (for teachers)
+// @Tags submissions
+// @Accept json
+// @Produce json
+// @Param assignmentId path string true "Assignment ID"
+// @Param id path string true "Submission ID"
+// @Param gradeRequest body schemas.GradeSubmissionRequest true "Grade request"
+// @Success 200 {object} model.Submission
+// @Router /assignments/{assignmentId}/submissions/{id}/grade [put]
+func (c *SubmissionController) GradeSubmission(ctx *gin.Context) {
+	assignmentID := ctx.Param("assignmentId")
+	id := ctx.Param("id")
+
+	var gradeRequest schemas.GradeSubmissionRequest
+	if err := ctx.ShouldBindJSON(&gradeRequest); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get teacher info from context
+	teacherUUID := ctx.GetString("teacher_uuid")
+
+	// Validate teacher permissions for this assignment
+	if err := c.submissionService.ValidateTeacherPermissions(ctx, assignmentID, teacherUUID); err != nil {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Validate submission belongs to the assignment
+	submission, err := c.submissionService.GetSubmission(ctx, id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if submission == nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "submission not found"})
+		return
+	}
+	if submission.AssignmentID != assignmentID {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "submission not found"})
+		return
+	}
+
+	// Grade the submission
+	gradedSubmission, err := c.submissionService.GradeSubmission(ctx, id, gradeRequest.Score, gradeRequest.Feedback)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gradedSubmission)
 }
