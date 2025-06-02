@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
-	"time"
 	"errors"
+	"time"
 
 	"courses-service/src/model"
 	"courses-service/src/repository"

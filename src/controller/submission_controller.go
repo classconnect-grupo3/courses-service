@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"courses-service/src/model"
-	"courses-service/src/service"
 	"courses-service/src/schemas"
+	"courses-service/src/service"
 	"github.com/gin-gonic/gin"
 )
 

@@ -24,4 +24,4 @@ func TeacherAuth() gin.HandlerFunc {
 
 		c.Next()
 	}
-} 
+}
