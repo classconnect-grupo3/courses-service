@@ -18,6 +18,28 @@ func NewEnrollmentService(enrollmentRepository repository.EnrollmentRepositoryIn
 	return &EnrollmentService{enrollmentRepository: enrollmentRepository, courseRepository: courseRepository}
 }
 
+func (s *EnrollmentService) GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error) {
+	if courseID == "" {
+		return nil, fmt.Errorf("course ID is required")
+	}
+
+	course, err := s.courseRepository.GetCourseById(courseID)
+	if err != nil {
+		return nil, fmt.Errorf("course %s not found", courseID)
+	}
+
+	if course.StudentsAmount <= 0 {
+		return []*model.Enrollment{}, nil
+	}
+
+	enrollments, err := s.enrollmentRepository.GetEnrollmentsByCourseId(courseID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting enrollments by course ID: %v", err)
+	}
+
+	return enrollments, nil
+}
+
 func (s *EnrollmentService) EnrollStudent(studentID, courseID string) error {
 	// First check if course exists
 	course, err := s.courseRepository.GetCourseById(courseID)

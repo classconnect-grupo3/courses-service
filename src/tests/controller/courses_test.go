@@ -332,4 +332,86 @@ func TestUpdateCourseWithError(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
 
-// TODO add tests for aux teachers
+func TestAddAuxTeacherToCourse(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"teacher_id": "123", "aux_teacher_id": "456"}`
+
+	req, _ := http.NewRequest("POST", "/courses/123/aux-teacher/add", strings.NewReader(body))
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestAddAuxTeacherToCourseWithInvalidBody(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"invalid": "body"}`
+
+	req, _ := http.NewRequest("POST", "/courses/123/aux-teacher/add", strings.NewReader(body))
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Error:Field validation")
+}
+
+func TestAddAuxTeacherToCourseWithError(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"teacher_id": "123", "aux_teacher_id": "456"}`
+
+	req, _ := http.NewRequest("POST", "/courses/123/aux-teacher/add", strings.NewReader(body))
+	errorRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Equal(t, "{\"error\":\"Error adding aux teacher to course\"}", w.Body.String())
+}
+
+func TestAddAuxTeacherToCourseWithEmptyCourseId(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"teacher_id": "123", "aux_teacher_id": "456"}`
+
+	req, _ := http.NewRequest("POST", "/courses//aux-teacher/add", strings.NewReader(body))
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestRemoveAuxTeacherFromCourse(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"teacher_id": "123", "aux_teacher_id": "456"}`
+
+	req, _ := http.NewRequest("DELETE", "/courses/123/aux-teacher/remove", strings.NewReader(body))
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestRemoveAuxTeacherFromCourseWithInvalidBody(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"invalid": "body"}`
+
+	req, _ := http.NewRequest("DELETE", "/courses/123/aux-teacher/remove", strings.NewReader(body))
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Error:Field validation")
+}
+
+func TestRemoveAuxTeacherFromCourseWithError(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"teacher_id": "123", "aux_teacher_id": "456"}`
+
+	req, _ := http.NewRequest("DELETE", "/courses/123/aux-teacher/remove", strings.NewReader(body))
+	errorRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Equal(t, "{\"error\":\"Error removing aux teacher from course\"}", w.Body.String())
+}
+
+func TestRemoveAuxTeacherFromCourseWithEmptyCourseId(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"teacher_id": "123", "aux_teacher_id": "456"}`
+
+	req, _ := http.NewRequest("DELETE", "/courses//aux-teacher/remove", strings.NewReader(body))
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
