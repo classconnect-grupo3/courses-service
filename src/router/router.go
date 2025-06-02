@@ -7,10 +7,8 @@ import (
 	"courses-service/src/middleware"
 	"courses-service/src/repository"
 	"courses-service/src/service"
-	"io"
 	"log"
 	"log/slog"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -19,14 +17,6 @@ import (
 	nrgin "github.com/newrelic/go-agent/v3/integrations/nrgin"
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
-
-func setUpLogger() {
-	gin.DefaultWriter = io.Discard
-	gin.DefaultErrorWriter = io.Discard
-
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	slog.SetDefault(logger)
-}
 
 func createRouterFromConfig(config *config.Config) *gin.Engine {
 	if config.Environment == "production" {
@@ -105,7 +95,6 @@ func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.Enrollmen
 }
 
 func NewRouter(config *config.Config) *gin.Engine {
-	setUpLogger()
 	r := createRouterFromConfig(config)
 	addNewRelicMiddleware(r)
 

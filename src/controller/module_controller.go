@@ -4,6 +4,7 @@ import (
 	"courses-service/src/model"
 	"courses-service/src/schemas"
 	"courses-service/src/service"
+	"log"
 	"log/slog"
 	"net/http"
 
@@ -37,6 +38,7 @@ func (c *ModuleController) CreateModule(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	log.Printf("module: %v\n", module)
 
 	createdModule, err := c.service.CreateModule(module)
 	if err != nil {
