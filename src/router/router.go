@@ -18,14 +18,6 @@ import (
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
-func setUpLogger() {
-	// gin.DefaultWriter = io.Discard
-	// gin.DefaultErrorWriter = io.Discard
-
-	// logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	// slog.SetDefault(logger)
-}
-
 func createRouterFromConfig(config *config.Config) *gin.Engine {
 	if config.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -103,7 +95,6 @@ func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.Enrollmen
 }
 
 func NewRouter(config *config.Config) *gin.Engine {
-	setUpLogger()
 	r := createRouterFromConfig(config)
 	addNewRelicMiddleware(r)
 

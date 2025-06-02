@@ -4,6 +4,7 @@ import (
 	"context"
 	"courses-service/src/model"
 	"fmt"
+	"sort"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -62,22 +63,140 @@ func (r *ModuleRepository) CreateModule(courseID string, module model.Module) (*
 	return &module, nil
 }
 
+// reorderModules adjusts the order of modules when a module's position changes
+func (r *ModuleRepository) reorderModules(modules []model.Module, targetModuleID primitive.ObjectID, newOrder int, oldOrder int) {
+	for i := range modules {
+		if modules[i].ID == targetModuleID {
+			// This is the target module, set its new order
+			modules[i].Order = newOrder
+		} else {
+			// Adjust order for other modules
+			currentOrder := modules[i].Order
+
+			if oldOrder < newOrder {
+				// Module moved down: shift modules between oldOrder+1 and newOrder up
+				if currentOrder > oldOrder && currentOrder <= newOrder {
+					modules[i].Order = currentOrder - 1
+				}
+			} else if oldOrder > newOrder {
+				// Module moved up: shift modules between newOrder and oldOrder-1 down
+				if currentOrder >= newOrder && currentOrder < oldOrder {
+					modules[i].Order = currentOrder + 1
+				}
+			}
+		}
+	}
+}
+
+// updateModuleFields updates the non-order fields of a target module
+func (r *ModuleRepository) updateModuleFields(modules []model.Module, targetModuleID primitive.ObjectID, updatedModule model.Module) {
+	for i := range modules {
+		if modules[i].ID == targetModuleID {
+			if updatedModule.Title != "" {
+				modules[i].Title = updatedModule.Title
+			}
+			if updatedModule.Description != "" {
+				modules[i].Description = updatedModule.Description
+			}
+			if updatedModule.Content != "" {
+				modules[i].Content = updatedModule.Content
+			}
+			break
+		}
+	}
+}
+
 func (r *ModuleRepository) UpdateModule(id string, module model.Module) (*model.Module, error) {
 	moduleUUID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, fmt.Errorf("invalid module ID: %v", err)
 	}
 
+	// First, get the current module and course to check if order has changed
 	filter := bson.M{"modules._id": moduleUUID}
-	update := bson.M{"$set": module}
-
-	var course model.Course
-	err = r.moduleCollection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&course)
+	var currentCourse model.Course
+	err = r.moduleCollection.FindOne(context.TODO(), filter).Decode(&currentCourse)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update module: %v", err)
+		return nil, fmt.Errorf("failed to find module: %v", err)
 	}
 
-	return &course.Modules[0], nil
+	// Find the current module
+	var currentModule *model.Module
+	for _, mod := range currentCourse.Modules {
+		if mod.ID == moduleUUID {
+			currentModule = &mod
+			break
+		}
+	}
+
+	if currentModule == nil {
+		return nil, fmt.Errorf("module not found")
+	}
+
+	// Check if order has changed
+	if module.Order != 0 && module.Order != currentModule.Order {
+		// Update module fields first
+		r.updateModuleFields(currentCourse.Modules, moduleUUID, module)
+
+		// Reorder modules
+		r.reorderModules(currentCourse.Modules, moduleUUID, module.Order, currentModule.Order)
+
+		// Sort modules by order to maintain consistency
+		sort.Slice(currentCourse.Modules, func(i, j int) bool {
+			return currentCourse.Modules[i].Order < currentCourse.Modules[j].Order
+		})
+
+		// Update the entire course with reordered modules
+		courseFilter := bson.M{"_id": currentCourse.ID}
+		update := bson.M{"$set": bson.M{"modules": currentCourse.Modules}}
+
+		_, err = r.moduleCollection.UpdateOne(context.TODO(), courseFilter, update)
+		if err != nil {
+			return nil, fmt.Errorf("failed to update module order: %v", err)
+		}
+
+		// Return the updated module
+		for _, mod := range currentCourse.Modules {
+			if mod.ID == moduleUUID {
+				return &mod, nil
+			}
+		}
+	} else {
+		// No order change, just update the specific module fields
+		updateFields := bson.M{}
+		if module.Title != "" {
+			updateFields["modules.$.title"] = module.Title
+		}
+		if module.Description != "" {
+			updateFields["modules.$.description"] = module.Description
+		}
+		if module.Content != "" {
+			updateFields["modules.$.content"] = module.Content
+		}
+
+		if len(updateFields) > 0 {
+			update := bson.M{"$set": updateFields}
+			_, err = r.moduleCollection.UpdateOne(context.TODO(), filter, update)
+			if err != nil {
+				return nil, fmt.Errorf("failed to update module: %v", err)
+			}
+		}
+
+		// Get the updated course to return the module
+		err = r.moduleCollection.FindOne(context.TODO(), filter).Decode(&currentCourse)
+		if err != nil {
+			return nil, fmt.Errorf("failed to find updated module: %v", err)
+		}
+
+		// Return the updated module
+		for _, mod := range currentCourse.Modules {
+			if mod.ID == moduleUUID {
+				return &mod, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("module not found after update")
 }
 
 func (r *ModuleRepository) DeleteModule(id string) error {
@@ -136,7 +255,14 @@ func (r *ModuleRepository) GetModuleById(id string) (*model.Module, error) {
 		return nil, fmt.Errorf("failed to find course or module: %v", err)
 	}
 
-	return &course.Modules[0], nil
+	// Find the module with the specified ID
+	for _, module := range course.Modules {
+		if module.ID == moduleUUID {
+			return &module, nil
+		}
+	}
+
+	return nil, fmt.Errorf("module with ID %s not found", id)
 }
 
 func (r *ModuleRepository) GetModulesByCourseId(courseID string) ([]model.Module, error) {
@@ -152,6 +278,11 @@ func (r *ModuleRepository) GetModulesByCourseId(courseID string) ([]model.Module
 	if err != nil {
 		return nil, fmt.Errorf("failed to find course: %v", err)
 	}
+
+	// Sort modules by order before returning
+	sort.Slice(course.Modules, func(i, j int) bool {
+		return course.Modules[i].Order < course.Modules[j].Order
+	})
 
 	return course.Modules, nil
 }
