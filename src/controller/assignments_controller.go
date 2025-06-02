@@ -47,26 +47,104 @@ func (c *AssignmentsController) GetAssignments(ctx *gin.Context) {
 // @Param assignment body schemas.CreateAssignmentRequest true "Assignment to create"
 // @Success 201 {object} model.Assignment
 // @Router /assignments [post]
+package controller
+
+import (
+	"encoding/json"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/rabbitmq/amqp091-go"
+	"your_project/model"
+	"your_project/schemas"
+	"your_project/service"
+)
+
 func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) {
-	slog.Debug("Creating assignment")
+	log.Println("Creating assignment")
 
 	var assignment schemas.CreateAssignmentRequest
 	if err := ctx.ShouldBindJSON(&assignment); err != nil {
-		slog.Error("Error binding JSON", "error", err)
+		log.Println("Error binding JSON:", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	createdAssignment, err := c.service.CreateAssignment(assignment)
 	if err != nil {
-		slog.Error("Error creating assignment", "error", err)
+		log.Println("Error creating assignment:", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	slog.Debug("Assignment created", "assignment", createdAssignment)
+	// 🟡 Publicar evento en RabbitMQ con amqp091-go
+	go func() {
+		conn, err := amqp091.Dial(os.Getenv("RABBITMQ_URL"))
+		if err != nil {
+			log.Println("RabbitMQ connection error:", err)
+			return
+		}
+		defer conn.Close()
+
+		ch, err := conn.Channel()
+		if err != nil {
+			log.Println("RabbitMQ channel error:", err)
+			return
+		}
+		defer ch.Close()
+
+		_, err = ch.QueueDeclare(
+			"assignment_created_queue",
+			true,
+			false,
+			false,
+			false,
+			nil,
+		)
+		if err != nil {
+			log.Println("Queue declare error:", err)
+			return
+		}
+
+		event := map[string]interface{}{
+			"event_type":          "assignment.created",
+			"course_id":           createdAssignment.CourseID,
+			"assignment_id":       createdAssignment.ID,
+			"assignment_title":    createdAssignment.Title,
+			"assignment_due_date": createdAssignment.DueDate.Format(time.RFC3339),
+		}
+
+		body, err := json.Marshal(event)
+		if err != nil {
+			log.Println("Error marshaling event:", err)
+			return
+		}
+
+		err = ch.Publish(
+			"",
+			"assignment_created_queue",
+			false,
+			false,
+			amqp091.Publishing{
+				ContentType: "application/json",
+				Body:        body,
+			},
+		)
+		if err != nil {
+			log.Println("Error publishing message:", err)
+			return
+		}
+
+		log.Println("📤 Event published: assignment.created")
+	}()
+
+	log.Println("Assignment created:", createdAssignment.ID)
 	ctx.JSON(http.StatusCreated, createdAssignment)
 }
+
 
 // @Summary Get an assignment by ID
 // @Description Get an assignment by ID
