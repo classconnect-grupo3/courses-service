@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"courses-service/src/model"
-	"fmt"
 	"log/slog"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -23,7 +22,6 @@ func NewEnrollmentRepository(db *mongo.Client, dbName string, courseRepository *
 }
 
 func (r *EnrollmentRepository) createEnrollmentAndModifyCourseCapacity(enrollment model.Enrollment, course *model.Course, ctx context.Context) (interface{}, error) {
-	fmt.Printf("enrollment: %v", enrollment)
 	res, err := r.enrollmentCollection.InsertOne(ctx, enrollment)
 	if err != nil {
 		slog.Error("Error creating enrollment", "error", err)

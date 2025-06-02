@@ -218,13 +218,20 @@ func (r *CourseRepository) AddAuxTeacherToCourse(course *model.Course, auxTeache
 	course.AuxTeachers = append(course.AuxTeachers, auxTeacherId)
 	course.UpdatedAt = time.Now()
 
-	updateCourseRequest := model.Course{
-		ID:          course.ID,
-		AuxTeachers: course.AuxTeachers,
-		UpdatedAt:   course.UpdatedAt,
+	// Direct MongoDB update to ensure we can set the exact AuxTeachers array
+	update := bson.M{
+		"$set": bson.M{
+			"aux_teachers": course.AuxTeachers,
+			"updated_at":   course.UpdatedAt,
+		},
 	}
 
-	return r.UpdateCourse(course.ID.Hex(), updateCourseRequest)
+	_, err := r.courseCollection.UpdateOne(context.TODO(), bson.M{"_id": course.ID}, update)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add aux teacher to course: %v", err)
+	}
+
+	return r.GetCourseById(course.ID.Hex())
 }
 
 func (r *CourseRepository) RemoveAuxTeacherFromCourse(course *model.Course, auxTeacherId string) (*model.Course, error) {
@@ -239,11 +246,18 @@ func (r *CourseRepository) RemoveAuxTeacherFromCourse(course *model.Course, auxT
 
 	course.UpdatedAt = time.Now()
 
-	updateCourseRequest := model.Course{
-		ID:          course.ID,
-		AuxTeachers: course.AuxTeachers,
-		UpdatedAt:   course.UpdatedAt,
+	// Direct MongoDB update to ensure we can set empty arrays
+	update := bson.M{
+		"$set": bson.M{
+			"aux_teachers": course.AuxTeachers,
+			"updated_at":   course.UpdatedAt,
+		},
 	}
 
-	return r.UpdateCourse(course.ID.Hex(), updateCourseRequest)
+	_, err := r.courseCollection.UpdateOne(context.TODO(), bson.M{"_id": course.ID}, update)
+	if err != nil {
+		return nil, fmt.Errorf("failed to remove aux teacher from course: %v", err)
+	}
+
+	return r.GetCourseById(course.ID.Hex())
 }

@@ -77,9 +77,9 @@
 				
 				<option value="file10">courses-service/src/repository/assignment_repository.go (1.4%)</option>
 				
-				<option value="file11">courses-service/src/repository/course_repository.go (70.8%)</option>
+				<option value="file11">courses-service/src/repository/course_repository.go (83.9%)</option>
 				
-				<option value="file12">courses-service/src/repository/enrollment_repository.go (47.4%)</option>
+				<option value="file12">courses-service/src/repository/enrollment_repository.go (45.9%)</option>
 				
 				<option value="file13">courses-service/src/repository/module_repository.go (1.6%)</option>
 				
@@ -3001,7 +3001,7 @@ func (r *CourseRepository) GetCourses() ([]*model.Course, error) <span class="co
 func (r *CourseRepository) GetCourseById(id string) (*model.Course, error) <span class="cov8" title="1">{
         var course model.Course
         objectId, err := primitive.ObjectIDFromHex(id)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, fmt.Errorf("failed to get course by id: %v", err)
         }</span>
         <span class="cov8" title="1">err = r.courseCollection.FindOne(context.TODO(), bson.M{"_id": objectId}).Decode(&amp;course)
@@ -3037,7 +3037,7 @@ func (r *CourseRepository) GetCoursesByStudentId(studentId string) ([]*model.Cou
                 return nil, fmt.Errorf("failed to parse enrollments: %v", err)
         }</span>
 
-        <span class="cov8" title="1">if len(enrollments) == 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if len(enrollments) == 0 </span><span class="cov8" title="1">{
                 return []*model.Course{}, nil
         }</span>
 
@@ -3090,7 +3090,7 @@ func (r *CourseRepository) GetCourseByTitle(title string) ([]*model.Course, erro
 
 func (r *CourseRepository) DeleteCourse(id string) error <span class="cov8" title="1">{
         objectId, err := primitive.ObjectIDFromHex(id)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return fmt.Errorf("failed to delete course: %v", err)
         }</span>
         <span class="cov8" title="1">_, err = r.courseCollection.DeleteOne(context.TODO(), bson.M{"_id": objectId})
@@ -3102,7 +3102,7 @@ func (r *CourseRepository) DeleteCourse(id string) error <span class="cov8" titl
 
 func (r *CourseRepository) UpdateCourse(id string, updateCourseRequest model.Course) (*model.Course, error) <span class="cov8" title="1">{
         objectId, err := primitive.ObjectIDFromHex(id)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, fmt.Errorf("failed to update course: %v", err)
         }</span>
 
@@ -3121,38 +3121,52 @@ func (r *CourseRepository) UpdateCourse(id string, updateCourseRequest model.Cou
         <span class="cov8" title="1">return updatedCourse, nil</span>
 }
 
-func (r *CourseRepository) AddAuxTeacherToCourse(course *model.Course, auxTeacherId string) (*model.Course, error) <span class="cov0" title="0">{
+func (r *CourseRepository) AddAuxTeacherToCourse(course *model.Course, auxTeacherId string) (*model.Course, error) <span class="cov8" title="1">{
         course.AuxTeachers = append(course.AuxTeachers, auxTeacherId)
         course.UpdatedAt = time.Now()
 
-        updateCourseRequest := model.Course{
-                ID:          course.ID,
-                AuxTeachers: course.AuxTeachers,
-                UpdatedAt:   course.UpdatedAt,
+        // Direct MongoDB update to ensure we can set the exact AuxTeachers array
+        update := bson.M{
+                "$set": bson.M{
+                        "aux_teachers": course.AuxTeachers,
+                        "updated_at":   course.UpdatedAt,
+                },
         }
 
-        return r.UpdateCourse(course.ID.Hex(), updateCourseRequest)
-}</span>
+        _, err := r.courseCollection.UpdateOne(context.TODO(), bson.M{"_id": course.ID}, update)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to add aux teacher to course: %v", err)
+        }</span>
 
-func (r *CourseRepository) RemoveAuxTeacherFromCourse(course *model.Course, auxTeacherId string) (*model.Course, error) <span class="cov0" title="0">{
+        <span class="cov8" title="1">return r.GetCourseById(course.ID.Hex())</span>
+}
+
+func (r *CourseRepository) RemoveAuxTeacherFromCourse(course *model.Course, auxTeacherId string) (*model.Course, error) <span class="cov8" title="1">{
         // Buscar y eliminar el auxTeacherId del slice
-        for i, teacher := range course.AuxTeachers </span><span class="cov0" title="0">{
-                if teacher == auxTeacherId </span><span class="cov0" title="0">{
+        for i, teacher := range course.AuxTeachers </span><span class="cov8" title="1">{
+                if teacher == auxTeacherId </span><span class="cov8" title="1">{
                         // Eliminar el elemento del slice
                         course.AuxTeachers = append(course.AuxTeachers[:i], course.AuxTeachers[i+1:]...)
                         break</span>
                 }
         }
 
-        <span class="cov0" title="0">course.UpdatedAt = time.Now()
+        <span class="cov8" title="1">course.UpdatedAt = time.Now()
 
-        updateCourseRequest := model.Course{
-                ID:          course.ID,
-                AuxTeachers: course.AuxTeachers,
-                UpdatedAt:   course.UpdatedAt,
+        // Direct MongoDB update to ensure we can set empty arrays
+        update := bson.M{
+                "$set": bson.M{
+                        "aux_teachers": course.AuxTeachers,
+                        "updated_at":   course.UpdatedAt,
+                },
         }
 
-        return r.UpdateCourse(course.ID.Hex(), updateCourseRequest)</span>
+        _, err := r.courseCollection.UpdateOne(context.TODO(), bson.M{"_id": course.ID}, update)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to remove aux teacher from course: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">return r.GetCourseById(course.ID.Hex())</span>
 }
 </pre>
 		
@@ -3161,7 +3175,6 @@ func (r *CourseRepository) RemoveAuxTeacherFromCourse(course *model.Course, auxT
 import (
         "context"
         "courses-service/src/model"
-        "fmt"
         "log/slog"
 
         "go.mongodb.org/mongo-driver/bson"
@@ -3181,7 +3194,6 @@ func NewEnrollmentRepository(db *mongo.Client, dbName string, courseRepository *
 }</span>
 
 func (r *EnrollmentRepository) createEnrollmentAndModifyCourseCapacity(enrollment model.Enrollment, course *model.Course, ctx context.Context) (interface{}, error) <span class="cov8" title="1">{
-        fmt.Printf("enrollment: %v", enrollment)
         res, err := r.enrollmentCollection.InsertOne(ctx, enrollment)
         if err != nil </span><span class="cov0" title="0">{
                 slog.Error("Error creating enrollment", "error", err)

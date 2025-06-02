@@ -346,3 +346,185 @@ func TestGetCoursesByStudentId(t *testing.T) {
 	assert.Equal(t, 1, len(gotCourses))
 	assert.Equal(t, course.Title, gotCourses[0].Title)
 }
+
+func TestGetCoursesByStudentIdEmpty(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+		dbSetup.CleanupCollection("enrollments")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	gotCourses, err := courseRepository.GetCoursesByStudentId("non-existent-student")
+	assert.NoError(t, err)
+
+	assert.Equal(t, 0, len(gotCourses))
+}
+
+func TestAddAuxTeacherToCourse(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	course := model.Course{
+		Title:       "Test Course",
+		Description: "Test Description",
+		TeacherUUID: "titular-teacher",
+		AuxTeachers: []string{},
+	}
+
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	updatedCourse, err := courseRepository.AddAuxTeacherToCourse(createdCourse, "aux-teacher-1")
+	assert.NoError(t, err)
+
+	assert.NotNil(t, updatedCourse)
+	assert.Equal(t, 1, len(updatedCourse.AuxTeachers))
+	assert.Equal(t, "aux-teacher-1", updatedCourse.AuxTeachers[0])
+}
+
+func TestAddMultipleAuxTeachersToCourse(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	course := model.Course{
+		Title:       "Test Course",
+		Description: "Test Description",
+		TeacherUUID: "titular-teacher",
+		AuxTeachers: []string{"existing-aux-teacher"},
+	}
+
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	updatedCourse, err := courseRepository.AddAuxTeacherToCourse(createdCourse, "aux-teacher-2")
+	assert.NoError(t, err)
+
+	assert.NotNil(t, updatedCourse)
+	assert.Equal(t, 2, len(updatedCourse.AuxTeachers))
+	assert.Contains(t, updatedCourse.AuxTeachers, "existing-aux-teacher")
+	assert.Contains(t, updatedCourse.AuxTeachers, "aux-teacher-2")
+}
+
+func TestRemoveAuxTeacherFromCourse(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	course := model.Course{
+		Title:       "Test Course",
+		Description: "Test Description",
+		TeacherUUID: "titular-teacher",
+		AuxTeachers: []string{"aux-teacher-1", "aux-teacher-2"},
+	}
+
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	updatedCourse, err := courseRepository.RemoveAuxTeacherFromCourse(createdCourse, "aux-teacher-1")
+	assert.NoError(t, err)
+
+	assert.NotNil(t, updatedCourse)
+	assert.Equal(t, 1, len(updatedCourse.AuxTeachers))
+	assert.Equal(t, "aux-teacher-2", updatedCourse.AuxTeachers[0])
+	assert.NotContains(t, updatedCourse.AuxTeachers, "aux-teacher-1")
+}
+
+func TestRemoveLastAuxTeacherFromCourse(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	course := model.Course{
+		Title:       "Test Course",
+		Description: "Test Description",
+		TeacherUUID: "titular-teacher",
+		AuxTeachers: []string{"aux-teacher-1"},
+	}
+
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	updatedCourse, err := courseRepository.RemoveAuxTeacherFromCourse(createdCourse, "aux-teacher-1")
+	assert.NoError(t, err)
+
+	assert.NotNil(t, updatedCourse)
+	assert.Equal(t, 0, len(updatedCourse.AuxTeachers))
+	assert.Equal(t, course.TeacherUUID, updatedCourse.TeacherUUID)
+	assert.Equal(t, course.Title, updatedCourse.Title)
+	assert.Equal(t, course.Description, updatedCourse.Description)
+}
+
+func TestRemoveNonExistentAuxTeacherFromCourse(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	course := model.Course{
+		Title:       "Test Course",
+		Description: "Test Description",
+		TeacherUUID: "titular-teacher",
+		AuxTeachers: []string{"aux-teacher-1"},
+	}
+
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	updatedCourse, err := courseRepository.RemoveAuxTeacherFromCourse(createdCourse, "non-existent-aux")
+	assert.NoError(t, err)
+
+	assert.NotNil(t, updatedCourse)
+	assert.Equal(t, 1, len(updatedCourse.AuxTeachers))
+	assert.Equal(t, "aux-teacher-1", updatedCourse.AuxTeachers[0])
+}
+
+func TestGetCourseByIdWithInvalidId(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	gotCourse, err := courseRepository.GetCourseById("invalid-object-id")
+	assert.Error(t, err)
+	assert.Nil(t, gotCourse)
+	assert.Contains(t, err.Error(), "failed to get course by id")
+}
+
+func TestDeleteCourseWithInvalidId(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	err := courseRepository.DeleteCourse("invalid-object-id")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to delete course")
+}
+
+func TestUpdateCourseWithInvalidId(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	_, err := courseRepository.UpdateCourse("invalid-object-id", model.Course{
+		Title: "Updated Course",
+	})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to update course")
+}
