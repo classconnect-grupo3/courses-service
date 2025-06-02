@@ -261,3 +261,25 @@ func (r *CourseRepository) RemoveAuxTeacherFromCourse(course *model.Course, auxT
 
 	return r.GetCourseById(course.ID.Hex())
 }
+
+func (r *CourseRepository) UpdateStudentsAmount(courseID string, newStudentsAmount int) error {
+	objectId, err := primitive.ObjectIDFromHex(courseID)
+	if err != nil {
+		return fmt.Errorf("failed to update students amount: %v", err)
+	}
+
+	// Direct MongoDB update to ensure we can set StudentsAmount to 0
+	update := bson.M{
+		"$set": bson.M{
+			"students_amount": newStudentsAmount,
+			"updated_at":      time.Now(),
+		},
+	}
+
+	_, err = r.courseCollection.UpdateOne(context.TODO(), bson.M{"_id": objectId}, update)
+	if err != nil {
+		return fmt.Errorf("failed to update students amount: %v", err)
+	}
+
+	return nil
+}

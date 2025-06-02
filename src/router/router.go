@@ -99,8 +99,9 @@ func InitializeSubmissionRoutes(r *gin.Engine, controller *controller.Submission
 }
 
 func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.EnrollmentController) {
+	r.GET("/courses/:id/enrollments", controller.GetEnrollmentsByCourseId)
 	r.POST("/courses/:id/enroll", controller.EnrollStudent)
-	r.POST("/courses/:id/unenroll", controller.UnenrollStudent)
+	r.DELETE("/courses/:id/unenroll", controller.UnenrollStudent)
 }
 
 func NewRouter(config *config.Config) *gin.Engine {

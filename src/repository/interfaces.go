@@ -16,6 +16,7 @@ type CourseRepositoryInterface interface {
 	UpdateCourse(id string, updateCourseRequest model.Course) (*model.Course, error)
 	AddAuxTeacherToCourse(course *model.Course, auxTeacherId string) (*model.Course, error)
 	RemoveAuxTeacherFromCourse(course *model.Course, auxTeacherId string) (*model.Course, error)
+	UpdateStudentsAmount(courseID string, newStudentsAmount int) error
 }
 
 type AssignmentRepositoryInterface interface {
@@ -31,6 +32,7 @@ type EnrollmentRepositoryInterface interface {
 	CreateEnrollment(enrollment model.Enrollment, course *model.Course) error
 	IsEnrolled(studentID, courseID string) (bool, error)
 	DeleteEnrollment(studentID string, course *model.Course) error
+	GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error)
 }
 
 type ModuleRepositoryInterface interface {

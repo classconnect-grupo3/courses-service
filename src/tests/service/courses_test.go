@@ -14,6 +14,11 @@ import (
 
 type MockEnrollmentRepository struct{}
 
+// GetEnrollmentsByCourseId implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepository) GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error) {
+	panic("unimplemented")
+}
+
 func (m *MockEnrollmentRepository) IsEnrolled(studentID, courseID string) (bool, error) {
 	// Return true for specific cases to test enrolled scenarios
 	if studentID == "enrolled-teacher" {
@@ -154,6 +159,10 @@ func (m *MockCourseRepository) UpdateCourse(id string, updateCourseRequest model
 		TeacherUUID: "123e4567-e89b-12d3-a456-426614174000",
 		Capacity:    10,
 	}, nil
+}
+
+func (m *MockCourseRepository) UpdateStudentsAmount(courseID string, newStudentsAmount int) error {
+	return nil
 }
 
 func TestCreateCourseWithInvalidCapacity(t *testing.T) {

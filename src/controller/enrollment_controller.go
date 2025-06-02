@@ -65,21 +65,49 @@ func (c *EnrollmentController) EnrollStudent(ctx *gin.Context) {
 func (c *EnrollmentController) UnenrollStudent(ctx *gin.Context) {
 	slog.Debug("Unenrolling student", "studentId", ctx.Param("studentId"), "courseId", ctx.Param("id"))
 	courseID := ctx.Param("id")
-	studentID := ctx.Param("studentId")
 
-	if studentID == "" || courseID == "" {
+	if courseID == "" {
 		slog.Error("Invalid student ID or course ID")
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid student ID or course ID"})
 		return
 	}
 
-	err := c.enrollmentService.UnenrollStudent(studentID, courseID)
+	var unenrollmentRequest schemas.UnenrollStudentRequest
+	if err := ctx.ShouldBindJSON(&unenrollmentRequest); err != nil {
+		slog.Error("Error binding unenrollment request", "error", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := c.enrollmentService.UnenrollStudent(unenrollmentRequest.StudentID, courseID)
 	if err != nil {
 		slog.Error("Error unenrolling student", "error", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	slog.Debug("Student unenrolled from course", "studentId", studentID, "courseId", courseID)
+	slog.Debug("Student unenrolled from course", "studentId", unenrollmentRequest.StudentID, "courseId", courseID)
 	ctx.JSON(http.StatusOK, gin.H{"message": "Student successfully unenrolled from course"})
+}
+
+// @Summary Get enrollments by course ID
+// @Description Get enrollments by course ID
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Success 200 {object} []schemas.Enrollment
+// @Router /courses/{id}/enrollments [get]
+func (c *EnrollmentController) GetEnrollmentsByCourseId(ctx *gin.Context) {
+	slog.Debug("Getting enrollments by course ID", "courseId", ctx.Param("id"))
+	courseID := ctx.Param("id")
+
+	enrollments, err := c.enrollmentService.GetEnrollmentsByCourseId(courseID)
+	if err != nil {
+		slog.Error("Error getting enrollments by course ID", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, enrollments)
 }
