@@ -81,11 +81,11 @@
 				
 				<option value="file12">courses-service/src/repository/enrollment_repository.go (76.6%)</option>
 				
-				<option value="file13">courses-service/src/repository/module_repository.go (1.6%)</option>
+				<option value="file13">courses-service/src/repository/module_repository.go (1.1%)</option>
 				
 				<option value="file14">courses-service/src/repository/submission_repository.go (2.4%)</option>
 				
-				<option value="file15">courses-service/src/router/router.go (96.1%)</option>
+				<option value="file15">courses-service/src/router/router.go (95.9%)</option>
 				
 				<option value="file16">courses-service/src/service/assignment_service.go (3.7%)</option>
 				
@@ -723,7 +723,8 @@ func (c *EnrollmentController) GetEnrollmentsByCourseId(ctx *gin.Context) <span 
         }</span>
 
         <span class="cov8" title="1">ctx.JSON(http.StatusOK, enrollments)</span>
-}</pre>
+}
+</pre>
 		
 		<pre class="file" id="file4" style="display: none">package controller
 
@@ -731,6 +732,7 @@ import (
         "courses-service/src/model"
         "courses-service/src/schemas"
         "courses-service/src/service"
+        "log"
         "log/slog"
         "net/http"
 
@@ -764,8 +766,9 @@ func (c *ModuleController) CreateModule(ctx *gin.Context) <span class="cov8" tit
                 ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
                 return
         }</span>
+        <span class="cov8" title="1">log.Printf("module: %v\n", module)
 
-        <span class="cov8" title="1">createdModule, err := c.service.CreateModule(module)
+        createdModule, err := c.service.CreateModule(module)
         if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error creating module", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -3364,8 +3367,12 @@ func NewModuleRepository(db *mongo.Client, dbName string) *ModuleRepository <spa
 
 func (r *ModuleRepository) GetNextModuleOrder(courseID string) (int, error) <span class="cov0" title="0">{
         var course model.Course
-        filter := bson.M{"_id": courseID}
-        err := r.moduleCollection.FindOne(context.TODO(), filter).Decode(&amp;course)
+        courseUUID, err := primitive.ObjectIDFromHex(courseID)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("invalid course ID: %v", err)
+        }</span>
+        <span class="cov0" title="0">filter := bson.M{"_id": courseUUID}
+        err = r.moduleCollection.FindOne(context.TODO(), filter).Decode(&amp;course)
         if err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to find course: %v", err)
         }</span>
@@ -3383,11 +3390,16 @@ func (r *ModuleRepository) GetNextModuleOrder(courseID string) (int, error) <spa
 func (r *ModuleRepository) CreateModule(courseID string, module model.Module) (*model.Module, error) <span class="cov0" title="0">{
         module.ID = primitive.NewObjectID()
 
-        filter := bson.M{"_id": courseID}
+        courseUUID, err := primitive.ObjectIDFromHex(courseID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("invalid course ID: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">filter := bson.M{"_id": courseUUID}
         update := bson.M{"$push": bson.M{"modules": module}}
 
         var course model.Course
-        err := r.moduleCollection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&amp;course)
+        err = r.moduleCollection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&amp;course)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to create module: %v", err)
         }</span>
@@ -3396,11 +3408,16 @@ func (r *ModuleRepository) CreateModule(courseID string, module model.Module) (*
 }
 
 func (r *ModuleRepository) UpdateModule(id string, module model.Module) (*model.Module, error) <span class="cov0" title="0">{
-        filter := bson.M{"modules._id": id}
+        moduleUUID, err := primitive.ObjectIDFromHex(id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("invalid module ID: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">filter := bson.M{"modules._id": moduleUUID}
         update := bson.M{"$set": module}
 
         var course model.Course
-        err := r.moduleCollection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&amp;course)
+        err = r.moduleCollection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&amp;course)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to update module: %v", err)
         }</span>
@@ -3409,11 +3426,16 @@ func (r *ModuleRepository) UpdateModule(id string, module model.Module) (*model.
 }
 
 func (r *ModuleRepository) DeleteModule(id string) error <span class="cov0" title="0">{
-        filter := bson.M{"modules._id": id}
-        update := bson.M{"$pull": bson.M{"modules": bson.M{"_id": id}}}
+        moduleUUID, err := primitive.ObjectIDFromHex(id)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("invalid module ID: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">filter := bson.M{"modules._id": moduleUUID}
+        update := bson.M{"$pull": bson.M{"modules": bson.M{"_id": moduleUUID}}}
 
         var course model.Course
-        err := r.moduleCollection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&amp;course)
+        err = r.moduleCollection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&amp;course)
         if err != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("failed to delete module: %v", err)
         }</span>
@@ -3422,10 +3444,15 @@ func (r *ModuleRepository) DeleteModule(id string) error <span class="cov0" titl
 }
 
 func (r *ModuleRepository) GetModuleByName(courseID string, moduleName string) (*model.Module, error) <span class="cov0" title="0">{
-        filter := bson.M{"_id": courseID, "modules.title": moduleName}
+        courseUUID, err := primitive.ObjectIDFromHex(courseID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("invalid course ID: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">filter := bson.M{"_id": courseUUID, "modules.title": moduleName}
 
         var course model.Course
-        err := r.moduleCollection.FindOne(context.TODO(), filter).Decode(&amp;course)
+        err = r.moduleCollection.FindOne(context.TODO(), filter).Decode(&amp;course)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to find course or module: %v", err)
         }</span>
@@ -3441,10 +3468,15 @@ func (r *ModuleRepository) GetModuleByName(courseID string, moduleName string) (
 }
 
 func (r *ModuleRepository) GetModuleById(id string) (*model.Module, error) <span class="cov0" title="0">{
-        filter := bson.M{"modules._id": id}
+        moduleUUID, err := primitive.ObjectIDFromHex(id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("invalid module ID: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">filter := bson.M{"modules._id": moduleUUID}
 
         var course model.Course
-        err := r.moduleCollection.FindOne(context.TODO(), filter).Decode(&amp;course)
+        err = r.moduleCollection.FindOne(context.TODO(), filter).Decode(&amp;course)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to find course or module: %v", err)
         }</span>
@@ -3453,10 +3485,15 @@ func (r *ModuleRepository) GetModuleById(id string) (*model.Module, error) <span
 }
 
 func (r *ModuleRepository) GetModulesByCourseId(courseID string) ([]model.Module, error) <span class="cov0" title="0">{
-        filter := bson.M{"_id": courseID}
+        courseUUID, err := primitive.ObjectIDFromHex(courseID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("invalid course ID: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">filter := bson.M{"_id": courseUUID}
 
         var course model.Course
-        err := r.moduleCollection.FindOne(context.TODO(), filter).Decode(&amp;course)
+        err = r.moduleCollection.FindOne(context.TODO(), filter).Decode(&amp;course)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to find course: %v", err)
         }</span>
@@ -3465,10 +3502,15 @@ func (r *ModuleRepository) GetModulesByCourseId(courseID string) ([]model.Module
 }
 
 func (r *ModuleRepository) GetModuleByOrder(courseID string, order int) (*model.Module, error) <span class="cov0" title="0">{
-        filter := bson.M{"_id": courseID, "modules.order": order}
+        courseUUID, err := primitive.ObjectIDFromHex(courseID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("invalid course ID: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">filter := bson.M{"_id": courseUUID, "modules.order": order}
 
         var course model.Course
-        err := r.moduleCollection.FindOne(context.TODO(), filter).Decode(&amp;course)
+        err = r.moduleCollection.FindOne(context.TODO(), filter).Decode(&amp;course)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to find course: %v", err)
         }</span>
@@ -3590,10 +3632,8 @@ import (
         "courses-service/src/middleware"
         "courses-service/src/repository"
         "courses-service/src/service"
-        "io"
         "log"
         "log/slog"
-        "os"
 
         "github.com/gin-gonic/gin"
         swaggerFiles "github.com/swaggo/files"
@@ -3603,12 +3643,12 @@ import (
         "github.com/newrelic/go-agent/v3/newrelic"
 )
 
-func setUpLogger() <span class="cov8" title="1">{
-        gin.DefaultWriter = io.Discard
-        gin.DefaultErrorWriter = io.Discard
+func setUpLogger() {<span class="cov8" title="1">
+        // gin.DefaultWriter = io.Discard
+        // gin.DefaultErrorWriter = io.Discard
 
-        logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-        slog.SetDefault(logger)
+        // logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+        // slog.SetDefault(logger)
 }</span>
 
 func createRouterFromConfig(config *config.Config) *gin.Engine <span class="cov8" title="1">{
@@ -4144,7 +4184,7 @@ func NewModuleService(moduleRepository repository.ModuleRepositoryInterface) *Mo
 }</span>
 
 func (s *ModuleService) CreateModule(module schemas.CreateModuleRequest) (*model.Module, error) <span class="cov0" title="0">{
-        slog.Debug("Creating module", "module", module)
+        fmt.Printf("Creating module: %v\n", module)
         if _, err := s.moduleRepository.GetModuleByName(module.CourseID, module.Title); err == nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("module with title %s already exists in course %s", module.Title, module.CourseID)
         }</span>
