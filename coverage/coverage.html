@@ -81,11 +81,11 @@
 				
 				<option value="file12">courses-service/src/repository/enrollment_repository.go (76.6%)</option>
 				
-				<option value="file13">courses-service/src/repository/module_repository.go (1.1%)</option>
+				<option value="file13">courses-service/src/repository/module_repository.go (89.9%)</option>
 				
 				<option value="file14">courses-service/src/repository/submission_repository.go (2.4%)</option>
 				
-				<option value="file15">courses-service/src/router/router.go (95.9%)</option>
+				<option value="file15">courses-service/src/router/router.go (95.8%)</option>
 				
 				<option value="file16">courses-service/src/service/assignment_service.go (3.7%)</option>
 				
@@ -3349,6 +3349,7 @@ import (
         "context"
         "courses-service/src/model"
         "fmt"
+        "sort"
 
         "go.mongodb.org/mongo-driver/bson"
         "go.mongodb.org/mongo-driver/bson/primitive"
@@ -3365,37 +3366,37 @@ func NewModuleRepository(db *mongo.Client, dbName string) *ModuleRepository <spa
         return &amp;ModuleRepository{db: db, dbName: dbName, moduleCollection: db.Database(dbName).Collection("courses")}
 }</span>
 
-func (r *ModuleRepository) GetNextModuleOrder(courseID string) (int, error) <span class="cov0" title="0">{
+func (r *ModuleRepository) GetNextModuleOrder(courseID string) (int, error) <span class="cov8" title="1">{
         var course model.Course
         courseUUID, err := primitive.ObjectIDFromHex(courseID)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return 0, fmt.Errorf("invalid course ID: %v", err)
         }</span>
-        <span class="cov0" title="0">filter := bson.M{"_id": courseUUID}
+        <span class="cov8" title="1">filter := bson.M{"_id": courseUUID}
         err = r.moduleCollection.FindOne(context.TODO(), filter).Decode(&amp;course)
         if err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to find course: %v", err)
         }</span>
 
-        <span class="cov0" title="0">maxOrder := 0
-        for _, module := range course.Modules </span><span class="cov0" title="0">{
-                if module.Order &gt; maxOrder </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">maxOrder := 0
+        for _, module := range course.Modules </span><span class="cov8" title="1">{
+                if module.Order &gt; maxOrder </span><span class="cov8" title="1">{
                         maxOrder = module.Order
                 }</span>
         }
 
-        <span class="cov0" title="0">return maxOrder + 1, nil</span>
+        <span class="cov8" title="1">return maxOrder + 1, nil</span>
 }
 
-func (r *ModuleRepository) CreateModule(courseID string, module model.Module) (*model.Module, error) <span class="cov0" title="0">{
+func (r *ModuleRepository) CreateModule(courseID string, module model.Module) (*model.Module, error) <span class="cov8" title="1">{
         module.ID = primitive.NewObjectID()
 
         courseUUID, err := primitive.ObjectIDFromHex(courseID)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, fmt.Errorf("invalid course ID: %v", err)
         }</span>
 
-        <span class="cov0" title="0">filter := bson.M{"_id": courseUUID}
+        <span class="cov8" title="1">filter := bson.M{"_id": courseUUID}
         update := bson.M{"$push": bson.M{"modules": module}}
 
         var course model.Course
@@ -3404,62 +3405,180 @@ func (r *ModuleRepository) CreateModule(courseID string, module model.Module) (*
                 return nil, fmt.Errorf("failed to create module: %v", err)
         }</span>
 
-        <span class="cov0" title="0">return &amp;module, nil</span>
+        <span class="cov8" title="1">return &amp;module, nil</span>
 }
 
-func (r *ModuleRepository) UpdateModule(id string, module model.Module) (*model.Module, error) <span class="cov0" title="0">{
+// reorderModules adjusts the order of modules when a module's position changes
+func (r *ModuleRepository) reorderModules(modules []model.Module, targetModuleID primitive.ObjectID, newOrder int, oldOrder int) <span class="cov8" title="1">{
+        for i := range modules </span><span class="cov8" title="1">{
+                if modules[i].ID == targetModuleID </span><span class="cov8" title="1">{
+                        // This is the target module, set its new order
+                        modules[i].Order = newOrder
+                }</span> else<span class="cov8" title="1"> {
+                        // Adjust order for other modules
+                        currentOrder := modules[i].Order
+
+                        if oldOrder &lt; newOrder </span><span class="cov0" title="0">{
+                                // Module moved down: shift modules between oldOrder+1 and newOrder up
+                                if currentOrder &gt; oldOrder &amp;&amp; currentOrder &lt;= newOrder </span><span class="cov0" title="0">{
+                                        modules[i].Order = currentOrder - 1
+                                }</span>
+                        } else<span class="cov8" title="1"> if oldOrder &gt; newOrder </span><span class="cov8" title="1">{
+                                // Module moved up: shift modules between newOrder and oldOrder-1 down
+                                if currentOrder &gt;= newOrder &amp;&amp; currentOrder &lt; oldOrder </span><span class="cov8" title="1">{
+                                        modules[i].Order = currentOrder + 1
+                                }</span>
+                        }
+                }
+        }
+}
+
+// updateModuleFields updates the non-order fields of a target module
+func (r *ModuleRepository) updateModuleFields(modules []model.Module, targetModuleID primitive.ObjectID, updatedModule model.Module) <span class="cov8" title="1">{
+        for i := range modules </span><span class="cov8" title="1">{
+                if modules[i].ID == targetModuleID </span><span class="cov8" title="1">{
+                        if updatedModule.Title != "" </span><span class="cov8" title="1">{
+                                modules[i].Title = updatedModule.Title
+                        }</span>
+                        <span class="cov8" title="1">if updatedModule.Description != "" </span><span class="cov8" title="1">{
+                                modules[i].Description = updatedModule.Description
+                        }</span>
+                        <span class="cov8" title="1">if updatedModule.Content != "" </span><span class="cov8" title="1">{
+                                modules[i].Content = updatedModule.Content
+                        }</span>
+                        <span class="cov8" title="1">break</span>
+                }
+        }
+}
+
+func (r *ModuleRepository) UpdateModule(id string, module model.Module) (*model.Module, error) <span class="cov8" title="1">{
         moduleUUID, err := primitive.ObjectIDFromHex(id)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("invalid module ID: %v", err)
         }</span>
 
-        <span class="cov0" title="0">filter := bson.M{"modules._id": moduleUUID}
-        update := bson.M{"$set": module}
-
-        var course model.Course
-        err = r.moduleCollection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&amp;course)
+        // First, get the current module and course to check if order has changed
+        <span class="cov8" title="1">filter := bson.M{"modules._id": moduleUUID}
+        var currentCourse model.Course
+        err = r.moduleCollection.FindOne(context.TODO(), filter).Decode(&amp;currentCourse)
         if err != nil </span><span class="cov0" title="0">{
-                return nil, fmt.Errorf("failed to update module: %v", err)
+                return nil, fmt.Errorf("failed to find module: %v", err)
         }</span>
 
-        <span class="cov0" title="0">return &amp;course.Modules[0], nil</span>
+        // Find the current module
+        <span class="cov8" title="1">var currentModule *model.Module
+        for _, mod := range currentCourse.Modules </span><span class="cov8" title="1">{
+                if mod.ID == moduleUUID </span><span class="cov8" title="1">{
+                        currentModule = &amp;mod
+                        break</span>
+                }
+        }
+
+        <span class="cov8" title="1">if currentModule == nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("module not found")
+        }</span>
+
+        // Check if order has changed
+        <span class="cov8" title="1">if module.Order != 0 &amp;&amp; module.Order != currentModule.Order </span><span class="cov8" title="1">{
+                // Update module fields first
+                r.updateModuleFields(currentCourse.Modules, moduleUUID, module)
+
+                // Reorder modules
+                r.reorderModules(currentCourse.Modules, moduleUUID, module.Order, currentModule.Order)
+
+                // Sort modules by order to maintain consistency
+                sort.Slice(currentCourse.Modules, func(i, j int) bool </span><span class="cov8" title="1">{
+                        return currentCourse.Modules[i].Order &lt; currentCourse.Modules[j].Order
+                }</span>)
+
+                // Update the entire course with reordered modules
+                <span class="cov8" title="1">courseFilter := bson.M{"_id": currentCourse.ID}
+                update := bson.M{"$set": bson.M{"modules": currentCourse.Modules}}
+
+                _, err = r.moduleCollection.UpdateOne(context.TODO(), courseFilter, update)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to update module order: %v", err)
+                }</span>
+
+                // Return the updated module
+                <span class="cov8" title="1">for _, mod := range currentCourse.Modules </span><span class="cov8" title="1">{
+                        if mod.ID == moduleUUID </span><span class="cov8" title="1">{
+                                return &amp;mod, nil
+                        }</span>
+                }
+        } else<span class="cov8" title="1"> {
+                // No order change, just update the specific module fields
+                updateFields := bson.M{}
+                if module.Title != "" </span><span class="cov8" title="1">{
+                        updateFields["modules.$.title"] = module.Title
+                }</span>
+                <span class="cov8" title="1">if module.Description != "" </span><span class="cov8" title="1">{
+                        updateFields["modules.$.description"] = module.Description
+                }</span>
+                <span class="cov8" title="1">if module.Content != "" </span><span class="cov8" title="1">{
+                        updateFields["modules.$.content"] = module.Content
+                }</span>
+
+                <span class="cov8" title="1">if len(updateFields) &gt; 0 </span><span class="cov8" title="1">{
+                        update := bson.M{"$set": updateFields}
+                        _, err = r.moduleCollection.UpdateOne(context.TODO(), filter, update)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return nil, fmt.Errorf("failed to update module: %v", err)
+                        }</span>
+                }
+
+                // Get the updated course to return the module
+                <span class="cov8" title="1">err = r.moduleCollection.FindOne(context.TODO(), filter).Decode(&amp;currentCourse)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to find updated module: %v", err)
+                }</span>
+
+                // Return the updated module
+                <span class="cov8" title="1">for _, mod := range currentCourse.Modules </span><span class="cov8" title="1">{
+                        if mod.ID == moduleUUID </span><span class="cov8" title="1">{
+                                return &amp;mod, nil
+                        }</span>
+                }
+        }
+
+        <span class="cov0" title="0">return nil, fmt.Errorf("module not found after update")</span>
 }
 
-func (r *ModuleRepository) DeleteModule(id string) error <span class="cov0" title="0">{
+func (r *ModuleRepository) DeleteModule(id string) error <span class="cov8" title="1">{
         moduleUUID, err := primitive.ObjectIDFromHex(id)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return fmt.Errorf("invalid module ID: %v", err)
         }</span>
 
-        <span class="cov0" title="0">filter := bson.M{"modules._id": moduleUUID}
+        <span class="cov8" title="1">filter := bson.M{"modules._id": moduleUUID}
         update := bson.M{"$pull": bson.M{"modules": bson.M{"_id": moduleUUID}}}
 
         var course model.Course
         err = r.moduleCollection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&amp;course)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return fmt.Errorf("failed to delete module: %v", err)
         }</span>
 
-        <span class="cov0" title="0">return nil</span>
+        <span class="cov8" title="1">return nil</span>
 }
 
-func (r *ModuleRepository) GetModuleByName(courseID string, moduleName string) (*model.Module, error) <span class="cov0" title="0">{
+func (r *ModuleRepository) GetModuleByName(courseID string, moduleName string) (*model.Module, error) <span class="cov8" title="1">{
         courseUUID, err := primitive.ObjectIDFromHex(courseID)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, fmt.Errorf("invalid course ID: %v", err)
         }</span>
 
-        <span class="cov0" title="0">filter := bson.M{"_id": courseUUID, "modules.title": moduleName}
+        <span class="cov8" title="1">filter := bson.M{"_id": courseUUID, "modules.title": moduleName}
 
         var course model.Course
         err = r.moduleCollection.FindOne(context.TODO(), filter).Decode(&amp;course)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, fmt.Errorf("failed to find course or module: %v", err)
         }</span>
 
         // Find the module with the specified name
-        <span class="cov0" title="0">for _, module := range course.Modules </span><span class="cov0" title="0">{
-                if module.Title == moduleName </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">for _, module := range course.Modules </span><span class="cov8" title="1">{
+                if module.Title == moduleName </span><span class="cov8" title="1">{
                         return &amp;module, nil
                 }</span>
         }
@@ -3467,30 +3586,37 @@ func (r *ModuleRepository) GetModuleByName(courseID string, moduleName string) (
         <span class="cov0" title="0">return nil, fmt.Errorf("module with name %s not found in course %s", moduleName, courseID)</span>
 }
 
-func (r *ModuleRepository) GetModuleById(id string) (*model.Module, error) <span class="cov0" title="0">{
+func (r *ModuleRepository) GetModuleById(id string) (*model.Module, error) <span class="cov8" title="1">{
         moduleUUID, err := primitive.ObjectIDFromHex(id)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, fmt.Errorf("invalid module ID: %v", err)
         }</span>
 
-        <span class="cov0" title="0">filter := bson.M{"modules._id": moduleUUID}
+        <span class="cov8" title="1">filter := bson.M{"modules._id": moduleUUID}
 
         var course model.Course
         err = r.moduleCollection.FindOne(context.TODO(), filter).Decode(&amp;course)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, fmt.Errorf("failed to find course or module: %v", err)
         }</span>
 
-        <span class="cov0" title="0">return &amp;course.Modules[0], nil</span>
+        // Find the module with the specified ID
+        <span class="cov8" title="1">for _, module := range course.Modules </span><span class="cov8" title="1">{
+                if module.ID == moduleUUID </span><span class="cov8" title="1">{
+                        return &amp;module, nil
+                }</span>
+        }
+
+        <span class="cov0" title="0">return nil, fmt.Errorf("module with ID %s not found", id)</span>
 }
 
-func (r *ModuleRepository) GetModulesByCourseId(courseID string) ([]model.Module, error) <span class="cov0" title="0">{
+func (r *ModuleRepository) GetModulesByCourseId(courseID string) ([]model.Module, error) <span class="cov8" title="1">{
         courseUUID, err := primitive.ObjectIDFromHex(courseID)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, fmt.Errorf("invalid course ID: %v", err)
         }</span>
 
-        <span class="cov0" title="0">filter := bson.M{"_id": courseUUID}
+        <span class="cov8" title="1">filter := bson.M{"_id": courseUUID}
 
         var course model.Course
         err = r.moduleCollection.FindOne(context.TODO(), filter).Decode(&amp;course)
@@ -3498,25 +3624,30 @@ func (r *ModuleRepository) GetModulesByCourseId(courseID string) ([]model.Module
                 return nil, fmt.Errorf("failed to find course: %v", err)
         }</span>
 
-        <span class="cov0" title="0">return course.Modules, nil</span>
+        // Sort modules by order before returning
+        <span class="cov8" title="1">sort.Slice(course.Modules, func(i, j int) bool </span><span class="cov8" title="1">{
+                return course.Modules[i].Order &lt; course.Modules[j].Order
+        }</span>)
+
+        <span class="cov8" title="1">return course.Modules, nil</span>
 }
 
-func (r *ModuleRepository) GetModuleByOrder(courseID string, order int) (*model.Module, error) <span class="cov0" title="0">{
+func (r *ModuleRepository) GetModuleByOrder(courseID string, order int) (*model.Module, error) <span class="cov8" title="1">{
         courseUUID, err := primitive.ObjectIDFromHex(courseID)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, fmt.Errorf("invalid course ID: %v", err)
         }</span>
 
-        <span class="cov0" title="0">filter := bson.M{"_id": courseUUID, "modules.order": order}
+        <span class="cov8" title="1">filter := bson.M{"_id": courseUUID, "modules.order": order}
 
         var course model.Course
         err = r.moduleCollection.FindOne(context.TODO(), filter).Decode(&amp;course)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, fmt.Errorf("failed to find course: %v", err)
         }</span>
 
-        <span class="cov0" title="0">for _, module := range course.Modules </span><span class="cov0" title="0">{
-                if module.Order == order </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">for _, module := range course.Modules </span><span class="cov8" title="1">{
+                if module.Order == order </span><span class="cov8" title="1">{
                         return &amp;module, nil
                 }</span>
         }
@@ -3643,14 +3774,6 @@ import (
         "github.com/newrelic/go-agent/v3/newrelic"
 )
 
-func setUpLogger() {<span class="cov8" title="1">
-        // gin.DefaultWriter = io.Discard
-        // gin.DefaultErrorWriter = io.Discard
-
-        // logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-        // slog.SetDefault(logger)
-}</span>
-
 func createRouterFromConfig(config *config.Config) *gin.Engine <span class="cov8" title="1">{
         if config.Environment == "production" </span><span class="cov0" title="0">{
                 gin.SetMode(gin.ReleaseMode)
@@ -3728,7 +3851,6 @@ func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.Enrollmen
 }</span>
 
 func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
-        setUpLogger()
         r := createRouterFromConfig(config)
         addNewRelicMiddleware(r)
 
