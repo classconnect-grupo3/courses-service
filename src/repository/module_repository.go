@@ -22,8 +22,12 @@ func NewModuleRepository(db *mongo.Client, dbName string) *ModuleRepository {
 
 func (r *ModuleRepository) GetNextModuleOrder(courseID string) (int, error) {
 	var course model.Course
-	filter := bson.M{"_id": courseID}
-	err := r.moduleCollection.FindOne(context.TODO(), filter).Decode(&course)
+	courseUUID, err := primitive.ObjectIDFromHex(courseID)
+	if err != nil {
+		return 0, fmt.Errorf("invalid course ID: %v", err)
+	}
+	filter := bson.M{"_id": courseUUID}
+	err = r.moduleCollection.FindOne(context.TODO(), filter).Decode(&course)
 	if err != nil {
 		return 0, fmt.Errorf("failed to find course: %v", err)
 	}
@@ -41,11 +45,16 @@ func (r *ModuleRepository) GetNextModuleOrder(courseID string) (int, error) {
 func (r *ModuleRepository) CreateModule(courseID string, module model.Module) (*model.Module, error) {
 	module.ID = primitive.NewObjectID()
 
-	filter := bson.M{"_id": courseID}
+	courseUUID, err := primitive.ObjectIDFromHex(courseID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid course ID: %v", err)
+	}
+
+	filter := bson.M{"_id": courseUUID}
 	update := bson.M{"$push": bson.M{"modules": module}}
 
 	var course model.Course
-	err := r.moduleCollection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&course)
+	err = r.moduleCollection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&course)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create module: %v", err)
 	}
@@ -54,11 +63,16 @@ func (r *ModuleRepository) CreateModule(courseID string, module model.Module) (*
 }
 
 func (r *ModuleRepository) UpdateModule(id string, module model.Module) (*model.Module, error) {
-	filter := bson.M{"modules._id": id}
+	moduleUUID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid module ID: %v", err)
+	}
+
+	filter := bson.M{"modules._id": moduleUUID}
 	update := bson.M{"$set": module}
 
 	var course model.Course
-	err := r.moduleCollection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&course)
+	err = r.moduleCollection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&course)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update module: %v", err)
 	}
@@ -67,11 +81,16 @@ func (r *ModuleRepository) UpdateModule(id string, module model.Module) (*model.
 }
 
 func (r *ModuleRepository) DeleteModule(id string) error {
-	filter := bson.M{"modules._id": id}
-	update := bson.M{"$pull": bson.M{"modules": bson.M{"_id": id}}}
+	moduleUUID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return fmt.Errorf("invalid module ID: %v", err)
+	}
+
+	filter := bson.M{"modules._id": moduleUUID}
+	update := bson.M{"$pull": bson.M{"modules": bson.M{"_id": moduleUUID}}}
 
 	var course model.Course
-	err := r.moduleCollection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&course)
+	err = r.moduleCollection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&course)
 	if err != nil {
 		return fmt.Errorf("failed to delete module: %v", err)
 	}
@@ -80,10 +99,15 @@ func (r *ModuleRepository) DeleteModule(id string) error {
 }
 
 func (r *ModuleRepository) GetModuleByName(courseID string, moduleName string) (*model.Module, error) {
-	filter := bson.M{"_id": courseID, "modules.title": moduleName}
+	courseUUID, err := primitive.ObjectIDFromHex(courseID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid course ID: %v", err)
+	}
+
+	filter := bson.M{"_id": courseUUID, "modules.title": moduleName}
 
 	var course model.Course
-	err := r.moduleCollection.FindOne(context.TODO(), filter).Decode(&course)
+	err = r.moduleCollection.FindOne(context.TODO(), filter).Decode(&course)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find course or module: %v", err)
 	}
@@ -99,10 +123,15 @@ func (r *ModuleRepository) GetModuleByName(courseID string, moduleName string) (
 }
 
 func (r *ModuleRepository) GetModuleById(id string) (*model.Module, error) {
-	filter := bson.M{"modules._id": id}
+	moduleUUID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid module ID: %v", err)
+	}
+
+	filter := bson.M{"modules._id": moduleUUID}
 
 	var course model.Course
-	err := r.moduleCollection.FindOne(context.TODO(), filter).Decode(&course)
+	err = r.moduleCollection.FindOne(context.TODO(), filter).Decode(&course)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find course or module: %v", err)
 	}
@@ -111,10 +140,15 @@ func (r *ModuleRepository) GetModuleById(id string) (*model.Module, error) {
 }
 
 func (r *ModuleRepository) GetModulesByCourseId(courseID string) ([]model.Module, error) {
-	filter := bson.M{"_id": courseID}
+	courseUUID, err := primitive.ObjectIDFromHex(courseID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid course ID: %v", err)
+	}
+
+	filter := bson.M{"_id": courseUUID}
 
 	var course model.Course
-	err := r.moduleCollection.FindOne(context.TODO(), filter).Decode(&course)
+	err = r.moduleCollection.FindOne(context.TODO(), filter).Decode(&course)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find course: %v", err)
 	}
@@ -123,10 +157,15 @@ func (r *ModuleRepository) GetModulesByCourseId(courseID string) ([]model.Module
 }
 
 func (r *ModuleRepository) GetModuleByOrder(courseID string, order int) (*model.Module, error) {
-	filter := bson.M{"_id": courseID, "modules.order": order}
+	courseUUID, err := primitive.ObjectIDFromHex(courseID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid course ID: %v", err)
+	}
+
+	filter := bson.M{"_id": courseUUID, "modules.order": order}
 
 	var course model.Course
-	err := r.moduleCollection.FindOne(context.TODO(), filter).Decode(&course)
+	err = r.moduleCollection.FindOne(context.TODO(), filter).Decode(&course)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find course: %v", err)
 	}

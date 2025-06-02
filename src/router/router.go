@@ -7,10 +7,8 @@ import (
 	"courses-service/src/middleware"
 	"courses-service/src/repository"
 	"courses-service/src/service"
-	"io"
 	"log"
 	"log/slog"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -21,11 +19,11 @@ import (
 )
 
 func setUpLogger() {
-	gin.DefaultWriter = io.Discard
-	gin.DefaultErrorWriter = io.Discard
+	// gin.DefaultWriter = io.Discard
+	// gin.DefaultErrorWriter = io.Discard
 
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	slog.SetDefault(logger)
+	// logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	// slog.SetDefault(logger)
 }
 
 func createRouterFromConfig(config *config.Config) *gin.Engine {

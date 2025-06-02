@@ -18,7 +18,7 @@ func NewModuleService(moduleRepository repository.ModuleRepositoryInterface) *Mo
 }
 
 func (s *ModuleService) CreateModule(module schemas.CreateModuleRequest) (*model.Module, error) {
-	slog.Debug("Creating module", "module", module)
+	fmt.Printf("Creating module: %v\n", module)
 	if _, err := s.moduleRepository.GetModuleByName(module.CourseID, module.Title); err == nil {
 		return nil, fmt.Errorf("module with title %s already exists in course %s", module.Title, module.CourseID)
 	}
