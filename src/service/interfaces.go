@@ -30,6 +30,7 @@ type ModuleServiceInterface interface {
 
 // EnrollmentServiceInterface define los métodos que debe implementar un servicio de enrollment
 type EnrollmentServiceInterface interface {
+	GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error)
 	EnrollStudent(studentID, courseID string) error
 	UnenrollStudent(studentID, courseID string) error
 }
