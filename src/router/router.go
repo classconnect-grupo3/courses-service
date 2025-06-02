@@ -84,6 +84,11 @@ func InitializeSubmissionRoutes(r *gin.Engine, controller *controller.Submission
 	studentAuthGroup.POST("/assignments/:assignmentId/submissions/:id/submit", controller.SubmitSubmission)
 	studentAuthGroup.GET("/students/:studentUUID/submissions", controller.GetSubmissionsByStudent)
 
+	// Aplicar el middleware de autenticación de docentes para calificar
+	teacherAuthGroup := r.Group("")
+	teacherAuthGroup.Use(middleware.TeacherAuth())
+	teacherAuthGroup.PUT("/assignments/:assignmentId/submissions/:id/grade", controller.GradeSubmission)
+
 	// Esta ruta no requiere autenticación de estudiante
 	r.GET("/assignments/:assignmentId/submissions", controller.GetSubmissionsByAssignment)
 }
@@ -116,7 +121,7 @@ func NewRouter(config *config.Config) *gin.Engine {
 	courseService := service.NewCourseService(courseRepo, enrollmentRepo)
 	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
 	assignmentService := service.NewAssignmentService(assignmentRepository, courseService)
-	submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository)
+	submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository, courseService)
 	moduleService := service.NewModuleService(moduleRepository)
 
 	courseController := controller.NewCourseController(courseService)

@@ -18,8 +18,6 @@ type Answer struct {
 	QuestionID string      `json:"question_id" bson:"question_id"`
 	Content    interface{} `json:"content" bson:"content"` // Can be string, []string for multiple choice, or file URL
 	Type       string      `json:"type" bson:"type"`       // text, multiple_choice, file
-	Score      *float64    `json:"score,omitempty" bson:"score,omitempty"`
-	Feedback   string      `json:"feedback,omitempty" bson:"feedback,omitempty"`
 }
 
 type Submission struct {
