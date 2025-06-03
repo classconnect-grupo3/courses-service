@@ -87,7 +87,7 @@ func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) {
 
 		_, err = ch.QueueDeclare(
 			"assignment_created_queue",
-			true,
+			false,
 			false,
 			false,
 			false,
