@@ -86,7 +86,7 @@ func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) {
 		defer ch.Close()
 
 		_, err = ch.QueueDeclare(
-			"assignment_created_queue",
+			os.Getenv("NOTIFICATIONS_QUEUE_NAME"),
 			false,
 			false,
 			false,
@@ -114,7 +114,7 @@ func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) {
 
 		err = ch.Publish(
 			"",
-			"assignment_created_queue",
+			os.Getenv("NOTIFICATIONS_QUEUE_NAME"),
 			false,
 			false,
 			amqp091.Publishing{
