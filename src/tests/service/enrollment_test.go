@@ -60,6 +60,16 @@ func (m *MockEnrollmentRepositoryForEnrollmentService) DeleteEnrollment(studentI
 	return nil
 }
 
+func (m *MockEnrollmentRepositoryForEnrollmentService) SetFavouriteCourse(studentID, courseID string) error {
+	if studentID == "error-setting-favourite-student" {
+		return errors.New("Error setting favourite course")
+	}
+	if studentID == "non-enrolled-student" && courseID == "valid-course" {
+		return errors.New("Error setting favourite course for student non-enrolled-student in course valid-course")
+	}
+	return nil
+}
+
 type MockCourseRepositoryForEnrollment struct{}
 
 func (m *MockCourseRepositoryForEnrollment) GetCourseById(id string) (*model.Course, error) {
@@ -287,4 +297,67 @@ func TestGetEnrollmentsByCourseIdWithRepositoryError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, enrollments)
 	assert.Contains(t, err.Error(), "error getting enrollments by course ID")
+}
+
+func TestSetFavouriteCourse(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	err := enrollmentService.SetFavouriteCourse("already-enrolled-student", "valid-course")
+	assert.NoError(t, err)
+}
+
+func TestSetFavouriteCourseWithEmptyStudentID(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	err := enrollmentService.SetFavouriteCourse("", "valid-course")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "student ID and course ID are required")
+}
+
+func TestSetFavouriteCourseWithEmptyCourseID(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	err := enrollmentService.SetFavouriteCourse("valid-student", "")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "student ID and course ID are required")
+}
+
+func TestSetFavouriteCourseWithNonExistentCourse(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	err := enrollmentService.SetFavouriteCourse("valid-student", "non-existent-course")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "course non-existent-course not found for favourite course")
+}
+
+func TestSetFavouriteCourseAsTeacher(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	err := enrollmentService.SetFavouriteCourse("teacher-student", "teacher-course")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "teacher teacher-student cannot set favourite course teacher-course")
+}
+
+func TestSetFavouriteCourseNotEnrolled(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	err := enrollmentService.SetFavouriteCourse("valid-student", "valid-course")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "student valid-student is not enrolled in course valid-course")
+}
+
+func TestSetFavouriteCourseWithErrorCheckingEnrollment(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	err := enrollmentService.SetFavouriteCourse("error-checking-student", "valid-course")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "error checking if student error-checking-student is enrolled in course valid-course")
+}
+
+func TestSetFavouriteCourseWithRepositoryError(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	err := enrollmentService.SetFavouriteCourse("error-setting-favourite-student", "valid-course")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "student error-setting-favourite-student is not enrolled in course valid-course")
 }

@@ -33,6 +33,7 @@ type EnrollmentServiceInterface interface {
 	GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error)
 	EnrollStudent(studentID, courseID string) error
 	UnenrollStudent(studentID, courseID string) error
+	SetFavouriteCourse(studentID, courseID string) error
 }
 
 type AssignmentServiceInterface interface {

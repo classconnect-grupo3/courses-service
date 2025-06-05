@@ -14,6 +14,11 @@ import (
 
 type MockEnrollmentRepository struct{}
 
+// SetFavouriteCourse implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepository) SetFavouriteCourse(studentID string, courseID string) error {
+	return nil
+}
+
 // GetEnrollmentsByCourseId implements repository.EnrollmentRepositoryInterface.
 func (m *MockEnrollmentRepository) GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error) {
 	panic("unimplemented")

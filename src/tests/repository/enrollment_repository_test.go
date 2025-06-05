@@ -338,3 +338,118 @@ func TestGetEnrollmentsByCourseIdWithNonExistentCourse(t *testing.T) {
 	assert.NotNil(t, enrollments)
 	assert.Equal(t, 0, len(enrollments))
 }
+
+func TestSetFavouriteCourse(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Create a course first
+	course := model.Course{
+		Title:          "Test Course",
+		Description:    "Test Description",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	// Create enrollment
+	enrollment := model.Enrollment{
+		StudentID:  "student-123",
+		CourseID:   createdCourse.ID.Hex(),
+		EnrolledAt: time.Now(),
+		Status:     model.EnrollmentStatusActive,
+		Favourite:  false, // Initially not favourite
+		UpdatedAt:  time.Now(),
+	}
+
+	err = enrollmentRepository.CreateEnrollment(enrollment, createdCourse)
+	assert.NoError(t, err)
+
+	// Set the course as favourite
+	err = enrollmentRepository.SetFavouriteCourse("student-123", createdCourse.ID.Hex())
+	assert.NoError(t, err)
+
+	// Verify the course is now marked as favourite
+	enrollments, err := enrollmentRepository.GetEnrollmentsByCourseId(createdCourse.ID.Hex())
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(enrollments))
+	assert.True(t, enrollments[0].Favourite)
+	assert.Equal(t, "student-123", enrollments[0].StudentID)
+}
+
+func TestSetFavouriteCourseWithNonExistentEnrollment(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Create a course but no enrollment
+	course := model.Course{
+		Title:          "Test Course",
+		Description:    "Test Description",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	// Try to set favourite for non-existent enrollment
+	err = enrollmentRepository.SetFavouriteCourse("non-existent-student", createdCourse.ID.Hex())
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "enrollment not found for student")
+}
+
+func TestSetFavouriteMultipleTimes(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Create a course first
+	course := model.Course{
+		Title:          "Test Course",
+		Description:    "Test Description",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	// Create enrollment
+	enrollment := model.Enrollment{
+		StudentID:  "student-123",
+		CourseID:   createdCourse.ID.Hex(),
+		EnrolledAt: time.Now(),
+		Status:     model.EnrollmentStatusActive,
+		Favourite:  false,
+		UpdatedAt:  time.Now(),
+	}
+
+	err = enrollmentRepository.CreateEnrollment(enrollment, createdCourse)
+	assert.NoError(t, err)
+
+	// Set favourite multiple times (should not error)
+	err = enrollmentRepository.SetFavouriteCourse("student-123", createdCourse.ID.Hex())
+	assert.NoError(t, err)
+
+	err = enrollmentRepository.SetFavouriteCourse("student-123", createdCourse.ID.Hex())
+	assert.NoError(t, err)
+
+	// Verify the course is still marked as favourite
+	enrollments, err := enrollmentRepository.GetEnrollmentsByCourseId(createdCourse.ID.Hex())
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(enrollments))
+	assert.True(t, enrollments[0].Favourite)
+}

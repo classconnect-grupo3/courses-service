@@ -111,3 +111,31 @@ func (c *EnrollmentController) GetEnrollmentsByCourseId(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, enrollments)
 }
+
+func (c *EnrollmentController) SetFavouriteCourse(ctx *gin.Context) {
+	slog.Debug("Setting favourite course", "courseId", ctx.Param("id"))
+	courseID := ctx.Param("id")
+
+	if courseID == "" {
+		slog.Error("Invalid course ID")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid course ID"})
+		return
+	}
+
+	var favouriteCourseRequest schemas.SetFavouriteCourseRequest
+	if err := ctx.ShouldBindJSON(&favouriteCourseRequest); err != nil {
+		slog.Error("Error binding favourite course request", "error", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := c.enrollmentService.SetFavouriteCourse(favouriteCourseRequest.StudentID, courseID)
+	if err != nil {
+		slog.Error("Error setting favourite course", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	slog.Debug("Favourite course set", "studentId", favouriteCourseRequest.StudentID, "courseId", courseID)
+	ctx.JSON(http.StatusOK, gin.H{"message": "Favourite course set"})
+}

@@ -15,3 +15,11 @@ type UnenrollStudentRequest struct {
 type UnenrollStudentResponse struct {
 	Message string `json:"message"`
 }
+
+type SetFavouriteCourseRequest struct {
+	StudentID string `json:"student_id" binding:"required"`
+}
+
+type SetFavouriteCourseResponse struct {
+	Message string `json:"message"`
+}
