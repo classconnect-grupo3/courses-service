@@ -98,6 +98,7 @@ func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.Enrollmen
 	r.POST("/courses/:id/enroll", controller.EnrollStudent)
 	r.DELETE("/courses/:id/unenroll", controller.UnenrollStudent)
 	r.POST("/courses/:id/favourite", controller.SetFavouriteCourse)
+	r.DELETE("/courses/:id/favourite", controller.UnsetFavouriteCourse)
 }
 
 func NewRouter(config *config.Config) *gin.Engine {

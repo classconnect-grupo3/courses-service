@@ -140,3 +140,25 @@ func (r *EnrollmentRepository) SetFavouriteCourse(studentID, courseID string) er
 	}
 	return nil
 }
+
+func (r *EnrollmentRepository) UnsetFavouriteCourse(studentID, courseID string) error {
+	filter := bson.M{
+		"student_id": studentID,
+		"course_id":  courseID,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"favourite": false,
+		},
+	}
+
+	res, err := r.enrollmentCollection.UpdateOne(context.TODO(), filter, update)
+	if res.MatchedCount == 0 {
+		return fmt.Errorf("enrollment not found for student %s in course %s", studentID, courseID)
+	}
+	if err != nil {
+		return fmt.Errorf("error unsetting favourite course for student %s in course %s", studentID, courseID)
+	}
+	return nil
+}

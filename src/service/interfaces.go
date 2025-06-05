@@ -34,6 +34,7 @@ type EnrollmentServiceInterface interface {
 	EnrollStudent(studentID, courseID string) error
 	UnenrollStudent(studentID, courseID string) error
 	SetFavouriteCourse(studentID, courseID string) error
+	UnsetFavouriteCourse(studentID, courseID string) error
 }
 
 type AssignmentServiceInterface interface {

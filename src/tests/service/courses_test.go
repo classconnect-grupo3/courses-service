@@ -19,6 +19,11 @@ func (m *MockEnrollmentRepository) SetFavouriteCourse(studentID string, courseID
 	return nil
 }
 
+// UnsetFavouriteCourse implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepository) UnsetFavouriteCourse(studentID string, courseID string) error {
+	return nil
+}
+
 // GetEnrollmentsByCourseId implements repository.EnrollmentRepositoryInterface.
 func (m *MockEnrollmentRepository) GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error) {
 	panic("unimplemented")

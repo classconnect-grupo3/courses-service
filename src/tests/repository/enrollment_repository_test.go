@@ -453,3 +453,118 @@ func TestSetFavouriteMultipleTimes(t *testing.T) {
 	assert.Equal(t, 1, len(enrollments))
 	assert.True(t, enrollments[0].Favourite)
 }
+
+func TestUnsetFavouriteCourse(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Create a course first
+	course := model.Course{
+		Title:          "Test Course",
+		Description:    "Test Description",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	// Create enrollment with favourite set to true
+	enrollment := model.Enrollment{
+		StudentID:  "student-123",
+		CourseID:   createdCourse.ID.Hex(),
+		EnrolledAt: time.Now(),
+		Status:     model.EnrollmentStatusActive,
+		Favourite:  true, // Initially favourite
+		UpdatedAt:  time.Now(),
+	}
+
+	err = enrollmentRepository.CreateEnrollment(enrollment, createdCourse)
+	assert.NoError(t, err)
+
+	// Unset the course as favourite
+	err = enrollmentRepository.UnsetFavouriteCourse("student-123", createdCourse.ID.Hex())
+	assert.NoError(t, err)
+
+	// Verify the course is now not marked as favourite
+	enrollments, err := enrollmentRepository.GetEnrollmentsByCourseId(createdCourse.ID.Hex())
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(enrollments))
+	assert.False(t, enrollments[0].Favourite)
+	assert.Equal(t, "student-123", enrollments[0].StudentID)
+}
+
+func TestUnsetFavouriteCourseWithNonExistentEnrollment(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Create a course but no enrollment
+	course := model.Course{
+		Title:          "Test Course",
+		Description:    "Test Description",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	// Try to unset favourite for non-existent enrollment
+	err = enrollmentRepository.UnsetFavouriteCourse("non-existent-student", createdCourse.ID.Hex())
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "enrollment not found for student")
+}
+
+func TestUnsetFavouriteMultipleTimes(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Create a course first
+	course := model.Course{
+		Title:          "Test Course",
+		Description:    "Test Description",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	// Create enrollment with favourite set to true
+	enrollment := model.Enrollment{
+		StudentID:  "student-123",
+		CourseID:   createdCourse.ID.Hex(),
+		EnrolledAt: time.Now(),
+		Status:     model.EnrollmentStatusActive,
+		Favourite:  true,
+		UpdatedAt:  time.Now(),
+	}
+
+	err = enrollmentRepository.CreateEnrollment(enrollment, createdCourse)
+	assert.NoError(t, err)
+
+	// Unset favourite multiple times (should not error)
+	err = enrollmentRepository.UnsetFavouriteCourse("student-123", createdCourse.ID.Hex())
+	assert.NoError(t, err)
+
+	err = enrollmentRepository.UnsetFavouriteCourse("student-123", createdCourse.ID.Hex())
+	assert.NoError(t, err)
+
+	// Verify the course is still not marked as favourite
+	enrollments, err := enrollmentRepository.GetEnrollmentsByCourseId(createdCourse.ID.Hex())
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(enrollments))
+	assert.False(t, enrollments[0].Favourite)
+}

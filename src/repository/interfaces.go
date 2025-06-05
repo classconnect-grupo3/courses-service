@@ -34,6 +34,7 @@ type EnrollmentRepositoryInterface interface {
 	DeleteEnrollment(studentID string, course *model.Course) error
 	GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error)
 	SetFavouriteCourse(studentID, courseID string) error
+	UnsetFavouriteCourse(studentID, courseID string) error
 }
 
 type ModuleRepositoryInterface interface {

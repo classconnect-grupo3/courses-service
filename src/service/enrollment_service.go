@@ -141,3 +141,33 @@ func (s *EnrollmentService) SetFavouriteCourse(studentID, courseID string) error
 
 	return nil
 }
+
+func (s *EnrollmentService) UnsetFavouriteCourse(studentID, courseID string) error {
+	if studentID == "" || courseID == "" {
+		return fmt.Errorf("student ID and course ID are required")
+	}
+
+	course, err := s.courseRepository.GetCourseById(courseID)
+	if err != nil {
+		return fmt.Errorf("course %s not found for unset favourite course", courseID)
+	}
+
+	if course.TeacherUUID == studentID {
+		return fmt.Errorf("teacher %s cannot unset favourite course %s", studentID, courseID)
+	}
+
+	enrolled, err := s.enrollmentRepository.IsEnrolled(studentID, courseID)
+	if err != nil {
+		return fmt.Errorf("error checking if student %s is enrolled in course %s", studentID, courseID)
+	}
+	if !enrolled {
+		return fmt.Errorf("student %s is not enrolled in course %s", studentID, courseID)
+	}
+
+	err = s.enrollmentRepository.UnsetFavouriteCourse(studentID, courseID)
+	if err != nil {
+		return fmt.Errorf("error unsetting favourite course for student %s in course %s", studentID, courseID)
+	}
+
+	return nil
+}
