@@ -1,20 +1,22 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
 	"courses-service/src/model"
 	"courses-service/src/schemas"
 	"courses-service/src/service"
+
 	"github.com/gin-gonic/gin"
 )
 
 type SubmissionController struct {
-	submissionService *service.SubmissionService
+	submissionService service.SubmissionServiceInterface
 }
 
-func NewSubmissionController(submissionService *service.SubmissionService) *SubmissionController {
+func NewSubmissionController(submissionService service.SubmissionServiceInterface) *SubmissionController {
 	return &SubmissionController{
 		submissionService: submissionService,
 	}
@@ -117,6 +119,7 @@ func (c *SubmissionController) UpdateSubmission(ctx *gin.Context) {
 
 	// Validate submission ID matches URL
 	if submission.ID.Hex() != id {
+		fmt.Printf("submission ID mismatch: %s != %s\n", submission.ID.Hex(), id)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "submission ID mismatch"})
 		return
 	}
