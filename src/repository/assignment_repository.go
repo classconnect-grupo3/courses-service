@@ -46,6 +46,11 @@ func (r *AssignmentRepository) GetAssignments() ([]*model.Assignment, error) {
 		return nil, fmt.Errorf("failed to get assignments: %v", err)
 	}
 
+	// Ensure we return an empty slice instead of nil when no documents are found
+	if assignments == nil {
+		assignments = []*model.Assignment{}
+	}
+
 	return assignments, nil
 }
 
@@ -76,6 +81,11 @@ func (r *AssignmentRepository) GetAssignmentsByCourseId(courseId string) ([]*mod
 	var assignments []*model.Assignment
 	if err := cursor.All(context.TODO(), &assignments); err != nil {
 		return nil, fmt.Errorf("failed to get assignments by course id: %v", err)
+	}
+
+	// Ensure we return an empty slice instead of nil when no documents are found
+	if assignments == nil {
+		assignments = []*model.Assignment{}
 	}
 
 	return assignments, nil

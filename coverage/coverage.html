@@ -57,7 +57,7 @@
 				
 				<option value="file0">courses-service/src/config/config.go (100.0%)</option>
 				
-				<option value="file1">courses-service/src/controller/assignments_controller.go (1.5%)</option>
+				<option value="file1">courses-service/src/controller/assignments_controller.go (100.0%)</option>
 				
 				<option value="file2">courses-service/src/controller/courses_controller.go (100.0%)</option>
 				
@@ -77,7 +77,7 @@
 				
 				<option value="file10">courses-service/src/middleware/teacher_auth.go (10.0%)</option>
 				
-				<option value="file11">courses-service/src/repository/assignment_repository.go (1.4%)</option>
+				<option value="file11">courses-service/src/repository/assignment_repository.go (87.0%)</option>
 				
 				<option value="file12">courses-service/src/repository/course_repository.go (83.3%)</option>
 				
@@ -89,7 +89,7 @@
 				
 				<option value="file16">courses-service/src/router/router.go (96.2%)</option>
 				
-				<option value="file17">courses-service/src/service/assignment_service.go (3.7%)</option>
+				<option value="file17">courses-service/src/service/assignment_service.go (100.0%)</option>
 				
 				<option value="file18">courses-service/src/service/course_service.go (93.8%)</option>
 				
@@ -167,17 +167,17 @@ func NewAssignmentsController(service service.AssignmentServiceInterface) *Assig
 // @Produce json
 // @Router /assignments [get]
 // @Success 200 {array} model.Assignment
-func (c *AssignmentsController) GetAssignments(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *AssignmentsController) GetAssignments(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting assignments")
 
         assignments, err := c.service.GetAssignments()
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error getting assignments", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">slog.Debug("Assignments retrieved", "assignments", assignments)
+        <span class="cov8" title="1">slog.Debug("Assignments retrieved", "assignments", assignments)
         ctx.JSON(http.StatusOK, assignments)</span>
 }
 
@@ -189,24 +189,24 @@ func (c *AssignmentsController) GetAssignments(ctx *gin.Context) <span class="co
 // @Param assignment body schemas.CreateAssignmentRequest true "Assignment to create"
 // @Success 201 {object} model.Assignment
 // @Router /assignments [post]
-func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Creating assignment")
 
         var assignment schemas.CreateAssignmentRequest
-        if err := ctx.ShouldBindJSON(&amp;assignment); err != nil </span><span class="cov0" title="0">{
+        if err := ctx.ShouldBindJSON(&amp;assignment); err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error binding JSON", "error", err)
                 ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">createdAssignment, err := c.service.CreateAssignment(assignment)
-        if err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">createdAssignment, err := c.service.CreateAssignment(assignment)
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error creating assignment", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">slog.Debug("Assignment created", "assignment", createdAssignment)
+        <span class="cov8" title="1">slog.Debug("Assignment created", "assignment", createdAssignment)
         ctx.JSON(http.StatusCreated, createdAssignment)</span>
 }
 
@@ -218,23 +218,23 @@ func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) <span class="
 // @Param assignmentId path string true "Assignment ID"
 // @Success 200 {object} model.Assignment
 // @Router /assignments/{assignmentId} [get]
-func (c *AssignmentsController) GetAssignmentById(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *AssignmentsController) GetAssignmentById(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting assignment by ID")
         id := ctx.Param("assignmentId")
 
         assignment, err := c.service.GetAssignmentById(id)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error getting assignment", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">if assignment == nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if assignment == nil </span><span class="cov8" title="1">{
                 ctx.JSON(http.StatusNotFound, gin.H{"error": "assignment not found"})
                 return
         }</span>
 
-        <span class="cov0" title="0">slog.Debug("Assignment retrieved", "assignment", assignment)
+        <span class="cov8" title="1">slog.Debug("Assignment retrieved", "assignment", assignment)
         ctx.JSON(http.StatusOK, assignment)</span>
 }
 
@@ -246,18 +246,18 @@ func (c *AssignmentsController) GetAssignmentById(ctx *gin.Context) <span class=
 // @Param courseId path string true "Course ID"
 // @Success 200 {array} model.Assignment
 // @Router /assignments/course/{courseId} [get]
-func (c *AssignmentsController) GetAssignmentsByCourseId(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *AssignmentsController) GetAssignmentsByCourseId(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting assignments by course ID")
         courseId := ctx.Param("courseId")
 
         assignments, err := c.service.GetAssignmentsByCourseId(courseId)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error getting assignments", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">slog.Debug("Assignments retrieved", "assignments", assignments)
+        <span class="cov8" title="1">slog.Debug("Assignments retrieved", "assignments", assignments)
         ctx.JSON(http.StatusOK, assignments)</span>
 }
 
@@ -270,25 +270,25 @@ func (c *AssignmentsController) GetAssignmentsByCourseId(ctx *gin.Context) <span
 // @Param assignment body schemas.UpdateAssignmentRequest true "Assignment to update"
 // @Success 200 {object} model.Assignment
 // @Router /assignments/{assignmentId} [put]
-func (c *AssignmentsController) UpdateAssignment(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *AssignmentsController) UpdateAssignment(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Updating assignment")
         id := ctx.Param("assignmentId")
 
         var updateAssignmentRequest schemas.UpdateAssignmentRequest
-        if err := ctx.ShouldBindJSON(&amp;updateAssignmentRequest); err != nil </span><span class="cov0" title="0">{
+        if err := ctx.ShouldBindJSON(&amp;updateAssignmentRequest); err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error binding JSON", "error", err)
                 ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">updatedAssignment, err := c.service.UpdateAssignment(id, updateAssignmentRequest)
-        if err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">updatedAssignment, err := c.service.UpdateAssignment(id, updateAssignmentRequest)
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error updating assignment", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">slog.Debug("Assignment updated", "assignment", updatedAssignment)
+        <span class="cov8" title="1">slog.Debug("Assignment updated", "assignment", updatedAssignment)
         ctx.JSON(http.StatusOK, updatedAssignment)</span>
 }
 
@@ -300,17 +300,17 @@ func (c *AssignmentsController) UpdateAssignment(ctx *gin.Context) <span class="
 // @Param assignmentId path string true "Assignment ID"
 // @Success 200 {string} string "Assignment deleted successfully"
 // @Router /assignments/{assignmentId} [delete]
-func (c *AssignmentsController) DeleteAssignment(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *AssignmentsController) DeleteAssignment(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Deleting assignment")
         id := ctx.Param("assignmentId")
 
-        if err := c.service.DeleteAssignment(id); err != nil </span><span class="cov0" title="0">{
+        if err := c.service.DeleteAssignment(id); err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error deleting assignment", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">slog.Debug("Assignment deleted")
+        <span class="cov8" title="1">slog.Debug("Assignment deleted")
         ctx.JSON(http.StatusNoContent, nil)</span>
 }
 </pre>
@@ -3272,136 +3272,146 @@ func NewAssignmentRepository(db *mongo.Client, dbName string) AssignmentReposito
         }
 }</span>
 
-func (r *AssignmentRepository) CreateAssignment(assignment model.Assignment) (*model.Assignment, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) CreateAssignment(assignment model.Assignment) (*model.Assignment, error) <span class="cov8" title="1">{
         result, err := r.assignmentCollection.InsertOne(context.TODO(), assignment)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to create assignment: %v", err)
         }</span>
 
-        <span class="cov0" title="0">assignment.ID = result.InsertedID.(primitive.ObjectID)
+        <span class="cov8" title="1">assignment.ID = result.InsertedID.(primitive.ObjectID)
         return &amp;assignment, nil</span>
 }
 
-func (r *AssignmentRepository) GetAssignments() ([]*model.Assignment, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) GetAssignments() ([]*model.Assignment, error) <span class="cov8" title="1">{
         cursor, err := r.assignmentCollection.Find(context.TODO(), bson.M{})
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to get assignments: %v", err)
         }</span>
 
-        <span class="cov0" title="0">var assignments []*model.Assignment
+        <span class="cov8" title="1">var assignments []*model.Assignment
         if err := cursor.All(context.TODO(), &amp;assignments); err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to get assignments: %v", err)
         }</span>
 
-        <span class="cov0" title="0">return assignments, nil</span>
+        // Ensure we return an empty slice instead of nil when no documents are found
+        <span class="cov8" title="1">if assignments == nil </span><span class="cov8" title="1">{
+                assignments = []*model.Assignment{}
+        }</span>
+
+        <span class="cov8" title="1">return assignments, nil</span>
 }
 
-func (r *AssignmentRepository) GetByID(ctx context.Context, id string) (*model.Assignment, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) GetByID(ctx context.Context, id string) (*model.Assignment, error) <span class="cov8" title="1">{
         var assignment model.Assignment
         objectId, err := primitive.ObjectIDFromHex(id)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, fmt.Errorf("failed to get assignment by id: %v", err)
         }</span>
 
-        <span class="cov0" title="0">err = r.assignmentCollection.FindOne(ctx, bson.M{"_id": objectId}).Decode(&amp;assignment)
-        if err != nil </span><span class="cov0" title="0">{
-                if err == mongo.ErrNoDocuments </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">err = r.assignmentCollection.FindOne(ctx, bson.M{"_id": objectId}).Decode(&amp;assignment)
+        if err != nil </span><span class="cov8" title="1">{
+                if err == mongo.ErrNoDocuments </span><span class="cov8" title="1">{
                         return nil, nil
                 }</span>
                 <span class="cov0" title="0">return nil, fmt.Errorf("failed to get assignment by id: %v", err)</span>
         }
 
-        <span class="cov0" title="0">return &amp;assignment, nil</span>
+        <span class="cov8" title="1">return &amp;assignment, nil</span>
 }
 
-func (r *AssignmentRepository) GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error) <span class="cov8" title="1">{
         cursor, err := r.assignmentCollection.Find(context.TODO(), bson.M{"course_id": courseId})
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to get assignments by course id: %v", err)
         }</span>
 
-        <span class="cov0" title="0">var assignments []*model.Assignment
+        <span class="cov8" title="1">var assignments []*model.Assignment
         if err := cursor.All(context.TODO(), &amp;assignments); err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to get assignments by course id: %v", err)
         }</span>
 
-        <span class="cov0" title="0">return assignments, nil</span>
+        // Ensure we return an empty slice instead of nil when no documents are found
+        <span class="cov8" title="1">if assignments == nil </span><span class="cov8" title="1">{
+                assignments = []*model.Assignment{}
+        }</span>
+
+        <span class="cov8" title="1">return assignments, nil</span>
 }
 
-func filterEmptyAssignmentFields(assignment model.Assignment) bson.M <span class="cov0" title="0">{
+func filterEmptyAssignmentFields(assignment model.Assignment) bson.M <span class="cov8" title="1">{
         update := bson.M{}
 
-        if assignment.Title != "" </span><span class="cov0" title="0">{
+        if assignment.Title != "" </span><span class="cov8" title="1">{
                 update["title"] = assignment.Title
         }</span>
-        <span class="cov0" title="0">if assignment.Description != "" </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if assignment.Description != "" </span><span class="cov8" title="1">{
                 update["description"] = assignment.Description
         }</span>
-        <span class="cov0" title="0">if assignment.Type != "" </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if assignment.Type != "" </span><span class="cov8" title="1">{
                 update["type"] = assignment.Type
         }</span>
-        <span class="cov0" title="0">if !assignment.DueDate.IsZero() </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if !assignment.DueDate.IsZero() </span><span class="cov0" title="0">{
                 update["due_date"] = assignment.DueDate
         }</span>
-        <span class="cov0" title="0">if assignment.Status != "" </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if assignment.Status != "" </span><span class="cov8" title="1">{
                 update["status"] = assignment.Status
         }</span>
-        <span class="cov0" title="0">if assignment.GracePeriod &gt; 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if assignment.GracePeriod &gt; 0 </span><span class="cov8" title="1">{
                 update["grace_period"] = assignment.GracePeriod
         }</span>
-        <span class="cov0" title="0">if len(assignment.SubmissionRules) &gt; 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if len(assignment.SubmissionRules) &gt; 0 </span><span class="cov8" title="1">{
                 update["submission_rules"] = assignment.SubmissionRules
         }</span>
-        <span class="cov0" title="0">if assignment.Instructions != "" </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if assignment.Instructions != "" </span><span class="cov8" title="1">{
                 update["instructions"] = assignment.Instructions
         }</span>
-        <span class="cov0" title="0">if len(assignment.Questions) &gt; 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if len(assignment.Questions) &gt; 0 </span><span class="cov8" title="1">{
                 update["questions"] = assignment.Questions
         }</span>
-        <span class="cov0" title="0">if assignment.TotalPoints &gt; 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if assignment.TotalPoints &gt; 0 </span><span class="cov8" title="1">{
                 update["total_points"] = assignment.TotalPoints
         }</span>
-        <span class="cov0" title="0">if assignment.PassingScore &gt; 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if assignment.PassingScore &gt; 0 </span><span class="cov8" title="1">{
                 update["passing_score"] = assignment.PassingScore
         }</span>
-        <span class="cov0" title="0">update["updated_at"] = primitive.NewDateTimeFromTime(time.Now())
+        <span class="cov8" title="1">update["updated_at"] = primitive.NewDateTimeFromTime(time.Now())
 
         return update</span>
 }
 
-func (r *AssignmentRepository) UpdateAssignment(id string, updateAssignment model.Assignment) (*model.Assignment, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) UpdateAssignment(id string, updateAssignment model.Assignment) (*model.Assignment, error) <span class="cov8" title="1">{
         objectId, err := primitive.ObjectIDFromHex(id)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, fmt.Errorf("failed to update assignment: %v", err)
         }</span>
 
-        <span class="cov0" title="0">update := filterEmptyAssignmentFields(updateAssignment)
+        <span class="cov8" title="1">update := filterEmptyAssignmentFields(updateAssignment)
 
         _, err = r.assignmentCollection.UpdateOne(context.TODO(), bson.M{"_id": objectId}, bson.M{"$set": update})
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to update assignment: %v", err)
         }</span>
 
-        <span class="cov0" title="0">updatedAssignment, err := r.GetByID(context.TODO(), id)
+        <span class="cov8" title="1">updatedAssignment, err := r.GetByID(context.TODO(), id)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to get updated assignment: %v", err)
         }</span>
 
-        <span class="cov0" title="0">return updatedAssignment, nil</span>
+        <span class="cov8" title="1">return updatedAssignment, nil</span>
 }
 
-func (r *AssignmentRepository) DeleteAssignment(id string) error <span class="cov0" title="0">{
+func (r *AssignmentRepository) DeleteAssignment(id string) error <span class="cov8" title="1">{
         objectId, err := primitive.ObjectIDFromHex(id)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("failed to delete assignment: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">_, err = r.assignmentCollection.DeleteOne(context.TODO(), bson.M{"_id": objectId})
         if err != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("failed to delete assignment: %v", err)
         }</span>
 
-        <span class="cov0" title="0">_, err = r.assignmentCollection.DeleteOne(context.TODO(), bson.M{"_id": objectId})
-        if err != nil </span><span class="cov0" title="0">{
-                return fmt.Errorf("failed to delete assignment: %v", err)
-        }</span>
-
-        <span class="cov0" title="0">return nil</span>
+        <span class="cov8" title="1">return nil</span>
 }
 </pre>
 		
@@ -4467,28 +4477,28 @@ func NewAssignmentService(assignmentRepository repository.AssignmentRepositoryIn
         return &amp;AssignmentService{assignmentRepository: assignmentRepository, courseService: courseService}
 }</span>
 
-func (s *AssignmentService) GetAssignments() ([]*model.Assignment, error) <span class="cov0" title="0">{
+func (s *AssignmentService) GetAssignments() ([]*model.Assignment, error) <span class="cov8" title="1">{
         return s.assignmentRepository.GetAssignments()
 }</span>
 
-func (s *AssignmentService) GetAssignmentById(id string) (*model.Assignment, error) <span class="cov0" title="0">{
-        if id == "" </span><span class="cov0" title="0">{
+func (s *AssignmentService) GetAssignmentById(id string) (*model.Assignment, error) <span class="cov8" title="1">{
+        if id == "" </span><span class="cov8" title="1">{
                 return nil, errors.New("id is required")
         }</span>
-        <span class="cov0" title="0">return s.assignmentRepository.GetByID(context.TODO(), id)</span>
+        <span class="cov8" title="1">return s.assignmentRepository.GetByID(context.TODO(), id)</span>
 }
 
-func (s *AssignmentService) CreateAssignment(c schemas.CreateAssignmentRequest) (*model.Assignment, error) <span class="cov0" title="0">{
+func (s *AssignmentService) CreateAssignment(c schemas.CreateAssignmentRequest) (*model.Assignment, error) <span class="cov8" title="1">{
         // Validate course exists
         course, err := s.courseService.GetCourseById(c.CourseID)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
-        <span class="cov0" title="0">if course == nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if course == nil </span><span class="cov8" title="1">{
                 return nil, errors.New("course not found")
         }</span>
 
-        <span class="cov0" title="0">assignment := model.Assignment{
+        <span class="cov8" title="1">assignment := model.Assignment{
                 Title:        c.Title,
                 Description:  c.Description,
                 Instructions: c.Instructions,
@@ -4507,21 +4517,21 @@ func (s *AssignmentService) CreateAssignment(c schemas.CreateAssignmentRequest) 
         return s.assignmentRepository.CreateAssignment(assignment)</span>
 }
 
-func (s *AssignmentService) UpdateAssignment(id string, updateAssignmentRequest schemas.UpdateAssignmentRequest) (*model.Assignment, error) <span class="cov0" title="0">{
-        if id == "" </span><span class="cov0" title="0">{
+func (s *AssignmentService) UpdateAssignment(id string, updateAssignmentRequest schemas.UpdateAssignmentRequest) (*model.Assignment, error) <span class="cov8" title="1">{
+        if id == "" </span><span class="cov8" title="1">{
                 return nil, errors.New("id is required")
         }</span>
 
         // Check if assignment exists
-        <span class="cov0" title="0">existingAssignment, err := s.assignmentRepository.GetByID(context.TODO(), id)
-        if err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">existingAssignment, err := s.assignmentRepository.GetByID(context.TODO(), id)
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
-        <span class="cov0" title="0">if existingAssignment == nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if existingAssignment == nil </span><span class="cov8" title="1">{
                 return nil, errors.New("assignment not found")
         }</span>
 
-        <span class="cov0" title="0">assignment := model.Assignment{
+        <span class="cov8" title="1">assignment := model.Assignment{
                 Title:        updateAssignmentRequest.Title,
                 Description:  updateAssignmentRequest.Description,
                 Instructions: updateAssignmentRequest.Instructions,
@@ -4539,18 +4549,18 @@ func (s *AssignmentService) UpdateAssignment(id string, updateAssignmentRequest 
         return s.assignmentRepository.UpdateAssignment(id, assignment)</span>
 }
 
-func (s *AssignmentService) DeleteAssignment(id string) error <span class="cov0" title="0">{
-        if id == "" </span><span class="cov0" title="0">{
+func (s *AssignmentService) DeleteAssignment(id string) error <span class="cov8" title="1">{
+        if id == "" </span><span class="cov8" title="1">{
                 return errors.New("id is required")
         }</span>
-        <span class="cov0" title="0">return s.assignmentRepository.DeleteAssignment(id)</span>
+        <span class="cov8" title="1">return s.assignmentRepository.DeleteAssignment(id)</span>
 }
 
-func (s *AssignmentService) GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error) <span class="cov0" title="0">{
-        if courseId == "" </span><span class="cov0" title="0">{
+func (s *AssignmentService) GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error) <span class="cov8" title="1">{
+        if courseId == "" </span><span class="cov8" title="1">{
                 return nil, errors.New("course id is required")
         }</span>
-        <span class="cov0" title="0">return s.assignmentRepository.GetAssignmentsByCourseId(courseId)</span>
+        <span class="cov8" title="1">return s.assignmentRepository.GetAssignmentsByCourseId(courseId)</span>
 }
 </pre>
 		
