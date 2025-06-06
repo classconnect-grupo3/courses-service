@@ -158,3 +158,30 @@ func (s *CourseService) RemoveAuxTeacherFromCourse(id string, titularTeacherId s
 	}
 	return s.courseRepository.RemoveAuxTeacherFromCourse(course, auxTeacherId)
 }
+
+func (s *CourseService) GetFavouriteCourses(studentId string) ([]*model.Course, error) {
+	if studentId == "" {
+		return nil, errors.New("studentId is required")
+	}
+
+	enrollments, err := s.enrollmentRepository.GetEnrollmentsByStudentId(studentId)
+	if err != nil {
+		return nil, err
+	}
+
+	courses, err := s.courseRepository.GetCoursesByStudentId(studentId)
+	if err != nil {
+		return nil, err
+	}
+
+	favouriteCourses := make([]*model.Course, 0)
+
+	for _, course := range courses {
+		for _, enrollment := range enrollments {
+			if enrollment.CourseID == course.ID.Hex() && enrollment.Favourite {
+				favouriteCourses = append(favouriteCourses, course)
+			}
+		}
+	}
+	return favouriteCourses, nil
+}

@@ -294,3 +294,30 @@ func (c *CourseController) RemoveAuxTeacherFromCourse(ctx *gin.Context) {
 	slog.Debug("Aux teacher removed from course", "course", course)
 	ctx.JSON(http.StatusOK, course)
 }
+
+// @Summary Get favourite courses
+// @Description Get favourite courses by student ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param studentId path string true "Student ID"
+// @Success 200 {array} model.Course
+// @Router /courses/favourite/{studentId} [get]
+func (c *CourseController) GetFavouriteCourses(ctx *gin.Context) {
+	slog.Debug("Getting favourite courses")
+	studentId := ctx.Param("studentId")
+	if studentId == "" {
+		slog.Error("Student ID is required")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Student ID is required"})
+		return
+	}
+
+	courses, err := c.service.GetFavouriteCourses(studentId)
+	if err != nil {
+		slog.Error("Error getting favourite courses", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	slog.Debug("Favourite courses retrieved", "courses", courses)
+	ctx.JSON(http.StatusOK, courses)
+}

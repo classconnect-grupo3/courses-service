@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"courses-service/src/model"
+	"fmt"
 	"log/slog"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -116,4 +117,70 @@ func (r *EnrollmentRepository) DeleteEnrollment(studentID string, course *model.
 		return err
 	}
 	return nil
+}
+
+func (r *EnrollmentRepository) SetFavouriteCourse(studentID, courseID string) error {
+	filter := bson.M{
+		"student_id": studentID,
+		"course_id":  courseID,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"favourite": true,
+		},
+	}
+
+	res, err := r.enrollmentCollection.UpdateOne(context.TODO(), filter, update)
+	if res.MatchedCount == 0 {
+		return fmt.Errorf("enrollment not found for student %s in course %s", studentID, courseID)
+	}
+	if err != nil {
+		return fmt.Errorf("error setting favourite course for student %s in course %s", studentID, courseID)
+	}
+	return nil
+}
+
+func (r *EnrollmentRepository) UnsetFavouriteCourse(studentID, courseID string) error {
+	filter := bson.M{
+		"student_id": studentID,
+		"course_id":  courseID,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"favourite": false,
+		},
+	}
+
+	res, err := r.enrollmentCollection.UpdateOne(context.TODO(), filter, update)
+	if res.MatchedCount == 0 {
+		return fmt.Errorf("enrollment not found for student %s in course %s", studentID, courseID)
+	}
+	if err != nil {
+		return fmt.Errorf("error unsetting favourite course for student %s in course %s", studentID, courseID)
+	}
+	return nil
+}
+
+func (r *EnrollmentRepository) GetEnrollmentsByStudentId(studentID string) ([]*model.Enrollment, error) {
+	filter := bson.M{
+		"student_id": studentID,
+	}
+
+	cursor, err := r.enrollmentCollection.Find(context.TODO(), filter)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return []*model.Enrollment{}, nil
+		}
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+
+	var enrollments []*model.Enrollment
+	if err := cursor.All(context.TODO(), &enrollments); err != nil {
+		return nil, err
+	}
+
+	return enrollments, nil
 }

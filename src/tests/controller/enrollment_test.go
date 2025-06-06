@@ -43,6 +43,14 @@ func (m *MockEnrollmentService) UnenrollStudent(studentID, courseID string) erro
 	return nil
 }
 
+func (m *MockEnrollmentService) SetFavouriteCourse(studentID, courseID string) error {
+	return nil
+}
+
+func (m *MockEnrollmentService) UnsetFavouriteCourse(studentID, courseID string) error {
+	return nil
+}
+
 type MockEnrollmentServiceWithError struct{}
 
 // GetEnrollmentsByCourseId implements service.EnrollmentServiceInterface.
@@ -56,6 +64,14 @@ func (m *MockEnrollmentServiceWithError) EnrollStudent(studentID, courseID strin
 
 func (m *MockEnrollmentServiceWithError) UnenrollStudent(studentID, courseID string) error {
 	return errors.New("Error unenrolling student")
+}
+
+func (m *MockEnrollmentServiceWithError) SetFavouriteCourse(studentID, courseID string) error {
+	return errors.New("Error setting favourite course")
+}
+
+func (m *MockEnrollmentServiceWithError) UnsetFavouriteCourse(studentID, courseID string) error {
+	return errors.New("Error unsetting favourite course")
 }
 
 func TestEnrollStudent(t *testing.T) {
@@ -161,4 +177,92 @@ func TestGetEnrollmentsByCourseIdWithError(t *testing.T) {
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 	assert.Contains(t, w.Body.String(), "Error getting enrollments by course ID")
+}
+
+func TestSetFavouriteCourse(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"student_id": "123e4567-e89b-12d3-a456-426614174000"}`
+
+	req, _ := http.NewRequest("POST", "/courses/course-123/favourite", strings.NewReader(body))
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "Favourite course set")
+}
+
+func TestSetFavouriteCourseWithInvalidBody(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"invalid": "body"}`
+
+	req, _ := http.NewRequest("POST", "/courses/course-123/favourite", strings.NewReader(body))
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Error:Field validation")
+}
+
+func TestSetFavouriteCourseWithEmptyCourseId(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"student_id": "123e4567-e89b-12d3-a456-426614174000"}`
+
+	req, _ := http.NewRequest("POST", "/courses//favourite", strings.NewReader(body))
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Invalid course ID")
+}
+
+func TestSetFavouriteCourseWithError(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"student_id": "123e4567-e89b-12d3-a456-426614174000"}`
+
+	req, _ := http.NewRequest("POST", "/courses/course-123/favourite", strings.NewReader(body))
+	errorEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "Error setting favourite course")
+}
+
+func TestUnsetFavouriteCourse(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"student_id": "123e4567-e89b-12d3-a456-426614174000"}`
+
+	req, _ := http.NewRequest("DELETE", "/courses/course-123/favourite", strings.NewReader(body))
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "Favourite course unset")
+}
+
+func TestUnsetFavouriteCourseWithInvalidBody(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"invalid": "body"}`
+
+	req, _ := http.NewRequest("DELETE", "/courses/course-123/favourite", strings.NewReader(body))
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Error:Field validation")
+}
+
+func TestUnsetFavouriteCourseWithEmptyCourseId(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"student_id": "123e4567-e89b-12d3-a456-426614174000"}`
+
+	req, _ := http.NewRequest("DELETE", "/courses//favourite", strings.NewReader(body))
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Invalid course ID")
+}
+
+func TestUnsetFavouriteCourseWithError(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"student_id": "123e4567-e89b-12d3-a456-426614174000"}`
+
+	req, _ := http.NewRequest("DELETE", "/courses/course-123/favourite", strings.NewReader(body))
+	errorEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "Error unsetting favourite course")
 }

@@ -372,6 +372,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/assignments/{assignmentId}/submissions/{id}/grade": {
+            "put": {
+                "description": "Grade a submission by ID (for teachers)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submissions"
+                ],
+                "summary": "Grade a submission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Assignment ID",
+                        "name": "assignmentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Submission ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Grade request",
+                        "name": "gradeRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.GradeSubmissionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Submission"
+                        }
+                    }
+                }
+            }
+        },
         "/assignments/{assignmentId}/submissions/{id}/submit": {
             "post": {
                 "description": "Submit a submission by ID",
@@ -464,6 +512,41 @@ const docTemplate = `{
                         "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/model.Course"
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/favourite/{studentId}": {
+            "get": {
+                "description": "Get favourite courses by student ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Get favourite courses",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Student ID",
+                        "name": "studentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Course"
+                            }
                         }
                     }
                 }
@@ -742,6 +825,121 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {}
+            }
+        },
+        "/courses/{id}/enrollments": {
+            "get": {
+                "description": "Get enrollments by course ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Get enrollments by course ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Enrollment"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/{id}/favourite": {
+            "post": {
+                "description": "Set a course as favourite",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Set a course as favourite",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Favourite course request",
+                        "name": "favouriteCourseRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.SetFavouriteCourseRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.SetFavouriteCourseResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Unset a course as favourite",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Unset a course as favourite",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Unset favourite course request",
+                        "name": "unsetFavouriteCourseRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.UnsetFavouriteCourseRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.UnsetFavouriteCourseResponse"
+                        }
+                    }
+                }
             }
         },
         "/courses/{id}/remove-aux-teacher": {
@@ -1050,14 +1248,8 @@ const docTemplate = `{
                 "content": {
                     "description": "Can be string, []string for multiple choice, or file URL"
                 },
-                "feedback": {
-                    "type": "string"
-                },
                 "question_id": {
                     "type": "string"
-                },
-                "score": {
-                    "type": "number"
                 },
                 "type": {
                     "description": "text, multiple_choice, file",
@@ -1175,6 +1367,48 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "model.Enrollment": {
+            "type": "object",
+            "properties": {
+                "completed_date": {
+                    "type": "string"
+                },
+                "course_id": {
+                    "type": "string"
+                },
+                "enrolled_at": {
+                    "type": "string"
+                },
+                "favourite": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/model.EnrollmentStatus"
+                },
+                "student_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.EnrollmentStatus": {
+            "type": "string",
+            "enum": [
+                "active",
+                "dropped",
+                "completed"
+            ],
+            "x-enum-varnames": [
+                "EnrollmentStatusActive",
+                "EnrollmentStatusDropped",
+                "EnrollmentStatusCompleted"
+            ]
         },
         "model.Module": {
             "type": "object",
@@ -1436,6 +1670,17 @@ const docTemplate = `{
                 }
             }
         },
+        "schemas.GradeSubmissionRequest": {
+            "type": "object",
+            "properties": {
+                "feedback": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                }
+            }
+        },
         "schemas.RemoveAuxTeacherFromCourseRequest": {
             "type": "object",
             "required": [
@@ -1447,6 +1692,25 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "teacher_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.SetFavouriteCourseRequest": {
+            "type": "object",
+            "required": [
+                "student_id"
+            ],
+            "properties": {
+                "student_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.SetFavouriteCourseResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
                     "type": "string"
                 }
             }
@@ -1463,6 +1727,25 @@ const docTemplate = `{
             }
         },
         "schemas.UnenrollStudentResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.UnsetFavouriteCourseRequest": {
+            "type": "object",
+            "required": [
+                "student_id"
+            ],
+            "properties": {
+                "student_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.UnsetFavouriteCourseResponse": {
             "type": "object",
             "properties": {
                 "message": {

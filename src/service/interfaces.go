@@ -18,6 +18,7 @@ type CourseServiceInterface interface {
 	UpdateCourse(id string, updateCourseRequest schemas.UpdateCourseRequest) (*model.Course, error)
 	AddAuxTeacherToCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error)
 	RemoveAuxTeacherFromCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error)
+	GetFavouriteCourses(studentId string) ([]*model.Course, error)
 }
 
 type ModuleServiceInterface interface {
@@ -33,6 +34,8 @@ type EnrollmentServiceInterface interface {
 	GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error)
 	EnrollStudent(studentID, courseID string) error
 	UnenrollStudent(studentID, courseID string) error
+	SetFavouriteCourse(studentID, courseID string) error
+	UnsetFavouriteCourse(studentID, courseID string) error
 }
 
 type AssignmentServiceInterface interface {

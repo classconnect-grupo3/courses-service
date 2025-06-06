@@ -47,6 +47,7 @@ func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseControl
 	r.POST("/courses", controller.CreateCourse)
 	r.GET("/courses/teacher/:teacherId", controller.GetCourseByTeacherId)
 	r.GET("/courses/student/:studentId", controller.GetCoursesByStudentId)
+	r.GET("/courses/student/:studentId/favourite", controller.GetFavouriteCourses)
 	r.GET("/courses/user/:userId", controller.GetCoursesByUserId)
 	r.GET("/courses/title/:title", controller.GetCourseByTitle)
 	r.GET("/courses/:id", controller.GetCourseById)
@@ -97,6 +98,8 @@ func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.Enrollmen
 	r.GET("/courses/:id/enrollments", controller.GetEnrollmentsByCourseId)
 	r.POST("/courses/:id/enroll", controller.EnrollStudent)
 	r.DELETE("/courses/:id/unenroll", controller.UnenrollStudent)
+	r.POST("/courses/:id/favourite", controller.SetFavouriteCourse)
+	r.DELETE("/courses/:id/favourite", controller.UnsetFavouriteCourse)
 }
 
 func NewRouter(config *config.Config) *gin.Engine {

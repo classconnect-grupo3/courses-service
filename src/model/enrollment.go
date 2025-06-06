@@ -13,6 +13,7 @@ type Enrollment struct {
 	EnrolledAt    time.Time          `json:"enrolled_at" bson:"enrolled_at"`
 	CompletedDate time.Time          `json:"completed_date" bson:"completed_date"`
 	Status        EnrollmentStatus   `json:"status" bson:"status"`
+	Favourite     bool               `json:"favourite" bson:"favourite"`
 	UpdatedAt     time.Time          `json:"updated_at" bson:"updated_at"`
 }
 

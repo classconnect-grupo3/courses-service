@@ -33,6 +33,11 @@ func init() {
 
 type MockCourseService struct{}
 
+// GetFavouriteCourses implements service.CourseServiceInterface.
+func (m *MockCourseService) GetFavouriteCourses(studentId string) ([]*model.Course, error) {
+	return []*model.Course{}, nil
+}
+
 // RemoveAuxTeacherFromCourse implements service.CourseServiceInterface.
 func (m *MockCourseService) RemoveAuxTeacherFromCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error) {
 	return &model.Course{}, nil
@@ -99,6 +104,11 @@ func (m *MockCourseService) UpdateCourse(id string, updateCourseRequest schemas.
 }
 
 type MockCourseServiceWithError struct{}
+
+// GetFavouriteCourses implements service.CourseServiceInterface.
+func (m *MockCourseServiceWithError) GetFavouriteCourses(studentId string) ([]*model.Course, error) {
+	return nil, errors.New("Error getting favourite courses")
+}
 
 // RemoveAuxTeacherFromCourse implements service.CourseServiceInterface.
 func (m *MockCourseServiceWithError) RemoveAuxTeacherFromCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error) {
@@ -414,4 +424,31 @@ func TestRemoveAuxTeacherFromCourseWithEmptyCourseId(t *testing.T) {
 	normalRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestGetFavouriteCourses(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/courses/student/123/favourite", nil)
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "[]", w.Body.String())
+}
+
+func TestGetFavouriteCoursesWithError(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/courses/student/123/favourite", nil)
+	errorRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "Error getting favourite courses")
+}
+
+func TestGetFavouriteCoursesWithEmptyStudentId(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/courses/student//favourite", nil)
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Student ID is required")
 }
