@@ -81,17 +81,17 @@
 				
 				<option value="file12">courses-service/src/repository/course_repository.go (83.3%)</option>
 				
-				<option value="file13">courses-service/src/repository/enrollment_repository.go (79.4%)</option>
+				<option value="file13">courses-service/src/repository/enrollment_repository.go (77.0%)</option>
 				
 				<option value="file14">courses-service/src/repository/module_repository.go (89.9%)</option>
 				
 				<option value="file15">courses-service/src/repository/submission_repository.go (2.4%)</option>
 				
-				<option value="file16">courses-service/src/router/router.go (96.1%)</option>
+				<option value="file16">courses-service/src/router/router.go (96.2%)</option>
 				
 				<option value="file17">courses-service/src/service/assignment_service.go (3.7%)</option>
 				
-				<option value="file18">courses-service/src/service/course_service.go (92.5%)</option>
+				<option value="file18">courses-service/src/service/course_service.go (93.8%)</option>
 				
 				<option value="file19">courses-service/src/service/enrollment_service.go (97.4%)</option>
 				
@@ -611,7 +611,25 @@ func (c *CourseController) RemoveAuxTeacherFromCourse(ctx *gin.Context) <span cl
         <span class="cov8" title="1">slog.Debug("Aux teacher removed from course", "course", course)
         ctx.JSON(http.StatusOK, course)</span>
 }
-</pre>
+
+func (c *CourseController) GetFavouriteCourses(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Getting favourite courses")
+        studentId := ctx.Param("studentId")
+        if studentId == "" </span><span class="cov8" title="1">{
+                slog.Error("Student ID is required")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Student ID is required"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">courses, err := c.service.GetFavouriteCourses(studentId)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error getting favourite courses", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov8" title="1">slog.Debug("Favourite courses retrieved", "courses", courses)
+        ctx.JSON(http.StatusOK, courses)</span>
+}</pre>
 		
 		<pre class="file" id="file3" style="display: none">package controller
 
@@ -3546,7 +3564,28 @@ func (r *EnrollmentRepository) UnsetFavouriteCourse(studentID, courseID string) 
         }</span>
         <span class="cov8" title="1">return nil</span>
 }
-</pre>
+
+func (r *EnrollmentRepository) GetEnrollmentsByStudentId(studentID string) ([]*model.Enrollment, error) <span class="cov8" title="1">{
+        filter := bson.M{
+                "student_id": studentID,
+        }
+
+        cursor, err := r.enrollmentCollection.Find(context.TODO(), filter)
+        if err != nil </span><span class="cov0" title="0">{
+                if err == mongo.ErrNoDocuments </span><span class="cov0" title="0">{
+                        return []*model.Enrollment{}, nil
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+        <span class="cov8" title="1">defer cursor.Close(context.TODO())
+
+        var enrollments []*model.Enrollment
+        if err := cursor.All(context.TODO(), &amp;enrollments); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return enrollments, nil</span>
+}</pre>
 		
 		<pre class="file" id="file14" style="display: none">package repository
 
@@ -4008,6 +4047,7 @@ func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseControl
         r.POST("/courses", controller.CreateCourse)
         r.GET("/courses/teacher/:teacherId", controller.GetCourseByTeacherId)
         r.GET("/courses/student/:studentId", controller.GetCoursesByStudentId)
+        r.GET("/courses/student/:studentId/favourite", controller.GetFavouriteCourses)
         r.GET("/courses/user/:userId", controller.GetCoursesByUserId)
         r.GET("/courses/title/:title", controller.GetCourseByTitle)
         r.GET("/courses/:id", controller.GetCourseById)
@@ -4381,7 +4421,33 @@ func (s *CourseService) RemoveAuxTeacherFromCourse(id string, titularTeacherId s
         }</span>
         <span class="cov8" title="1">return s.courseRepository.RemoveAuxTeacherFromCourse(course, auxTeacherId)</span>
 }
-</pre>
+
+func (s *CourseService) GetFavouriteCourses(studentId string) ([]*model.Course, error) <span class="cov8" title="1">{
+        if studentId == "" </span><span class="cov8" title="1">{
+                return nil, errors.New("studentId is required")
+        }</span>
+
+        <span class="cov8" title="1">enrollments, err := s.enrollmentRepository.GetEnrollmentsByStudentId(studentId)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">courses, err := s.courseRepository.GetCoursesByStudentId(studentId)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">favouriteCourses := make([]*model.Course, 0)
+
+        for _, course := range courses </span><span class="cov8" title="1">{
+                for _, enrollment := range enrollments </span><span class="cov8" title="1">{
+                        if enrollment.CourseID == course.ID.Hex() &amp;&amp; enrollment.Favourite </span><span class="cov8" title="1">{
+                                favouriteCourses = append(favouriteCourses, course)
+                        }</span>
+                }
+        }
+        <span class="cov8" title="1">return favouriteCourses, nil</span>
+}</pre>
 		
 		<pre class="file" id="file19" style="display: none">package service
 
