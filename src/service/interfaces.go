@@ -18,6 +18,7 @@ type CourseServiceInterface interface {
 	UpdateCourse(id string, updateCourseRequest schemas.UpdateCourseRequest) (*model.Course, error)
 	AddAuxTeacherToCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error)
 	RemoveAuxTeacherFromCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error)
+	GetFavouriteCourses(studentId string) ([]*model.Course, error)
 }
 
 type ModuleServiceInterface interface {

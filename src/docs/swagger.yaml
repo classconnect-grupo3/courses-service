@@ -10,12 +10,8 @@ definitions:
     properties:
       content:
         description: Can be string, []string for multiple choice, or file URL
-      feedback:
-        type: string
       question_id:
         type: string
-      score:
-        type: number
       type:
         description: text, multiple_choice, file
         type: string
@@ -95,6 +91,35 @@ definitions:
       updated_at:
         type: string
     type: object
+  model.Enrollment:
+    properties:
+      completed_date:
+        type: string
+      course_id:
+        type: string
+      enrolled_at:
+        type: string
+      favourite:
+        type: boolean
+      id:
+        type: string
+      status:
+        $ref: '#/definitions/model.EnrollmentStatus'
+      student_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.EnrollmentStatus:
+    enum:
+    - active
+    - dropped
+    - completed
+    type: string
+    x-enum-varnames:
+    - EnrollmentStatusActive
+    - EnrollmentStatusDropped
+    - EnrollmentStatusCompleted
   model.Module:
     properties:
       content:
@@ -276,6 +301,13 @@ definitions:
     required:
     - student_id
     type: object
+  schemas.GradeSubmissionRequest:
+    properties:
+      feedback:
+        type: string
+      score:
+        type: number
+    type: object
   schemas.RemoveAuxTeacherFromCourseRequest:
     properties:
       aux_teacher_id:
@@ -286,6 +318,18 @@ definitions:
     - aux_teacher_id
     - teacher_id
     type: object
+  schemas.SetFavouriteCourseRequest:
+    properties:
+      student_id:
+        type: string
+    required:
+    - student_id
+    type: object
+  schemas.SetFavouriteCourseResponse:
+    properties:
+      message:
+        type: string
+    type: object
   schemas.UnenrollStudentRequest:
     properties:
       student_id:
@@ -294,6 +338,18 @@ definitions:
     - student_id
     type: object
   schemas.UnenrollStudentResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  schemas.UnsetFavouriteCourseRequest:
+    properties:
+      student_id:
+        type: string
+    required:
+    - student_id
+    type: object
+  schemas.UnsetFavouriteCourseResponse:
     properties:
       message:
         type: string
@@ -569,6 +625,38 @@ paths:
       summary: Update a submission
       tags:
       - submissions
+  /assignments/{assignmentId}/submissions/{id}/grade:
+    put:
+      consumes:
+      - application/json
+      description: Grade a submission by ID (for teachers)
+      parameters:
+      - description: Assignment ID
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      - description: Submission ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Grade request
+        in: body
+        name: gradeRequest
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.GradeSubmissionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Submission'
+      summary: Grade a submission
+      tags:
+      - submissions
   /assignments/{assignmentId}/submissions/{id}/submit:
     post:
       consumes:
@@ -746,6 +834,82 @@ paths:
       summary: Enroll a student in a course
       tags:
       - enrollments
+  /courses/{id}/enrollments:
+    get:
+      consumes:
+      - application/json
+      description: Get enrollments by course ID
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Enrollment'
+            type: array
+      summary: Get enrollments by course ID
+      tags:
+      - enrollments
+  /courses/{id}/favourite:
+    delete:
+      consumes:
+      - application/json
+      description: Unset a course as favourite
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Unset favourite course request
+        in: body
+        name: unsetFavouriteCourseRequest
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.UnsetFavouriteCourseRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.UnsetFavouriteCourseResponse'
+      summary: Unset a course as favourite
+      tags:
+      - enrollments
+    post:
+      consumes:
+      - application/json
+      description: Set a course as favourite
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Favourite course request
+        in: body
+        name: favouriteCourseRequest
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.SetFavouriteCourseRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.SetFavouriteCourseResponse'
+      summary: Set a course as favourite
+      tags:
+      - enrollments
   /courses/{id}/remove-aux-teacher:
     delete:
       consumes:
@@ -800,6 +964,29 @@ paths:
       summary: Unenroll a student from a course
       tags:
       - enrollments
+  /courses/favourite/{studentId}:
+    get:
+      consumes:
+      - application/json
+      description: Get favourite courses by student ID
+      parameters:
+      - description: Student ID
+        in: path
+        name: studentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Course'
+            type: array
+      summary: Get favourite courses
+      tags:
+      - courses
   /courses/student/{studentId}:
     get:
       consumes:

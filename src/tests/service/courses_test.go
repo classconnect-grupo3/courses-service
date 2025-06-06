@@ -14,6 +14,50 @@ import (
 
 type MockEnrollmentRepository struct{}
 
+// GetEnrollmentsByStudentId implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepository) GetEnrollmentsByStudentId(studentID string) ([]*model.Enrollment, error) {
+	if studentID == "student-with-favourites" {
+		return []*model.Enrollment{
+			{
+				StudentID: studentID,
+				CourseID:  "123456789012345678901234", // course-favourite-1
+				Favourite: true,
+			},
+			{
+				StudentID: studentID,
+				CourseID:  "123456789012345678901236", // course-not-favourite
+				Favourite: false,
+			},
+			{
+				StudentID: studentID,
+				CourseID:  "123456789012345678901235", // course-favourite-2
+				Favourite: true,
+			},
+		}, nil
+	}
+	if studentID == "student-no-favourites" {
+		return []*model.Enrollment{
+			{
+				StudentID: studentID,
+				CourseID:  "123456789012345678901237", // course-not-favourite-1
+				Favourite: false,
+			},
+			{
+				StudentID: studentID,
+				CourseID:  "123456789012345678901238", // course-not-favourite-2
+				Favourite: false,
+			},
+		}, nil
+	}
+	if studentID == "student-no-enrollments" {
+		return []*model.Enrollment{}, nil
+	}
+	if studentID == "error-getting-enrollments" {
+		return nil, errors.New("Error getting enrollments")
+	}
+	return []*model.Enrollment{}, nil
+}
+
 // SetFavouriteCourse implements repository.EnrollmentRepositoryInterface.
 func (m *MockEnrollmentRepository) SetFavouriteCourse(studentID string, courseID string) error {
 	return nil
@@ -26,7 +70,13 @@ func (m *MockEnrollmentRepository) UnsetFavouriteCourse(studentID string, course
 
 // GetEnrollmentsByCourseId implements repository.EnrollmentRepositoryInterface.
 func (m *MockEnrollmentRepository) GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error) {
-	panic("unimplemented")
+	return []*model.Enrollment{
+		{
+			StudentID: "student-1",
+			CourseID:  courseID,
+			Favourite: true,
+		},
+	}, nil
 }
 
 func (m *MockEnrollmentRepository) IsEnrolled(studentID, courseID string) (bool, error) {
@@ -69,6 +119,55 @@ func (m *MockCourseRepository) GetCoursesByStudentId(studentId string) ([]*model
 				Capacity:    20,
 			},
 		}, nil
+	}
+	if studentId == "student-with-favourites" {
+		return []*model.Course{
+			{
+				ID:          mustParseObjectID("course-favourite-1"),
+				Title:       "Favourite Course 1",
+				Description: "First favourite course",
+				TeacherUUID: "teacher-1",
+				Capacity:    20,
+			},
+			{
+				ID:          mustParseObjectID("course-not-favourite"),
+				Title:       "Not Favourite Course",
+				Description: "Course not marked as favourite",
+				TeacherUUID: "teacher-2",
+				Capacity:    15,
+			},
+			{
+				ID:          mustParseObjectID("course-favourite-2"),
+				Title:       "Favourite Course 2",
+				Description: "Second favourite course",
+				TeacherUUID: "teacher-3",
+				Capacity:    25,
+			},
+		}, nil
+	}
+	if studentId == "student-no-favourites" {
+		return []*model.Course{
+			{
+				ID:          mustParseObjectID("course-not-favourite-1"),
+				Title:       "Course 1",
+				Description: "First course not favourite",
+				TeacherUUID: "teacher-1",
+				Capacity:    20,
+			},
+			{
+				ID:          mustParseObjectID("course-not-favourite-2"),
+				Title:       "Course 2",
+				Description: "Second course not favourite",
+				TeacherUUID: "teacher-2",
+				Capacity:    15,
+			},
+		}, nil
+	}
+	if studentId == "student-no-enrollments" {
+		return []*model.Course{}, nil
+	}
+	if studentId == "error-getting-courses" {
+		return nil, errors.New("Error getting courses")
 	}
 	return []*model.Course{}, nil
 }
@@ -173,6 +272,31 @@ func (m *MockCourseRepository) UpdateCourse(id string, updateCourseRequest model
 
 func (m *MockCourseRepository) UpdateStudentsAmount(courseID string, newStudentsAmount int) error {
 	return nil
+}
+
+// Helper function to create ObjectID from string
+func mustParseObjectID(id string) primitive.ObjectID {
+	// For testing purposes, we'll create consistent ObjectIDs
+	// In real scenarios, these would be actual MongoDB ObjectIDs
+	switch id {
+	case "course-favourite-1":
+		objectID, _ := primitive.ObjectIDFromHex("123456789012345678901234")
+		return objectID
+	case "course-favourite-2":
+		objectID, _ := primitive.ObjectIDFromHex("123456789012345678901235")
+		return objectID
+	case "course-not-favourite":
+		objectID, _ := primitive.ObjectIDFromHex("123456789012345678901236")
+		return objectID
+	case "course-not-favourite-1":
+		objectID, _ := primitive.ObjectIDFromHex("123456789012345678901237")
+		return objectID
+	case "course-not-favourite-2":
+		objectID, _ := primitive.ObjectIDFromHex("123456789012345678901238")
+		return objectID
+	default:
+		return primitive.NewObjectID()
+	}
 }
 
 func TestCreateCourseWithInvalidCapacity(t *testing.T) {
@@ -426,4 +550,61 @@ func TestRemoveAuxTeacherFromCourseWithEnrolledTeacher(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, course)
 	assert.Contains(t, err.Error(), "the aux teacher is already enrolled in the course")
+}
+
+func TestGetFavouriteCourses(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	courses, err := courseService.GetFavouriteCourses("student-with-favourites")
+	assert.NoError(t, err)
+	assert.NotNil(t, courses)
+	assert.Equal(t, 2, len(courses))
+
+	// Verify that only favourite courses are returned
+	titles := make([]string, len(courses))
+	for i, course := range courses {
+		titles[i] = course.Title
+	}
+	assert.Contains(t, titles, "Favourite Course 1")
+	assert.Contains(t, titles, "Favourite Course 2")
+	assert.NotContains(t, titles, "Not Favourite Course")
+}
+
+func TestGetFavouriteCoursesWithEmptyStudentId(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	courses, err := courseService.GetFavouriteCourses("")
+	assert.Error(t, err)
+	assert.Nil(t, courses)
+	assert.Contains(t, err.Error(), "studentId is required")
+}
+
+func TestGetFavouriteCoursesWithNoFavourites(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	courses, err := courseService.GetFavouriteCourses("student-no-favourites")
+	assert.NoError(t, err)
+	assert.NotNil(t, courses)
+	assert.Equal(t, 0, len(courses))
+}
+
+func TestGetFavouriteCoursesWithNoEnrollments(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	courses, err := courseService.GetFavouriteCourses("student-no-enrollments")
+	assert.NoError(t, err)
+	assert.NotNil(t, courses)
+	assert.Equal(t, 0, len(courses))
+}
+
+func TestGetFavouriteCoursesWithErrorGettingEnrollments(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	courses, err := courseService.GetFavouriteCourses("error-getting-enrollments")
+	assert.Error(t, err)
+	assert.Nil(t, courses)
+	assert.Contains(t, err.Error(), "Error getting enrollments")
+}
+
+func TestGetFavouriteCoursesWithErrorGettingCourses(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	courses, err := courseService.GetFavouriteCourses("error-getting-courses")
+	assert.Error(t, err)
+	assert.Nil(t, courses)
+	assert.Contains(t, err.Error(), "Error getting courses")
 }

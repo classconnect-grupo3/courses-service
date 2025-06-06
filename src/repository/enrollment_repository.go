@@ -162,3 +162,25 @@ func (r *EnrollmentRepository) UnsetFavouriteCourse(studentID, courseID string) 
 	}
 	return nil
 }
+
+func (r *EnrollmentRepository) GetEnrollmentsByStudentId(studentID string) ([]*model.Enrollment, error) {
+	filter := bson.M{
+		"student_id": studentID,
+	}
+
+	cursor, err := r.enrollmentCollection.Find(context.TODO(), filter)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return []*model.Enrollment{}, nil
+		}
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+
+	var enrollments []*model.Enrollment
+	if err := cursor.All(context.TODO(), &enrollments); err != nil {
+		return nil, err
+	}
+
+	return enrollments, nil
+}

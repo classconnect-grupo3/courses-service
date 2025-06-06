@@ -568,3 +568,246 @@ func TestUnsetFavouriteMultipleTimes(t *testing.T) {
 	assert.Equal(t, 1, len(enrollments))
 	assert.False(t, enrollments[0].Favourite)
 }
+
+func TestGetEnrollmentsByStudentId(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Create multiple courses
+	course1 := model.Course{
+		Title:          "Course 1",
+		Description:    "Test Description 1",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse1, err := courseRepository.CreateCourse(course1)
+	assert.NoError(t, err)
+
+	course2 := model.Course{
+		Title:          "Course 2",
+		Description:    "Test Description 2",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse2, err := courseRepository.CreateCourse(course2)
+	assert.NoError(t, err)
+
+	course3 := model.Course{
+		Title:          "Course 3",
+		Description:    "Test Description 3",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse3, err := courseRepository.CreateCourse(course3)
+	assert.NoError(t, err)
+
+	// Create enrollments for the same student in multiple courses
+	studentID := "student-123"
+	enrollments := []model.Enrollment{
+		{
+			StudentID:  studentID,
+			CourseID:   createdCourse1.ID.Hex(),
+			EnrolledAt: time.Now(),
+			Status:     model.EnrollmentStatusActive,
+			Favourite:  true,
+			UpdatedAt:  time.Now(),
+		},
+		{
+			StudentID:  studentID,
+			CourseID:   createdCourse2.ID.Hex(),
+			EnrolledAt: time.Now(),
+			Status:     model.EnrollmentStatusActive,
+			Favourite:  false,
+			UpdatedAt:  time.Now(),
+		},
+		{
+			StudentID:  studentID,
+			CourseID:   createdCourse3.ID.Hex(),
+			EnrolledAt: time.Now(),
+			Status:     model.EnrollmentStatusCompleted,
+			Favourite:  true,
+			UpdatedAt:  time.Now(),
+		},
+	}
+
+	// Create the enrollments
+	for i, enrollment := range enrollments {
+		var course *model.Course
+		switch i {
+		case 0:
+			course = createdCourse1
+		case 1:
+			course = createdCourse2
+		case 2:
+			course = createdCourse3
+		}
+		err = enrollmentRepository.CreateEnrollment(enrollment, course)
+		assert.NoError(t, err)
+	}
+
+	// Test GetEnrollmentsByStudentId
+	retrievedEnrollments, err := enrollmentRepository.GetEnrollmentsByStudentId(studentID)
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedEnrollments)
+	assert.Equal(t, 3, len(retrievedEnrollments))
+
+	// Verify all enrollments belong to the correct student
+	courseIDs := make([]string, len(retrievedEnrollments))
+	for i, enrollment := range retrievedEnrollments {
+		assert.Equal(t, studentID, enrollment.StudentID)
+		courseIDs[i] = enrollment.CourseID
+	}
+
+	// Verify all courses are present
+	expectedCourseIDs := []string{
+		createdCourse1.ID.Hex(),
+		createdCourse2.ID.Hex(),
+		createdCourse3.ID.Hex(),
+	}
+	for _, expectedCourseID := range expectedCourseIDs {
+		assert.Contains(t, courseIDs, expectedCourseID)
+	}
+}
+
+func TestGetEnrollmentsByStudentIdEmpty(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Create a course and enroll a different student
+	course := model.Course{
+		Title:          "Test Course",
+		Description:    "Test Description",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	// Create enrollment for a different student
+	enrollment := model.Enrollment{
+		StudentID:  "other-student",
+		CourseID:   createdCourse.ID.Hex(),
+		EnrolledAt: time.Now(),
+		Status:     model.EnrollmentStatusActive,
+		UpdatedAt:  time.Now(),
+	}
+
+	err = enrollmentRepository.CreateEnrollment(enrollment, createdCourse)
+	assert.NoError(t, err)
+
+	// Test GetEnrollmentsByStudentId for a student with no enrollments
+	enrollments, err := enrollmentRepository.GetEnrollmentsByStudentId("student-with-no-enrollments")
+	assert.NoError(t, err)
+	if enrollments != nil {
+		assert.Equal(t, 0, len(enrollments))
+	} else {
+		// Accept nil as valid response when no enrollments exist
+		assert.Nil(t, enrollments)
+	}
+}
+
+func TestGetEnrollmentsByStudentIdWithNonExistentStudent(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Test with non-existent student ID
+	enrollments, err := enrollmentRepository.GetEnrollmentsByStudentId("non-existent-student")
+	assert.NoError(t, err)
+	if enrollments != nil {
+		assert.Equal(t, 0, len(enrollments))
+	} else {
+		// Accept nil as valid response when no enrollments exist
+		assert.Nil(t, enrollments)
+	}
+}
+
+func TestGetEnrollmentsByStudentIdWithDifferentStatuses(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Create courses
+	courses := []model.Course{
+		{
+			Title:          "Active Course",
+			Description:    "Course with active enrollment",
+			Capacity:       10,
+			StudentsAmount: 0,
+		},
+		{
+			Title:          "Completed Course",
+			Description:    "Course with completed enrollment",
+			Capacity:       10,
+			StudentsAmount: 0,
+		},
+		{
+			Title:          "Dropped Course",
+			Description:    "Course with dropped enrollment",
+			Capacity:       10,
+			StudentsAmount: 0,
+		},
+	}
+
+	var createdCourses []*model.Course
+	for _, course := range courses {
+		createdCourse, err := courseRepository.CreateCourse(course)
+		assert.NoError(t, err)
+		createdCourses = append(createdCourses, createdCourse)
+	}
+
+	// Create enrollments with different statuses
+	studentID := "student-123"
+	statuses := []model.EnrollmentStatus{
+		model.EnrollmentStatusActive,
+		model.EnrollmentStatusCompleted,
+		model.EnrollmentStatusDropped,
+	}
+
+	for i, status := range statuses {
+		enrollment := model.Enrollment{
+			StudentID:  studentID,
+			CourseID:   createdCourses[i].ID.Hex(),
+			EnrolledAt: time.Now(),
+			Status:     status,
+			UpdatedAt:  time.Now(),
+		}
+
+		err := enrollmentRepository.CreateEnrollment(enrollment, createdCourses[i])
+		assert.NoError(t, err)
+	}
+
+	// Test GetEnrollmentsByStudentId
+	retrievedEnrollments, err := enrollmentRepository.GetEnrollmentsByStudentId(studentID)
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedEnrollments)
+	assert.Equal(t, 3, len(retrievedEnrollments))
+
+	// Verify all different statuses are present
+	retrievedStatuses := make([]model.EnrollmentStatus, len(retrievedEnrollments))
+	for i, enrollment := range retrievedEnrollments {
+		assert.Equal(t, studentID, enrollment.StudentID)
+		retrievedStatuses[i] = enrollment.Status
+	}
+
+	for _, expectedStatus := range statuses {
+		assert.Contains(t, retrievedStatuses, expectedStatus)
+	}
+}

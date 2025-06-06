@@ -12,6 +12,11 @@ import (
 
 type MockEnrollmentRepositoryForEnrollmentService struct{}
 
+// GetEnrollmentsByStudentId implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepositoryForEnrollmentService) GetEnrollmentsByStudentId(studentID string) ([]*model.Enrollment, error) {
+	return nil, nil
+}
+
 // GetEnrollmentsByCourseId implements repository.EnrollmentRepositoryInterface.
 func (m *MockEnrollmentRepositoryForEnrollmentService) GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error) {
 	if courseID == "error-course" {

@@ -96,7 +96,7 @@ func (c *EnrollmentController) UnenrollStudent(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Course ID"
-// @Success 200 {object} []schemas.Enrollment
+// @Success 200 {array} model.Enrollment
 // @Router /courses/{id}/enrollments [get]
 func (c *EnrollmentController) GetEnrollmentsByCourseId(ctx *gin.Context) {
 	slog.Debug("Getting enrollments by course ID", "courseId", ctx.Param("id"))
