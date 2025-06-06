@@ -95,7 +95,7 @@
 				
 				<option value="file19">courses-service/src/service/enrollment_service.go (97.4%)</option>
 				
-				<option value="file20">courses-service/src/service/module_service.go (2.9%)</option>
+				<option value="file20">courses-service/src/service/module_service.go (100.0%)</option>
 				
 				<option value="file21">courses-service/src/service/submission_service.go (1.3%)</option>
 				
@@ -612,6 +612,14 @@ func (c *CourseController) RemoveAuxTeacherFromCourse(ctx *gin.Context) <span cl
         ctx.JSON(http.StatusOK, course)</span>
 }
 
+// @Summary Get favourite courses
+// @Description Get favourite courses by student ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param studentId path string true "Student ID"
+// @Success 200 {array} model.Course
+// @Router /courses/favourite/{studentId} [get]
 func (c *CourseController) GetFavouriteCourses(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting favourite courses")
         studentId := ctx.Param("studentId")
@@ -629,7 +637,8 @@ func (c *CourseController) GetFavouriteCourses(ctx *gin.Context) <span class="co
         }</span>
         <span class="cov8" title="1">slog.Debug("Favourite courses retrieved", "courses", courses)
         ctx.JSON(http.StatusOK, courses)</span>
-}</pre>
+}
+</pre>
 		
 		<pre class="file" id="file3" style="display: none">package controller
 
@@ -729,7 +738,7 @@ func (c *EnrollmentController) UnenrollStudent(ctx *gin.Context) <span class="co
 // @Accept json
 // @Produce json
 // @Param id path string true "Course ID"
-// @Success 200 {object} []schemas.Enrollment
+// @Success 200 {array} model.Enrollment
 // @Router /courses/{id}/enrollments [get]
 func (c *EnrollmentController) GetEnrollmentsByCourseId(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting enrollments by course ID", "courseId", ctx.Param("id"))
@@ -1666,6 +1675,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/assignments/{assignmentId}/submissions/{id}/grade": {
+            "put": {
+                "description": "Grade a submission by ID (for teachers)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submissions"
+                ],
+                "summary": "Grade a submission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Assignment ID",
+                        "name": "assignmentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Submission ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Grade request",
+                        "name": "gradeRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.GradeSubmissionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Submission"
+                        }
+                    }
+                }
+            }
+        },
         "/assignments/{assignmentId}/submissions/{id}/submit": {
             "post": {
                 "description": "Submit a submission by ID",
@@ -1758,6 +1815,41 @@ const docTemplate = `{
                         "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/model.Course"
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/favourite/{studentId}": {
+            "get": {
+                "description": "Get favourite courses by student ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Get favourite courses",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Student ID",
+                        "name": "studentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Course"
+                            }
                         }
                     }
                 }
@@ -2036,6 +2128,121 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {}
+            }
+        },
+        "/courses/{id}/enrollments": {
+            "get": {
+                "description": "Get enrollments by course ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Get enrollments by course ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Enrollment"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/{id}/favourite": {
+            "post": {
+                "description": "Set a course as favourite",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Set a course as favourite",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Favourite course request",
+                        "name": "favouriteCourseRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.SetFavouriteCourseRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.SetFavouriteCourseResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Unset a course as favourite",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Unset a course as favourite",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Unset favourite course request",
+                        "name": "unsetFavouriteCourseRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.UnsetFavouriteCourseRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.UnsetFavouriteCourseResponse"
+                        }
+                    }
+                }
             }
         },
         "/courses/{id}/remove-aux-teacher": {
@@ -2344,14 +2551,8 @@ const docTemplate = `{
                 "content": {
                     "description": "Can be string, []string for multiple choice, or file URL"
                 },
-                "feedback": {
-                    "type": "string"
-                },
                 "question_id": {
                     "type": "string"
-                },
-                "score": {
-                    "type": "number"
                 },
                 "type": {
                     "description": "text, multiple_choice, file",
@@ -2469,6 +2670,48 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "model.Enrollment": {
+            "type": "object",
+            "properties": {
+                "completed_date": {
+                    "type": "string"
+                },
+                "course_id": {
+                    "type": "string"
+                },
+                "enrolled_at": {
+                    "type": "string"
+                },
+                "favourite": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/model.EnrollmentStatus"
+                },
+                "student_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.EnrollmentStatus": {
+            "type": "string",
+            "enum": [
+                "active",
+                "dropped",
+                "completed"
+            ],
+            "x-enum-varnames": [
+                "EnrollmentStatusActive",
+                "EnrollmentStatusDropped",
+                "EnrollmentStatusCompleted"
+            ]
         },
         "model.Module": {
             "type": "object",
@@ -2730,6 +2973,17 @@ const docTemplate = `{
                 }
             }
         },
+        "schemas.GradeSubmissionRequest": {
+            "type": "object",
+            "properties": {
+                "feedback": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                }
+            }
+        },
         "schemas.RemoveAuxTeacherFromCourseRequest": {
             "type": "object",
             "required": [
@@ -2741,6 +2995,25 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "teacher_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.SetFavouriteCourseRequest": {
+            "type": "object",
+            "required": [
+                "student_id"
+            ],
+            "properties": {
+                "student_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.SetFavouriteCourseResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
                     "type": "string"
                 }
             }
@@ -2757,6 +3030,25 @@ const docTemplate = `{
             }
         },
         "schemas.UnenrollStudentResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.UnsetFavouriteCourseRequest": {
+            "type": "object",
+            "required": [
+                "student_id"
+            ],
+            "properties": {
+                "student_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.UnsetFavouriteCourseResponse": {
             "type": "object",
             "properties": {
                 "message": {
@@ -3585,7 +3877,8 @@ func (r *EnrollmentRepository) GetEnrollmentsByStudentId(studentID string) ([]*m
         }</span>
 
         <span class="cov8" title="1">return enrollments, nil</span>
-}</pre>
+}
+</pre>
 		
 		<pre class="file" id="file14" style="display: none">package repository
 
@@ -4447,7 +4740,8 @@ func (s *CourseService) GetFavouriteCourses(studentId string) ([]*model.Course, 
                 }
         }
         <span class="cov8" title="1">return favouriteCourses, nil</span>
-}</pre>
+}
+</pre>
 		
 		<pre class="file" id="file19" style="display: none">package service
 
@@ -4643,75 +4937,75 @@ func NewModuleService(moduleRepository repository.ModuleRepositoryInterface) *Mo
         return &amp;ModuleService{moduleRepository: moduleRepository}
 }</span>
 
-func (s *ModuleService) CreateModule(module schemas.CreateModuleRequest) (*model.Module, error) <span class="cov0" title="0">{
+func (s *ModuleService) CreateModule(module schemas.CreateModuleRequest) (*model.Module, error) <span class="cov8" title="1">{
         fmt.Printf("Creating module: %v\n", module)
-        if _, err := s.moduleRepository.GetModuleByName(module.CourseID, module.Title); err == nil </span><span class="cov0" title="0">{
+        if _, err := s.moduleRepository.GetModuleByName(module.CourseID, module.Title); err == nil </span><span class="cov8" title="1">{
                 return nil, fmt.Errorf("module with title %s already exists in course %s", module.Title, module.CourseID)
         }</span>
 
-        <span class="cov0" title="0">moduleModel := model.Module{
+        <span class="cov8" title="1">moduleModel := model.Module{
                 Title:       module.Title,
                 Description: module.Description,
                 Content:     module.Content,
         }
 
         order, err := s.moduleRepository.GetNextModuleOrder(module.CourseID)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
-        <span class="cov0" title="0">moduleModel.Order = order
+        <span class="cov8" title="1">moduleModel.Order = order
 
         return s.moduleRepository.CreateModule(module.CourseID, moduleModel)</span>
 }
 
-func (s *ModuleService) GetModulesByCourseId(courseId string) ([]model.Module, error) <span class="cov0" title="0">{
+func (s *ModuleService) GetModulesByCourseId(courseId string) ([]model.Module, error) <span class="cov8" title="1">{
         slog.Debug("Getting modules by course id", "courseId", courseId)
-        if courseId == "" </span><span class="cov0" title="0">{
+        if courseId == "" </span><span class="cov8" title="1">{
                 return nil, errors.New("courseId is required")
         }</span>
-        <span class="cov0" title="0">return s.moduleRepository.GetModulesByCourseId(courseId)</span>
+        <span class="cov8" title="1">return s.moduleRepository.GetModulesByCourseId(courseId)</span>
 }
 
-func (s *ModuleService) GetModuleById(id string) (*model.Module, error) <span class="cov0" title="0">{
+func (s *ModuleService) GetModuleById(id string) (*model.Module, error) <span class="cov8" title="1">{
         slog.Debug("Getting module by id", "id", id)
-        if id == "" </span><span class="cov0" title="0">{
+        if id == "" </span><span class="cov8" title="1">{
                 return nil, errors.New("module id is required")
         }</span>
-        <span class="cov0" title="0">return s.moduleRepository.GetModuleById(id)</span>
+        <span class="cov8" title="1">return s.moduleRepository.GetModuleById(id)</span>
 }
 
-func (s *ModuleService) GetModuleByOrder(courseID string, order int) (*model.Module, error) <span class="cov0" title="0">{
+func (s *ModuleService) GetModuleByOrder(courseID string, order int) (*model.Module, error) <span class="cov8" title="1">{
         slog.Debug("Getting module by order", "courseID", courseID, "order", order)
-        if courseID == "" </span><span class="cov0" title="0">{
+        if courseID == "" </span><span class="cov8" title="1">{
                 return nil, errors.New("courseId is required")
         }</span>
-        <span class="cov0" title="0">return s.moduleRepository.GetModuleByOrder(courseID, order)</span>
+        <span class="cov8" title="1">return s.moduleRepository.GetModuleByOrder(courseID, order)</span>
 }
-func (s *ModuleService) UpdateModule(id string, module model.Module) (*model.Module, error) <span class="cov0" title="0">{
+func (s *ModuleService) UpdateModule(id string, module model.Module) (*model.Module, error) <span class="cov8" title="1">{
         slog.Debug("Updating module", "id", id, "module", module)
-        if id == "" </span><span class="cov0" title="0">{
+        if id == "" </span><span class="cov8" title="1">{
                 return nil, errors.New("module id is required")
         }</span>
 
-        <span class="cov0" title="0">existingModule, err := s.moduleRepository.GetModuleByName(module.CourseID, module.Title)
-        if err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">existingModule, err := s.moduleRepository.GetModuleByName(module.CourseID, module.Title)
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
 
         // Check if the module we are updating is the same as the existing module
-        <span class="cov0" title="0">if existingModule.ID != module.ID </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if existingModule.ID != module.ID </span><span class="cov8" title="1">{
                 return nil, fmt.Errorf("module with title %s already exists in course %s", module.Title, module.CourseID)
         }</span>
 
-        <span class="cov0" title="0">return s.moduleRepository.UpdateModule(id, module)</span>
+        <span class="cov8" title="1">return s.moduleRepository.UpdateModule(id, module)</span>
 }
 
-func (s *ModuleService) DeleteModule(id string) error <span class="cov0" title="0">{
+func (s *ModuleService) DeleteModule(id string) error <span class="cov8" title="1">{
         slog.Debug("Deleting module", "id", id)
-        if id == "" </span><span class="cov0" title="0">{
+        if id == "" </span><span class="cov8" title="1">{
                 return errors.New("module id is required")
         }</span>
-        <span class="cov0" title="0">return s.moduleRepository.DeleteModule(id)</span>
+        <span class="cov8" title="1">return s.moduleRepository.DeleteModule(id)</span>
 }
 </pre>
 		
