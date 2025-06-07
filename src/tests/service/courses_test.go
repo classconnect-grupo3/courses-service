@@ -14,6 +14,19 @@ import (
 
 type MockEnrollmentRepository struct{}
 
+// CreateStudentFeedback implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepository) CreateStudentFeedback(feedbackRequest model.StudentFeedback, enrollmentID string) error {
+	return nil
+}
+
+// GetEnrollmentByStudentIdAndCourseId implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepository) GetEnrollmentByStudentIdAndCourseId(studentID string, courseID string) (*model.Enrollment, error) {
+	return &model.Enrollment{
+		StudentID: studentID,
+		CourseID:  courseID,
+	}, nil
+}
+
 // GetEnrollmentsByStudentId implements repository.EnrollmentRepositoryInterface.
 func (m *MockEnrollmentRepository) GetEnrollmentsByStudentId(studentID string) ([]*model.Enrollment, error) {
 	if studentID == "student-with-favourites" {
@@ -72,9 +85,11 @@ func (m *MockEnrollmentRepository) UnsetFavouriteCourse(studentID string, course
 func (m *MockEnrollmentRepository) GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error) {
 	return []*model.Enrollment{
 		{
-			StudentID: "student-1",
+			ID:        primitive.NewObjectID(),
+			StudentID: "student-123",
 			CourseID:  courseID,
-			Favourite: true,
+			Status:    model.EnrollmentStatusActive,
+			Feedback:  []model.StudentFeedback{}, // Initialize as empty slice
 		},
 	}, nil
 }
@@ -607,4 +622,27 @@ func TestGetFavouriteCoursesWithErrorGettingCourses(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, courses)
 	assert.Contains(t, err.Error(), "Error getting courses")
+}
+
+func (m *MockEnrollmentRepository) GetEnrollmentsByCourseID(courseID string) ([]*model.Enrollment, error) {
+	return []*model.Enrollment{
+		{
+			ID:        primitive.NewObjectID(),
+			StudentID: "student-1",
+			CourseID:  courseID,
+			Favourite: true,
+			Feedback:  []model.StudentFeedback{}, // Initialize as empty slice
+		},
+	}, nil
+}
+
+func (m *MockEnrollmentRepository) GetStudentFavouriteCourses(studentUUID string) ([]*model.Enrollment, error) {
+	return []*model.Enrollment{
+		{
+			ID:        primitive.NewObjectID(),
+			StudentID: studentUUID,
+			Favourite: true,
+			Feedback:  []model.StudentFeedback{}, // Initialize as empty slice
+		},
+	}, nil
 }

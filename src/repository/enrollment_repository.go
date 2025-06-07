@@ -163,6 +163,21 @@ func (r *EnrollmentRepository) UnsetFavouriteCourse(studentID, courseID string) 
 	return nil
 }
 
+func (r *EnrollmentRepository) GetEnrollmentByStudentIdAndCourseId(studentID, courseID string) (*model.Enrollment, error) {
+	filter := bson.M{
+		"student_id": studentID,
+		"course_id":  courseID,
+	}
+
+	var enrollment model.Enrollment
+	err := r.enrollmentCollection.FindOne(context.TODO(), filter).Decode(&enrollment)
+	if err != nil {
+		return nil, err
+	}
+
+	return &enrollment, nil
+}
+
 func (r *EnrollmentRepository) GetEnrollmentsByStudentId(studentID string) ([]*model.Enrollment, error) {
 	filter := bson.M{
 		"student_id": studentID,
@@ -183,4 +198,21 @@ func (r *EnrollmentRepository) GetEnrollmentsByStudentId(studentID string) ([]*m
 	}
 
 	return enrollments, nil
+}
+
+func (r *EnrollmentRepository) CreateStudentFeedback(feedbackRequest model.StudentFeedback, enrollmentID string) error {
+	feedbackRequest.ID = primitive.NewObjectID()
+
+	// Convert string ID to ObjectID
+	objID, err := primitive.ObjectIDFromHex(enrollmentID)
+	if err != nil {
+		return fmt.Errorf("invalid enrollment ID: %v", err)
+	}
+
+	_, err = r.enrollmentCollection.UpdateOne(context.TODO(), bson.M{"_id": objID}, bson.M{"$push": bson.M{"feedback": feedbackRequest}})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -37,6 +37,7 @@ type EnrollmentServiceInterface interface {
 	UnenrollStudent(studentID, courseID string) error
 	SetFavouriteCourse(studentID, courseID string) error
 	UnsetFavouriteCourse(studentID, courseID string) error
+	CreateStudentFeedback(feedbackRequest schemas.CreateStudentFeedbackRequest) error
 }
 
 type AssignmentServiceInterface interface {

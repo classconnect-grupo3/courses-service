@@ -35,6 +35,7 @@ func TestCreateEnrollment(t *testing.T) {
 		EnrolledAt: time.Now(),
 		Status:     model.EnrollmentStatusActive,
 		UpdatedAt:  time.Now(),
+		Feedback:   []model.StudentFeedback{},
 	}
 
 	err = enrollmentRepository.CreateEnrollment(enrollment, createdCourse)
@@ -82,6 +83,7 @@ func TestIsEnrolled(t *testing.T) {
 		EnrolledAt: time.Now(),
 		Status:     model.EnrollmentStatusActive,
 		UpdatedAt:  time.Now(),
+		Feedback:   []model.StudentFeedback{},
 	}
 
 	err = enrollmentRepository.CreateEnrollment(enrollment, createdCourse)
@@ -132,6 +134,7 @@ func TestDeleteEnrollment(t *testing.T) {
 		EnrolledAt: time.Now(),
 		Status:     model.EnrollmentStatusActive,
 		UpdatedAt:  time.Now(),
+		Feedback:   []model.StudentFeedback{},
 	}
 
 	err = enrollmentRepository.CreateEnrollment(enrollment, createdCourse)
@@ -219,6 +222,7 @@ func TestMultipleEnrollments(t *testing.T) {
 			EnrolledAt: time.Now(),
 			Status:     model.EnrollmentStatusActive,
 			UpdatedAt:  time.Now(),
+			Feedback:   []model.StudentFeedback{},
 		}
 
 		// Get the current course state before each enrollment
@@ -269,6 +273,7 @@ func TestGetEnrollmentsByCourseId(t *testing.T) {
 			EnrolledAt: time.Now(),
 			Status:     model.EnrollmentStatusActive,
 			UpdatedAt:  time.Now(),
+			Feedback:   []model.StudentFeedback{},
 		}
 
 		// Get the current course state before each enrollment
@@ -366,6 +371,7 @@ func TestSetFavouriteCourse(t *testing.T) {
 		Status:     model.EnrollmentStatusActive,
 		Favourite:  false, // Initially not favourite
 		UpdatedAt:  time.Now(),
+		Feedback:   []model.StudentFeedback{},
 	}
 
 	err = enrollmentRepository.CreateEnrollment(enrollment, createdCourse)
@@ -435,6 +441,7 @@ func TestSetFavouriteMultipleTimes(t *testing.T) {
 		Status:     model.EnrollmentStatusActive,
 		Favourite:  false,
 		UpdatedAt:  time.Now(),
+		Feedback:   []model.StudentFeedback{},
 	}
 
 	err = enrollmentRepository.CreateEnrollment(enrollment, createdCourse)
@@ -481,6 +488,7 @@ func TestUnsetFavouriteCourse(t *testing.T) {
 		Status:     model.EnrollmentStatusActive,
 		Favourite:  true, // Initially favourite
 		UpdatedAt:  time.Now(),
+		Feedback:   []model.StudentFeedback{},
 	}
 
 	err = enrollmentRepository.CreateEnrollment(enrollment, createdCourse)
@@ -550,6 +558,7 @@ func TestUnsetFavouriteMultipleTimes(t *testing.T) {
 		Status:     model.EnrollmentStatusActive,
 		Favourite:  true,
 		UpdatedAt:  time.Now(),
+		Feedback:   []model.StudentFeedback{},
 	}
 
 	err = enrollmentRepository.CreateEnrollment(enrollment, createdCourse)
@@ -616,6 +625,7 @@ func TestGetEnrollmentsByStudentId(t *testing.T) {
 			Status:     model.EnrollmentStatusActive,
 			Favourite:  true,
 			UpdatedAt:  time.Now(),
+			Feedback:   []model.StudentFeedback{},
 		},
 		{
 			StudentID:  studentID,
@@ -624,6 +634,7 @@ func TestGetEnrollmentsByStudentId(t *testing.T) {
 			Status:     model.EnrollmentStatusActive,
 			Favourite:  false,
 			UpdatedAt:  time.Now(),
+			Feedback:   []model.StudentFeedback{},
 		},
 		{
 			StudentID:  studentID,
@@ -632,6 +643,7 @@ func TestGetEnrollmentsByStudentId(t *testing.T) {
 			Status:     model.EnrollmentStatusCompleted,
 			Favourite:  true,
 			UpdatedAt:  time.Now(),
+			Feedback:   []model.StudentFeedback{},
 		},
 	}
 
@@ -700,6 +712,7 @@ func TestGetEnrollmentsByStudentIdEmpty(t *testing.T) {
 		EnrolledAt: time.Now(),
 		Status:     model.EnrollmentStatusActive,
 		UpdatedAt:  time.Now(),
+		Feedback:   []model.StudentFeedback{},
 	}
 
 	err = enrollmentRepository.CreateEnrollment(enrollment, createdCourse)
@@ -788,6 +801,7 @@ func TestGetEnrollmentsByStudentIdWithDifferentStatuses(t *testing.T) {
 			EnrolledAt: time.Now(),
 			Status:     status,
 			UpdatedAt:  time.Now(),
+			Feedback:   []model.StudentFeedback{},
 		}
 
 		err := enrollmentRepository.CreateEnrollment(enrollment, createdCourses[i])
@@ -810,4 +824,338 @@ func TestGetEnrollmentsByStudentIdWithDifferentStatuses(t *testing.T) {
 	for _, expectedStatus := range statuses {
 		assert.Contains(t, retrievedStatuses, expectedStatus)
 	}
+}
+
+func TestGetEnrollmentByStudentIdAndCourseId(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Create a course first
+	course := model.Course{
+		Title:          "Test Course",
+		Description:    "Test Description",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	// Create enrollment
+	enrollmentTime := time.Now()
+	enrollment := model.Enrollment{
+		StudentID:  "student-123",
+		CourseID:   createdCourse.ID.Hex(),
+		EnrolledAt: enrollmentTime,
+		Status:     model.EnrollmentStatusActive,
+		UpdatedAt:  enrollmentTime,
+		Favourite:  true,
+		Feedback:   []model.StudentFeedback{},
+	}
+
+	err = enrollmentRepository.CreateEnrollment(enrollment, createdCourse)
+	assert.NoError(t, err)
+
+	// Test getting enrollment by student ID and course ID
+	retrievedEnrollment, err := enrollmentRepository.GetEnrollmentByStudentIdAndCourseId("student-123", createdCourse.ID.Hex())
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedEnrollment)
+	assert.Equal(t, "student-123", retrievedEnrollment.StudentID)
+	assert.Equal(t, createdCourse.ID.Hex(), retrievedEnrollment.CourseID)
+	assert.Equal(t, model.EnrollmentStatusActive, retrievedEnrollment.Status)
+	assert.True(t, retrievedEnrollment.Favourite)
+	assert.WithinDuration(t, enrollmentTime, retrievedEnrollment.EnrolledAt, time.Second)
+	assert.WithinDuration(t, enrollmentTime, retrievedEnrollment.UpdatedAt, time.Second)
+}
+
+func TestGetEnrollmentByStudentIdAndCourseIdWithNonExistentEnrollment(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Create a course first
+	course := model.Course{
+		Title:          "Test Course",
+		Description:    "Test Description",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	// Try to get non-existent enrollment
+	retrievedEnrollment, err := enrollmentRepository.GetEnrollmentByStudentIdAndCourseId("non-existent-student", createdCourse.ID.Hex())
+	assert.Error(t, err)
+	assert.Nil(t, retrievedEnrollment)
+}
+
+func TestGetEnrollmentByStudentIdAndCourseIdWithNonExistentCourse(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Try to get enrollment with non-existent course
+	retrievedEnrollment, err := enrollmentRepository.GetEnrollmentByStudentIdAndCourseId("student-123", "non-existent-course")
+	assert.Error(t, err)
+	assert.Nil(t, retrievedEnrollment)
+}
+
+func TestGetEnrollmentByStudentIdAndCourseIdWithMultipleEnrollments(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Create two courses
+	course1 := model.Course{
+		Title:          "Test Course 1",
+		Description:    "Test Description 1",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse1, err := courseRepository.CreateCourse(course1)
+	assert.NoError(t, err)
+
+	course2 := model.Course{
+		Title:          "Test Course 2",
+		Description:    "Test Description 2",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse2, err := courseRepository.CreateCourse(course2)
+	assert.NoError(t, err)
+
+	// Create enrollments for same student in different courses
+	enrollment1 := model.Enrollment{
+		StudentID:  "student-123",
+		CourseID:   createdCourse1.ID.Hex(),
+		EnrolledAt: time.Now(),
+		Status:     model.EnrollmentStatusActive,
+		UpdatedAt:  time.Now(),
+		Favourite:  true,
+		Feedback:   []model.StudentFeedback{},
+	}
+
+	enrollment2 := model.Enrollment{
+		StudentID:  "student-123",
+		CourseID:   createdCourse2.ID.Hex(),
+		EnrolledAt: time.Now(),
+		Status:     model.EnrollmentStatusActive,
+		UpdatedAt:  time.Now(),
+		Favourite:  false,
+		Feedback:   []model.StudentFeedback{},
+	}
+
+	err = enrollmentRepository.CreateEnrollment(enrollment1, createdCourse1)
+	assert.NoError(t, err)
+
+	err = enrollmentRepository.CreateEnrollment(enrollment2, createdCourse2)
+	assert.NoError(t, err)
+
+	// Get enrollment for course 1
+	retrievedEnrollment1, err := enrollmentRepository.GetEnrollmentByStudentIdAndCourseId("student-123", createdCourse1.ID.Hex())
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedEnrollment1)
+	assert.Equal(t, "student-123", retrievedEnrollment1.StudentID)
+	assert.Equal(t, createdCourse1.ID.Hex(), retrievedEnrollment1.CourseID)
+	assert.True(t, retrievedEnrollment1.Favourite)
+
+	// Get enrollment for course 2
+	retrievedEnrollment2, err := enrollmentRepository.GetEnrollmentByStudentIdAndCourseId("student-123", createdCourse2.ID.Hex())
+	assert.NoError(t, err)
+	assert.NotNil(t, retrievedEnrollment2)
+	assert.Equal(t, "student-123", retrievedEnrollment2.StudentID)
+	assert.Equal(t, createdCourse2.ID.Hex(), retrievedEnrollment2.CourseID)
+	assert.False(t, retrievedEnrollment2.Favourite)
+}
+
+func TestCreateStudentFeedback(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Create a course first
+	course := model.Course{
+		Title:          "Test Course",
+		Description:    "Test Description",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	// Create enrollment
+	enrollment := model.Enrollment{
+		StudentID:  "student-123",
+		CourseID:   createdCourse.ID.Hex(),
+		EnrolledAt: time.Now(),
+		Status:     model.EnrollmentStatusActive,
+		UpdatedAt:  time.Now(),
+		Feedback:   []model.StudentFeedback{},
+	}
+
+	err = enrollmentRepository.CreateEnrollment(enrollment, createdCourse)
+	assert.NoError(t, err)
+
+	// Get the created enrollment to get its ID
+	createdEnrollment, err := enrollmentRepository.GetEnrollmentByStudentIdAndCourseId("student-123", createdCourse.ID.Hex())
+	assert.NoError(t, err)
+
+	// Create student feedback
+	feedback := model.StudentFeedback{
+		StudentUUID:  "student-123",
+		TeacherUUID:  "teacher-456",
+		FeedbackType: model.FeedbackTypePositive,
+		Score:        85,
+		Feedback:     "Excellent work on the assignment!",
+		CreatedAt:    time.Now(),
+	}
+
+	err = enrollmentRepository.CreateStudentFeedback(feedback, createdEnrollment.ID.Hex())
+	assert.NoError(t, err)
+
+	// Verify feedback was added to enrollment
+	updatedEnrollment, err := enrollmentRepository.GetEnrollmentByStudentIdAndCourseId("student-123", createdCourse.ID.Hex())
+	assert.NoError(t, err)
+	assert.NotNil(t, updatedEnrollment)
+	assert.NotEmpty(t, updatedEnrollment.Feedback)
+	assert.Equal(t, 1, len(updatedEnrollment.Feedback))
+
+	createdFeedback := updatedEnrollment.Feedback[0]
+	assert.Equal(t, "student-123", createdFeedback.StudentUUID)
+	assert.Equal(t, "teacher-456", createdFeedback.TeacherUUID)
+	assert.Equal(t, model.FeedbackTypePositive, createdFeedback.FeedbackType)
+	assert.Equal(t, 85, createdFeedback.Score)
+	assert.Equal(t, "Excellent work on the assignment!", createdFeedback.Feedback)
+	assert.False(t, createdFeedback.CreatedAt.IsZero())
+}
+
+func TestCreateStudentFeedbackWithInvalidEnrollmentID(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Create student feedback with invalid enrollment ID
+	feedback := model.StudentFeedback{
+		StudentUUID:  "student-123",
+		TeacherUUID:  "teacher-456",
+		FeedbackType: model.FeedbackTypeNegative,
+		Score:        60,
+		Feedback:     "Needs improvement",
+		CreatedAt:    time.Now(),
+	}
+
+	err := enrollmentRepository.CreateStudentFeedback(feedback, "invalid-enrollment-id")
+	assert.Error(t, err)
+}
+
+func TestCreateMultipleStudentFeedbacks(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Create a course first
+	course := model.Course{
+		Title:          "Test Course",
+		Description:    "Test Description",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	// Create enrollment
+	enrollment := model.Enrollment{
+		StudentID:  "student-123",
+		CourseID:   createdCourse.ID.Hex(),
+		EnrolledAt: time.Now(),
+		Status:     model.EnrollmentStatusActive,
+		UpdatedAt:  time.Now(),
+		Feedback:   []model.StudentFeedback{},
+	}
+
+	err = enrollmentRepository.CreateEnrollment(enrollment, createdCourse)
+	assert.NoError(t, err)
+
+	// Get the created enrollment to get its ID
+	createdEnrollment, err := enrollmentRepository.GetEnrollmentByStudentIdAndCourseId("student-123", createdCourse.ID.Hex())
+	assert.NoError(t, err)
+
+	// Create multiple feedbacks
+	feedbacks := []model.StudentFeedback{
+		{
+			StudentUUID:  "student-123",
+			TeacherUUID:  "teacher-456",
+			FeedbackType: model.FeedbackTypePositive,
+			Score:        85,
+			Feedback:     "Great job on assignment 1!",
+			CreatedAt:    time.Now(),
+		},
+		{
+			StudentUUID:  "student-123",
+			TeacherUUID:  "teacher-789",
+			FeedbackType: model.FeedbackTypeNeutral,
+			Score:        75,
+			Feedback:     "Good effort on assignment 2",
+			CreatedAt:    time.Now(),
+		},
+		{
+			StudentUUID:  "student-123",
+			TeacherUUID:  "teacher-456",
+			FeedbackType: model.FeedbackTypePositive,
+			Score:        90,
+			Feedback:     "Excellent work on final project!",
+			CreatedAt:    time.Now(),
+		},
+	}
+
+	// Add all feedbacks
+	for _, feedback := range feedbacks {
+		err = enrollmentRepository.CreateStudentFeedback(feedback, createdEnrollment.ID.Hex())
+		assert.NoError(t, err)
+	}
+
+	// Verify all feedbacks were added
+	updatedEnrollment, err := enrollmentRepository.GetEnrollmentByStudentIdAndCourseId("student-123", createdCourse.ID.Hex())
+	assert.NoError(t, err)
+	assert.NotNil(t, updatedEnrollment)
+	assert.Equal(t, 3, len(updatedEnrollment.Feedback))
+
+	// Verify each feedback
+	assert.Equal(t, "Great job on assignment 1!", updatedEnrollment.Feedback[0].Feedback)
+	assert.Equal(t, model.FeedbackTypePositive, updatedEnrollment.Feedback[0].FeedbackType)
+	assert.Equal(t, 85, updatedEnrollment.Feedback[0].Score)
+
+	assert.Equal(t, "Good effort on assignment 2", updatedEnrollment.Feedback[1].Feedback)
+	assert.Equal(t, model.FeedbackTypeNeutral, updatedEnrollment.Feedback[1].FeedbackType)
+	assert.Equal(t, 75, updatedEnrollment.Feedback[1].Score)
+
+	assert.Equal(t, "Excellent work on final project!", updatedEnrollment.Feedback[2].Feedback)
+	assert.Equal(t, model.FeedbackTypePositive, updatedEnrollment.Feedback[2].FeedbackType)
+	assert.Equal(t, 90, updatedEnrollment.Feedback[2].Score)
 }

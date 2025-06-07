@@ -6,6 +6,7 @@ import (
 	"courses-service/src/tests/testutil"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -333,8 +334,12 @@ func TestGetCoursesByStudentId(t *testing.T) {
 	resCourse, _ := courseRepository.CreateCourse(course)
 
 	enrollment := model.Enrollment{
-		StudentID: "123e4567-e89b-12d3-a456-426614174000",
-		CourseID:  resCourse.ID.Hex(),
+		StudentID:  "student-123",
+		CourseID:   resCourse.ID.Hex(),
+		EnrolledAt: time.Now(),
+		Status:     model.EnrollmentStatusActive,
+		UpdatedAt:  time.Now(),
+		Feedback:   []model.StudentFeedback{},
 	}
 
 	fmt.Printf("resCourseId: %v", resCourse.ID.Hex())

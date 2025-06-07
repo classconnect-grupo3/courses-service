@@ -1,10 +1,13 @@
 package controller
 
 import (
+	"courses-service/src/model"
 	"courses-service/src/schemas"
 	"courses-service/src/service"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"slices"
 
 	"github.com/gin-gonic/gin"
 )
@@ -184,4 +187,40 @@ func (c *EnrollmentController) UnsetFavouriteCourse(ctx *gin.Context) {
 
 	slog.Debug("Favourite course unset", "studentId", unsetFavouriteCourseRequest.StudentID, "courseId", courseID)
 	ctx.JSON(http.StatusOK, gin.H{"message": "Favourite course unset"})
+}
+
+func (c *EnrollmentController) CreateFeedback(ctx *gin.Context) {
+	slog.Debug("Creating feedback", "courseId", ctx.Param("id"))
+	courseID := ctx.Param("id")
+
+	if courseID == "" {
+		slog.Error("Invalid course ID")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid course ID"})
+		return
+	}
+
+	var feedbackRequest schemas.CreateStudentFeedbackRequest
+	if err := ctx.ShouldBindJSON(&feedbackRequest); err != nil {
+		slog.Error("Error binding feedback request", "error", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	fmt.Printf("Feedback type: %+v\n", feedbackRequest.FeedbackType)
+
+	if !slices.Contains(model.FeedbackTypes, feedbackRequest.FeedbackType) {
+		slog.Error("Invalid feedback type")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid feedback type"})
+		return
+	}
+
+	err := c.enrollmentService.CreateStudentFeedback(feedbackRequest)
+	if err != nil {
+		slog.Error("Error creating feedback", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	slog.Debug("Feedback created", "studentId", feedbackRequest.StudentUUID, "teacherId", feedbackRequest.TeacherUUID)
+	ctx.JSON(http.StatusOK, gin.H{"message": "Feedback created"})
 }

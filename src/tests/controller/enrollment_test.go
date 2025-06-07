@@ -4,7 +4,9 @@ import (
 	"courses-service/src/controller"
 	"courses-service/src/model"
 	"courses-service/src/router"
+	"courses-service/src/schemas"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -30,6 +32,11 @@ func init() {
 
 type MockEnrollmentService struct{}
 
+// CreateStudentFeedback implements service.EnrollmentServiceInterface.
+func (m *MockEnrollmentService) CreateStudentFeedback(feedbackRequest schemas.CreateStudentFeedbackRequest) error {
+	return nil
+}
+
 // GetEnrollmentsByCourseId implements service.EnrollmentServiceInterface.
 func (m *MockEnrollmentService) GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error) {
 	return nil, nil
@@ -52,6 +59,11 @@ func (m *MockEnrollmentService) UnsetFavouriteCourse(studentID, courseID string)
 }
 
 type MockEnrollmentServiceWithError struct{}
+
+// CreateStudentFeedback implements service.EnrollmentServiceInterface.
+func (m *MockEnrollmentServiceWithError) CreateStudentFeedback(feedbackRequest schemas.CreateStudentFeedbackRequest) error {
+	return errors.New("Error creating student feedback")
+}
 
 // GetEnrollmentsByCourseId implements service.EnrollmentServiceInterface.
 func (m *MockEnrollmentServiceWithError) GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error) {
@@ -265,4 +277,176 @@ func TestUnsetFavouriteCourseWithError(t *testing.T) {
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 	assert.Contains(t, w.Body.String(), "Error unsetting favourite course")
+}
+
+func TestCreateFeedback(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{
+		"student_uuid": "student-123",
+		"teacher_uuid": "teacher-456",
+		"course_id": "course-123",
+		"feedback_type": "POSITIVO",
+		"score": 4,
+		"feedback": "Excellent work on the assignment!"
+	}`
+
+	req, _ := http.NewRequest("POST", "/courses/course-123/feedback", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "Feedback created")
+}
+
+func TestCreateFeedbackWithEmptyCourseID(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{
+		"student_uuid": "student-123",
+		"teacher_uuid": "teacher-456",
+		"course_id": "course-123",
+		"feedback_type": "POSITIVO",
+		"score": 4,
+		"feedback": "Great work!"
+	}`
+
+	req, _ := http.NewRequest("POST", "/courses//feedback", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestCreateFeedbackWithInvalidJSON(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{
+		"student_uuid": "student-123",
+		"teacher_uuid": "teacher-456",
+		"invalid_field": "invalid"
+	}`
+
+	req, _ := http.NewRequest("POST", "/courses/course-123/feedback", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Error:Field validation")
+}
+
+func TestCreateFeedbackWithMissingRequiredFields(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{
+		"student_uuid": "",
+		"teacher_uuid": "teacher-456",
+		"course_id": "course-123",
+		"feedback_type": "POSITIVO",
+		"score": 4,
+		"feedback": "Great work!"
+	}`
+
+	req, _ := http.NewRequest("POST", "/courses/course-123/feedback", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Error:Field validation")
+}
+
+func TestCreateFeedbackWithServiceError(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{
+		"student_uuid": "student-123",
+		"teacher_uuid": "teacher-456",
+		"course_id": "course-123",
+		"feedback_type": "POSITIVO",
+		"score": 4,
+		"feedback": "Great work!"
+	}`
+
+	req, _ := http.NewRequest("POST", "/courses/course-123/feedback", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	errorEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "Error creating student feedback")
+}
+
+func TestCreateFeedbackWithDifferentFeedbackTypes(t *testing.T) {
+	testCases := []struct {
+		feedbackType string
+		score        int
+		expected     string
+	}{
+		{"POSITIVO", 5, "Feedback created"},
+		{"NEUTRO", 3, "Feedback created"},
+		{"NEGATIVO", 1, "Feedback created"},
+	}
+
+	for _, tc := range testCases {
+		w := httptest.NewRecorder()
+		body := fmt.Sprintf(`{
+			"student_uuid": "student-123",
+			"teacher_uuid": "teacher-456",
+			"course_id": "course-123",
+			"feedback_type": "%s",
+			"score": %d,
+			"feedback": "Test feedback"
+		}`, tc.feedbackType, tc.score)
+
+		req, _ := http.NewRequest("POST", "/courses/course-123/feedback", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		normalEnrollmentRouter.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), tc.expected)
+	}
+}
+
+func TestCreateFeedbackWithInvalidFeedbackType(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{
+		"student_uuid": "student-123",
+		"teacher_uuid": "teacher-456",
+		"course_id": "course-123",
+		"feedback_type": "INVALID_TYPE",
+		"score": 3,
+		"feedback": "Great work!"
+	}`
+
+	req, _ := http.NewRequest("POST", "/courses/course-123/feedback", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Invalid feedback type")
+}
+
+func TestCreateFeedbackWithValidScoreBoundaries(t *testing.T) {
+	testCases := []struct {
+		score    int
+		expected int
+	}{
+		{1, http.StatusOK}, // Lower boundary
+		{5, http.StatusOK}, // Upper boundary
+	}
+
+	for _, tc := range testCases {
+		w := httptest.NewRecorder()
+		body := fmt.Sprintf(`{
+			"student_uuid": "student-123",
+			"teacher_uuid": "teacher-456",
+			"course_id": "course-123",
+			"feedback_type": "POSITIVO",
+			"score": %d,
+			"feedback": "Score boundary test"
+		}`, tc.score)
+
+		req, _ := http.NewRequest("POST", "/courses/course-123/feedback", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		normalEnrollmentRouter.ServeHTTP(w, req)
+
+		assert.Equal(t, tc.expected, w.Code)
+		if tc.expected == http.StatusOK {
+			assert.Contains(t, w.Body.String(), "Feedback created")
+		}
+	}
 }

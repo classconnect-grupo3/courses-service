@@ -81,7 +81,7 @@
 				
 				<option value="file12">courses-service/src/repository/course_repository.go (83.3%)</option>
 				
-				<option value="file13">courses-service/src/repository/enrollment_repository.go (77.0%)</option>
+				<option value="file13">courses-service/src/repository/enrollment_repository.go (79.5%)</option>
 				
 				<option value="file14">courses-service/src/repository/module_repository.go (89.9%)</option>
 				
@@ -93,7 +93,7 @@
 				
 				<option value="file18">courses-service/src/service/course_service.go (93.8%)</option>
 				
-				<option value="file19">courses-service/src/service/enrollment_service.go (97.4%)</option>
+				<option value="file19">courses-service/src/service/enrollment_service.go (95.9%)</option>
 				
 				<option value="file20">courses-service/src/service/module_service.go (100.0%)</option>
 				
@@ -643,10 +643,13 @@ func (c *CourseController) GetFavouriteCourses(ctx *gin.Context) <span class="co
 		<pre class="file" id="file3" style="display: none">package controller
 
 import (
+        "courses-service/src/model"
         "courses-service/src/schemas"
         "courses-service/src/service"
+        "fmt"
         "log/slog"
         "net/http"
+        "slices"
 
         "github.com/gin-gonic/gin"
 )
@@ -826,6 +829,42 @@ func (c *EnrollmentController) UnsetFavouriteCourse(ctx *gin.Context) <span clas
 
         <span class="cov8" title="1">slog.Debug("Favourite course unset", "studentId", unsetFavouriteCourseRequest.StudentID, "courseId", courseID)
         ctx.JSON(http.StatusOK, gin.H{"message": "Favourite course unset"})</span>
+}
+
+func (c *EnrollmentController) CreateFeedback(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Creating feedback", "courseId", ctx.Param("id"))
+        courseID := ctx.Param("id")
+
+        if courseID == "" </span><span class="cov8" title="1">{
+                slog.Error("Invalid course ID")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid course ID"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">var feedbackRequest schemas.CreateStudentFeedbackRequest
+        if err := ctx.ShouldBindJSON(&amp;feedbackRequest); err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error binding feedback request", "error", err)
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">fmt.Printf("Feedback type: %+v\n", feedbackRequest.FeedbackType)
+
+        if !slices.Contains(model.FeedbackTypes, feedbackRequest.FeedbackType) </span><span class="cov8" title="1">{
+                slog.Error("Invalid feedback type")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid feedback type"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">err := c.enrollmentService.CreateStudentFeedback(feedbackRequest)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error creating feedback", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">slog.Debug("Feedback created", "studentId", feedbackRequest.StudentUUID, "teacherId", feedbackRequest.TeacherUUID)
+        ctx.JSON(http.StatusOK, gin.H{"message": "Feedback created"})</span>
 }
 </pre>
 		
@@ -3870,6 +3909,21 @@ func (r *EnrollmentRepository) UnsetFavouriteCourse(studentID, courseID string) 
         <span class="cov8" title="1">return nil</span>
 }
 
+func (r *EnrollmentRepository) GetEnrollmentByStudentIdAndCourseId(studentID, courseID string) (*model.Enrollment, error) <span class="cov8" title="1">{
+        filter := bson.M{
+                "student_id": studentID,
+                "course_id":  courseID,
+        }
+
+        var enrollment model.Enrollment
+        err := r.enrollmentCollection.FindOne(context.TODO(), filter).Decode(&amp;enrollment)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return &amp;enrollment, nil</span>
+}
+
 func (r *EnrollmentRepository) GetEnrollmentsByStudentId(studentID string) ([]*model.Enrollment, error) <span class="cov8" title="1">{
         filter := bson.M{
                 "student_id": studentID,
@@ -3890,6 +3944,23 @@ func (r *EnrollmentRepository) GetEnrollmentsByStudentId(studentID string) ([]*m
         }</span>
 
         <span class="cov8" title="1">return enrollments, nil</span>
+}
+
+func (r *EnrollmentRepository) CreateStudentFeedback(feedbackRequest model.StudentFeedback, enrollmentID string) error <span class="cov8" title="1">{
+        feedbackRequest.ID = primitive.NewObjectID()
+
+        // Convert string ID to ObjectID
+        objID, err := primitive.ObjectIDFromHex(enrollmentID)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("invalid enrollment ID: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">_, err = r.enrollmentCollection.UpdateOne(context.TODO(), bson.M{"_id": objID}, bson.M{"$push": bson.M{"feedback": feedbackRequest}})
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
 }
 </pre>
 		
@@ -4406,6 +4477,7 @@ func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.Enrollmen
         r.DELETE("/courses/:id/unenroll", controller.UnenrollStudent)
         r.POST("/courses/:id/favourite", controller.SetFavouriteCourse)
         r.DELETE("/courses/:id/favourite", controller.UnsetFavouriteCourse)
+        r.POST("/courses/:id/feedback", controller.CreateFeedback)
 }</span>
 
 func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
@@ -4761,7 +4833,9 @@ func (s *CourseService) GetFavouriteCourses(studentId string) ([]*model.Course, 
 import (
         "courses-service/src/model"
         "courses-service/src/repository"
+        "courses-service/src/schemas"
         "fmt"
+        "slices"
         "time"
 
         "go.mongodb.org/mongo-driver/mongo"
@@ -4830,6 +4904,7 @@ func (s *EnrollmentService) EnrollStudent(studentID, courseID string) error <spa
                 EnrolledAt: time.Now(),
                 Status:     model.EnrollmentStatusActive,
                 UpdatedAt:  time.Now(),
+                Feedback:   []model.StudentFeedback{},
         }
 
         err = s.enrollmentRepository.CreateEnrollment(enrollment, course)
@@ -4925,6 +5000,55 @@ func (s *EnrollmentService) UnsetFavouriteCourse(studentID, courseID string) err
         <span class="cov8" title="1">err = s.enrollmentRepository.UnsetFavouriteCourse(studentID, courseID)
         if err != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("error unsetting favourite course for student %s in course %s", studentID, courseID)
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (s *EnrollmentService) GetEnrollmentByStudentIdAndCourseId(studentID, courseID string) (*model.Enrollment, error) <span class="cov8" title="1">{
+        if studentID == "" || courseID == "" </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("student ID and course ID are required")
+        }</span>
+
+        <span class="cov8" title="1">enrollment, err := s.enrollmentRepository.GetEnrollmentByStudentIdAndCourseId(studentID, courseID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("error getting enrollment by student ID and course ID: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">return enrollment, nil</span>
+}
+
+func (s *EnrollmentService) CreateStudentFeedback(feedbackRequest schemas.CreateStudentFeedbackRequest) error <span class="cov8" title="1">{
+        if feedbackRequest.Score &lt; 1 || feedbackRequest.Score &gt; 5 </span><span class="cov8" title="1">{
+                return fmt.Errorf("score must be between 1 and 5, not %d", feedbackRequest.Score)
+        }</span>
+
+        <span class="cov8" title="1">enrollment, err := s.GetEnrollmentByStudentIdAndCourseId(feedbackRequest.StudentUUID, feedbackRequest.CourseID)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">course, err := s.courseRepository.GetCourseById(feedbackRequest.CourseID)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("error getting course by ID: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">if course.TeacherUUID != feedbackRequest.TeacherUUID &amp;&amp; !slices.Contains(course.AuxTeachers, feedbackRequest.TeacherUUID) </span><span class="cov8" title="1">{
+                return fmt.Errorf("teacher %s is not the teacher or aux teacher of course %s", feedbackRequest.TeacherUUID, feedbackRequest.CourseID)
+        }</span>
+
+        <span class="cov8" title="1">feedback := model.StudentFeedback{
+                StudentUUID:  feedbackRequest.StudentUUID,
+                TeacherUUID:  feedbackRequest.TeacherUUID,
+                FeedbackType: feedbackRequest.FeedbackType,
+                Score:        feedbackRequest.Score,
+                Feedback:     feedbackRequest.Feedback,
+                CreatedAt:    time.Now(),
+        }
+
+        err = s.enrollmentRepository.CreateStudentFeedback(feedback, enrollment.ID.Hex())
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("error creating student feedback: %v", err)
         }</span>
 
         <span class="cov8" title="1">return nil</span>
