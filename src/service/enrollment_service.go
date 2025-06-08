@@ -223,3 +223,16 @@ func (s *EnrollmentService) CreateStudentFeedback(feedbackRequest schemas.Create
 
 	return nil
 }
+
+func (s *EnrollmentService) GetFeedbackByStudentId(studentID string, getFeedbackByStudentIdRequest schemas.GetFeedbackByStudentIdRequest) ([]*model.StudentFeedback, error) {
+	if studentID == "" {
+		return nil, fmt.Errorf("student ID is required")
+	}
+
+	feedback, err := s.enrollmentRepository.GetFeedbackByStudentId(studentID, getFeedbackByStudentIdRequest)
+	if err != nil {
+		return nil, fmt.Errorf("error getting feedback by student ID: %v", err)
+	}
+
+	return feedback, nil
+}

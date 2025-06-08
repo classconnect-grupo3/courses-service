@@ -101,7 +101,7 @@ func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.Enrollmen
 	r.POST("/courses/:id/favourite", controller.SetFavouriteCourse)
 	r.DELETE("/courses/:id/favourite", controller.UnsetFavouriteCourse)
 	r.POST("/courses/:id/feedback", controller.CreateFeedback)
-	// r.GET("/feedback/student/:id", controller.GetFeedbackByStudentId)
+	r.GET("/feedback/student/:id", controller.GetFeedbackByStudentId)
 	
 }
 

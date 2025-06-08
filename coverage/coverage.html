@@ -61,7 +61,7 @@
 				
 				<option value="file2">courses-service/src/controller/courses_controller.go (100.0%)</option>
 				
-				<option value="file3">courses-service/src/controller/enrollment_controller.go (100.0%)</option>
+				<option value="file3">courses-service/src/controller/enrollment_controller.go (97.5%)</option>
 				
 				<option value="file4">courses-service/src/controller/module_controller.go (100.0%)</option>
 				
@@ -81,7 +81,7 @@
 				
 				<option value="file12">courses-service/src/repository/course_repository.go (83.3%)</option>
 				
-				<option value="file13">courses-service/src/repository/enrollment_repository.go (79.5%)</option>
+				<option value="file13">courses-service/src/repository/enrollment_repository.go (81.4%)</option>
 				
 				<option value="file14">courses-service/src/repository/module_repository.go (89.9%)</option>
 				
@@ -93,7 +93,7 @@
 				
 				<option value="file18">courses-service/src/service/course_service.go (93.8%)</option>
 				
-				<option value="file19">courses-service/src/service/enrollment_service.go (95.9%)</option>
+				<option value="file19">courses-service/src/service/enrollment_service.go (96.2%)</option>
 				
 				<option value="file20">courses-service/src/service/module_service.go (100.0%)</option>
 				
@@ -831,6 +831,15 @@ func (c *EnrollmentController) UnsetFavouriteCourse(ctx *gin.Context) <span clas
         ctx.JSON(http.StatusOK, gin.H{"message": "Favourite course unset"})</span>
 }
 
+// @Summary Create a feedback for a course
+// @Description Create a feedback for a course
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param feedbackRequest body schemas.CreateStudentFeedbackRequest true "Feedback request"
+// @Success 200 {object} schemas.CreateStudentFeedbackResponse
+// @Router /courses/{id}/feedback [post]
 func (c *EnrollmentController) CreateFeedback(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Creating feedback", "courseId", ctx.Param("id"))
         courseID := ctx.Param("id")
@@ -866,7 +875,43 @@ func (c *EnrollmentController) CreateFeedback(ctx *gin.Context) <span class="cov
         <span class="cov8" title="1">slog.Debug("Feedback created", "studentId", feedbackRequest.StudentUUID, "teacherId", feedbackRequest.TeacherUUID)
         ctx.JSON(http.StatusOK, gin.H{"message": "Feedback created"})</span>
 }
-</pre>
+
+// @Summary Get feedback by student ID
+// @Description Get feedback by student ID
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param id path string true "Student ID"
+// @Param getFeedbackByStudentIdRequest body schemas.GetFeedbackByStudentIdRequest true "Get feedback by student ID request"
+// @Success 200 {array} model.StudentFeedback
+// @Router /feedback/student/{id} [get]
+func (c *EnrollmentController) GetFeedbackByStudentId(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Getting feedback by student ID", "studentId", ctx.Param("id"))
+        studentID := ctx.Param("id")
+
+        if studentID == "" </span><span class="cov0" title="0">{
+                slog.Error("Invalid student ID")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid student ID"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">var getFeedbackByStudentIdRequest schemas.GetFeedbackByStudentIdRequest
+        if err := ctx.ShouldBindJSON(&amp;getFeedbackByStudentIdRequest); err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error binding get feedback by student ID request", "error", err)
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">feedback, err := c.enrollmentService.GetFeedbackByStudentId(studentID, getFeedbackByStudentIdRequest)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error getting feedback by student ID", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">slog.Debug("Feedback retrieved", "studentId", studentID)
+        ctx.JSON(http.StatusOK, feedback)</span>
+}</pre>
 		
 		<pre class="file" id="file4" style="display: none">package controller
 
@@ -3749,6 +3794,7 @@ func (r *CourseRepository) UpdateStudentsAmount(courseID string, newStudentsAmou
 import (
         "context"
         "courses-service/src/model"
+        "courses-service/src/schemas"
         "fmt"
         "log/slog"
 
@@ -3961,6 +4007,76 @@ func (r *EnrollmentRepository) CreateStudentFeedback(feedbackRequest model.Stude
         }</span>
 
         <span class="cov8" title="1">return nil</span>
+}
+
+func (r *EnrollmentRepository) matchesFeedbackFilters(feedback *model.StudentFeedback, request schemas.GetFeedbackByStudentIdRequest) bool <span class="cov8" title="1">{
+        // Filter by feedback type
+        if request.FeedbackType != "" &amp;&amp; feedback.FeedbackType != request.FeedbackType </span><span class="cov8" title="1">{
+                return false
+        }</span>
+
+        // Filter by score range
+        <span class="cov8" title="1">if request.StartScore != 0 &amp;&amp; feedback.Score &lt; request.StartScore </span><span class="cov8" title="1">{
+                return false
+        }</span>
+        <span class="cov8" title="1">if request.EndScore != 0 &amp;&amp; feedback.Score &gt; request.EndScore </span><span class="cov0" title="0">{
+                return false
+        }</span>
+
+        // Filter by date range
+        <span class="cov8" title="1">if !request.StartDate.IsZero() &amp;&amp; feedback.CreatedAt.Before(request.StartDate) </span><span class="cov8" title="1">{
+                return false
+        }</span>
+        <span class="cov8" title="1">if !request.EndDate.IsZero() &amp;&amp; feedback.CreatedAt.After(request.EndDate) </span><span class="cov0" title="0">{
+                return false
+        }</span>
+
+        <span class="cov8" title="1">return true</span>
+}
+
+func (r *EnrollmentRepository) GetFeedbackByStudentId(studentID string, getFeedbackByStudentIdRequest schemas.GetFeedbackByStudentIdRequest) ([]*model.StudentFeedback, error) <span class="cov8" title="1">{
+        // Build base filter for enrollments of the student
+        filter := bson.M{
+                "student_id": studentID,
+                "feedback":   bson.M{"$exists": true, "$ne": []interface{}{}}, // Must have non-empty feedback array
+        }
+
+        // Add course filter if specified
+        if getFeedbackByStudentIdRequest.CourseID != "" </span><span class="cov8" title="1">{
+                filter["course_id"] = getFeedbackByStudentIdRequest.CourseID
+        }</span>
+
+        // Find all enrollments for this student
+        <span class="cov8" title="1">cursor, err := r.enrollmentCollection.Find(context.TODO(), filter)
+        if err != nil </span><span class="cov0" title="0">{
+                return []*model.StudentFeedback{}, nil // Return empty slice on error instead of nil
+        }</span>
+        <span class="cov8" title="1">defer cursor.Close(context.TODO())
+
+        var enrollments []*model.Enrollment
+        if err := cursor.All(context.TODO(), &amp;enrollments); err != nil </span><span class="cov0" title="0">{
+                return []*model.StudentFeedback{}, nil // Return empty slice on error instead of nil
+        }</span>
+
+        // Extract and filter feedbacks from enrollments
+        <span class="cov8" title="1">var allFeedbacks []*model.StudentFeedback
+        for _, enrollment := range enrollments </span><span class="cov8" title="1">{
+                for _, feedback := range enrollment.Feedback </span><span class="cov8" title="1">{
+                        // Apply feedback filters
+                        if r.matchesFeedbackFilters(&amp;feedback, getFeedbackByStudentIdRequest) </span><span class="cov8" title="1">{
+                                // Create a copy to avoid pointer issues
+                                feedbackCopy := feedback
+                                allFeedbacks = append(allFeedbacks, &amp;feedbackCopy)
+                        }</span>
+                }
+        }
+
+        // Ensure we always return a non-nil slice
+        <span class="cov8" title="1">if allFeedbacks == nil </span><span class="cov8" title="1">{
+                allFeedbacks = []*model.StudentFeedback{}
+        }</span>
+
+        <span class="cov8" title="1">return allFeedbacks, nil</span>
 }
 </pre>
 		
@@ -4478,6 +4594,8 @@ func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.Enrollmen
         r.POST("/courses/:id/favourite", controller.SetFavouriteCourse)
         r.DELETE("/courses/:id/favourite", controller.UnsetFavouriteCourse)
         r.POST("/courses/:id/feedback", controller.CreateFeedback)
+        r.GET("/feedback/student/:id", controller.GetFeedbackByStudentId)
+        
 }</span>
 
 func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
@@ -5053,7 +5171,19 @@ func (s *EnrollmentService) CreateStudentFeedback(feedbackRequest schemas.Create
 
         <span class="cov8" title="1">return nil</span>
 }
-</pre>
+
+func (s *EnrollmentService) GetFeedbackByStudentId(studentID string, getFeedbackByStudentIdRequest schemas.GetFeedbackByStudentIdRequest) ([]*model.StudentFeedback, error) <span class="cov8" title="1">{
+        if studentID == "" </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("student ID is required")
+        }</span>
+
+        <span class="cov8" title="1">feedback, err := s.enrollmentRepository.GetFeedbackByStudentId(studentID, getFeedbackByStudentIdRequest)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("error getting feedback by student ID: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">return feedback, nil</span>
+}</pre>
 		
 		<pre class="file" id="file20" style="display: none">package service
 

@@ -19,6 +19,11 @@ func (m *MockEnrollmentRepository) CreateStudentFeedback(feedbackRequest model.S
 	return nil
 }
 
+// GetFeedbackByStudentId implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepository) GetFeedbackByStudentId(studentID string, getFeedbackByStudentIdRequest schemas.GetFeedbackByStudentIdRequest) ([]*model.StudentFeedback, error) {
+	return []*model.StudentFeedback{}, nil
+}
+
 // GetEnrollmentByStudentIdAndCourseId implements repository.EnrollmentRepositoryInterface.
 func (m *MockEnrollmentRepository) GetEnrollmentByStudentIdAndCourseId(studentID string, courseID string) (*model.Enrollment, error) {
 	return &model.Enrollment{

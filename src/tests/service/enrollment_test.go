@@ -125,6 +125,32 @@ func (m *MockEnrollmentRepositoryForEnrollmentService) CreateStudentFeedback(fee
 	return nil
 }
 
+// GetFeedbackByStudentId implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepositoryForEnrollmentService) GetFeedbackByStudentId(studentID string, getFeedbackByStudentIdRequest schemas.GetFeedbackByStudentIdRequest) ([]*model.StudentFeedback, error) {
+	if studentID == "error-student" {
+		return nil, errors.New("Error getting feedback from repository")
+	}
+	if studentID == "student-with-feedback" {
+		return []*model.StudentFeedback{
+			{
+				StudentUUID:  studentID,
+				TeacherUUID:  "teacher-123",
+				FeedbackType: model.FeedbackTypePositive,
+				Score:        5,
+				Feedback:     "Excellent work!",
+			},
+			{
+				StudentUUID:  studentID,
+				TeacherUUID:  "teacher-456",
+				FeedbackType: model.FeedbackTypeNeutral,
+				Score:        3,
+				Feedback:     "Good effort",
+			},
+		}, nil
+	}
+	return []*model.StudentFeedback{}, nil
+}
+
 type MockCourseRepositoryForEnrollment struct{}
 
 func (m *MockCourseRepositoryForEnrollment) GetCourseById(id string) (*model.Course, error) {
@@ -740,4 +766,111 @@ func TestCreateStudentFeedbackWithValidScoreBoundaries(t *testing.T) {
 
 	err = enrollmentService.CreateStudentFeedback(feedbackRequest2)
 	assert.NoError(t, err)
+}
+
+func TestGetFeedbackByStudentId(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	getFeedbackRequest := schemas.GetFeedbackByStudentIdRequest{
+		CourseID:     "valid-course",
+		FeedbackType: model.FeedbackTypePositive,
+		StartScore:   1,
+		EndScore:     5,
+	}
+
+	feedback, err := enrollmentService.GetFeedbackByStudentId("student-with-feedback", getFeedbackRequest)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedback)
+	assert.Equal(t, 2, len(feedback))
+	assert.Equal(t, "student-with-feedback", feedback[0].StudentUUID)
+	assert.Equal(t, "teacher-123", feedback[0].TeacherUUID)
+	assert.Equal(t, model.FeedbackTypePositive, feedback[0].FeedbackType)
+	assert.Equal(t, 5, feedback[0].Score)
+	assert.Equal(t, "Excellent work!", feedback[0].Feedback)
+}
+
+func TestGetFeedbackByStudentIdWithEmptyStudentID(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	getFeedbackRequest := schemas.GetFeedbackByStudentIdRequest{
+		CourseID: "valid-course",
+	}
+
+	feedback, err := enrollmentService.GetFeedbackByStudentId("", getFeedbackRequest)
+	assert.Error(t, err)
+	assert.Nil(t, feedback)
+	assert.Contains(t, err.Error(), "student ID is required")
+}
+
+func TestGetFeedbackByStudentIdWithRepositoryError(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	getFeedbackRequest := schemas.GetFeedbackByStudentIdRequest{
+		CourseID: "valid-course",
+	}
+
+	feedback, err := enrollmentService.GetFeedbackByStudentId("error-student", getFeedbackRequest)
+	assert.Error(t, err)
+	assert.Nil(t, feedback)
+	assert.Contains(t, err.Error(), "error getting feedback by student ID")
+}
+
+func TestGetFeedbackByStudentIdWithNoFeedback(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	getFeedbackRequest := schemas.GetFeedbackByStudentIdRequest{
+		CourseID: "valid-course",
+	}
+
+	feedback, err := enrollmentService.GetFeedbackByStudentId("student-without-feedback", getFeedbackRequest)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedback)
+	assert.Equal(t, 0, len(feedback))
+}
+
+func TestGetFeedbackByStudentIdWithFilters(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	// Test with different filters
+	testCases := []struct {
+		name            string
+		studentID       string
+		request         schemas.GetFeedbackByStudentIdRequest
+		expectedResults int
+	}{
+		{
+			name:      "Filter by course ID",
+			studentID: "student-with-feedback",
+			request: schemas.GetFeedbackByStudentIdRequest{
+				CourseID: "specific-course",
+			},
+			expectedResults: 2,
+		},
+		{
+			name:      "Filter by feedback type",
+			studentID: "student-with-feedback",
+			request: schemas.GetFeedbackByStudentIdRequest{
+				FeedbackType: model.FeedbackTypePositive,
+			},
+			expectedResults: 2,
+		},
+		{
+			name:      "Filter by score range",
+			studentID: "student-with-feedback",
+			request: schemas.GetFeedbackByStudentIdRequest{
+				StartScore: 4,
+				EndScore:   5,
+			},
+			expectedResults: 2,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			feedback, err := enrollmentService.GetFeedbackByStudentId(tc.studentID, tc.request)
+			assert.NoError(t, err)
+			assert.NotNil(t, feedback)
+			assert.Equal(t, tc.expectedResults, len(feedback))
+		})
+	}
 }

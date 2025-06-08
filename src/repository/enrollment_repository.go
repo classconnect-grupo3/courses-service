@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"courses-service/src/model"
+	"courses-service/src/schemas"
 	"fmt"
 	"log/slog"
 
@@ -215,4 +216,74 @@ func (r *EnrollmentRepository) CreateStudentFeedback(feedbackRequest model.Stude
 	}
 
 	return nil
+}
+
+func (r *EnrollmentRepository) matchesFeedbackFilters(feedback *model.StudentFeedback, request schemas.GetFeedbackByStudentIdRequest) bool {
+	// Filter by feedback type
+	if request.FeedbackType != "" && feedback.FeedbackType != request.FeedbackType {
+		return false
+	}
+
+	// Filter by score range
+	if request.StartScore != 0 && feedback.Score < request.StartScore {
+		return false
+	}
+	if request.EndScore != 0 && feedback.Score > request.EndScore {
+		return false
+	}
+
+	// Filter by date range
+	if !request.StartDate.IsZero() && feedback.CreatedAt.Before(request.StartDate) {
+		return false
+	}
+	if !request.EndDate.IsZero() && feedback.CreatedAt.After(request.EndDate) {
+		return false
+	}
+
+	return true
+}
+
+func (r *EnrollmentRepository) GetFeedbackByStudentId(studentID string, getFeedbackByStudentIdRequest schemas.GetFeedbackByStudentIdRequest) ([]*model.StudentFeedback, error) {
+	// Build base filter for enrollments of the student
+	filter := bson.M{
+		"student_id": studentID,
+		"feedback":   bson.M{"$exists": true, "$ne": []interface{}{}}, // Must have non-empty feedback array
+	}
+
+	// Add course filter if specified
+	if getFeedbackByStudentIdRequest.CourseID != "" {
+		filter["course_id"] = getFeedbackByStudentIdRequest.CourseID
+	}
+
+	// Find all enrollments for this student
+	cursor, err := r.enrollmentCollection.Find(context.TODO(), filter)
+	if err != nil {
+		return []*model.StudentFeedback{}, nil // Return empty slice on error instead of nil
+	}
+	defer cursor.Close(context.TODO())
+
+	var enrollments []*model.Enrollment
+	if err := cursor.All(context.TODO(), &enrollments); err != nil {
+		return []*model.StudentFeedback{}, nil // Return empty slice on error instead of nil
+	}
+
+	// Extract and filter feedbacks from enrollments
+	var allFeedbacks []*model.StudentFeedback
+	for _, enrollment := range enrollments {
+		for _, feedback := range enrollment.Feedback {
+			// Apply feedback filters
+			if r.matchesFeedbackFilters(&feedback, getFeedbackByStudentIdRequest) {
+				// Create a copy to avoid pointer issues
+				feedbackCopy := feedback
+				allFeedbacks = append(allFeedbacks, &feedbackCopy)
+			}
+		}
+	}
+
+	// Ensure we always return a non-nil slice
+	if allFeedbacks == nil {
+		allFeedbacks = []*model.StudentFeedback{}
+	}
+
+	return allFeedbacks, nil
 }

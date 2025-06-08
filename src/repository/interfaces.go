@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"courses-service/src/model"
+	"courses-service/src/schemas"
 )
 
 type CourseRepositoryInterface interface {
@@ -38,6 +39,7 @@ type EnrollmentRepositoryInterface interface {
 	GetEnrollmentsByStudentId(studentID string) ([]*model.Enrollment, error)
 	GetEnrollmentByStudentIdAndCourseId(studentID, courseID string) (*model.Enrollment, error)
 	CreateStudentFeedback(feedbackRequest model.StudentFeedback, enrollmentID string) error
+	GetFeedbackByStudentId(studentID string, getFeedbackByStudentIdRequest schemas.GetFeedbackByStudentIdRequest) ([]*model.StudentFeedback, error)
 }
 
 type ModuleRepositoryInterface interface {

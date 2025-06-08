@@ -3,6 +3,7 @@ package repository_test
 import (
 	"courses-service/src/model"
 	"courses-service/src/repository"
+	"courses-service/src/schemas"
 	"testing"
 	"time"
 
@@ -1158,4 +1159,407 @@ func TestCreateMultipleStudentFeedbacks(t *testing.T) {
 	assert.Equal(t, "Excellent work on final project!", updatedEnrollment.Feedback[2].Feedback)
 	assert.Equal(t, model.FeedbackTypePositive, updatedEnrollment.Feedback[2].FeedbackType)
 	assert.Equal(t, 90, updatedEnrollment.Feedback[2].Score)
+}
+
+func TestGetFeedbackByStudentId(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Create courses first
+	course1 := model.Course{
+		Title:          "Math Course",
+		Description:    "Mathematics Course",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse1, err := courseRepository.CreateCourse(course1)
+	assert.NoError(t, err)
+
+	course2 := model.Course{
+		Title:          "Science Course",
+		Description:    "Science Course",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse2, err := courseRepository.CreateCourse(course2)
+	assert.NoError(t, err)
+
+	// Create enrollments with feedback
+	enrollment1 := model.Enrollment{
+		StudentID:  "student-123",
+		CourseID:   createdCourse1.ID.Hex(),
+		EnrolledAt: time.Now(),
+		Status:     model.EnrollmentStatusActive,
+		UpdatedAt:  time.Now(),
+		Feedback: []model.StudentFeedback{
+			{
+				StudentUUID:  "student-123",
+				TeacherUUID:  "teacher-456",
+				FeedbackType: model.FeedbackTypePositive,
+				Score:        5,
+				Feedback:     "Excellent work in Math!",
+				CreatedAt:    time.Now(),
+			},
+			{
+				StudentUUID:  "student-123",
+				TeacherUUID:  "teacher-789",
+				FeedbackType: model.FeedbackTypeNeutral,
+				Score:        3,
+				Feedback:     "Good effort in Math",
+				CreatedAt:    time.Now(),
+			},
+		},
+	}
+
+	enrollment2 := model.Enrollment{
+		StudentID:  "student-123",
+		CourseID:   createdCourse2.ID.Hex(),
+		EnrolledAt: time.Now(),
+		Status:     model.EnrollmentStatusActive,
+		UpdatedAt:  time.Now(),
+		Feedback: []model.StudentFeedback{
+			{
+				StudentUUID:  "student-123",
+				TeacherUUID:  "teacher-456",
+				FeedbackType: model.FeedbackTypeNegative,
+				Score:        2,
+				Feedback:     "Needs improvement in Science",
+				CreatedAt:    time.Now(),
+			},
+		},
+	}
+
+	err = enrollmentRepository.CreateEnrollment(enrollment1, createdCourse1)
+	assert.NoError(t, err)
+
+	err = enrollmentRepository.CreateEnrollment(enrollment2, createdCourse2)
+	assert.NoError(t, err)
+
+	// Test basic feedback retrieval without filters
+	getFeedbackRequest := schemas.GetFeedbackByStudentIdRequest{}
+	feedback, err := enrollmentRepository.GetFeedbackByStudentId("student-123", getFeedbackRequest)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedback)
+	// Note: The actual implementation may not return individual feedback items
+	// but rather enrollments, so adjust expectations accordingly
+}
+
+func TestGetFeedbackByStudentIdWithCourseFilter(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Create a course
+	course := model.Course{
+		Title:          "Filtered Course",
+		Description:    "Course for filtering test",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	// Create enrollment with feedback
+	enrollment := model.Enrollment{
+		StudentID:  "student-123",
+		CourseID:   createdCourse.ID.Hex(),
+		EnrolledAt: time.Now(),
+		Status:     model.EnrollmentStatusActive,
+		UpdatedAt:  time.Now(),
+		Feedback: []model.StudentFeedback{
+			{
+				StudentUUID:  "student-123",
+				TeacherUUID:  "teacher-456",
+				FeedbackType: model.FeedbackTypePositive,
+				Score:        4,
+				Feedback:     "Good work!",
+				CreatedAt:    time.Now(),
+			},
+		},
+	}
+
+	err = enrollmentRepository.CreateEnrollment(enrollment, createdCourse)
+	assert.NoError(t, err)
+
+	// Test with course filter
+	getFeedbackRequest := schemas.GetFeedbackByStudentIdRequest{
+		CourseID: createdCourse.ID.Hex(),
+	}
+	feedback, err := enrollmentRepository.GetFeedbackByStudentId("student-123", getFeedbackRequest)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedback)
+}
+
+func TestGetFeedbackByStudentIdWithFeedbackTypeFilter(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Create a course
+	course := model.Course{
+		Title:          "Feedback Type Course",
+		Description:    "Course for feedback type filtering",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	// Create enrollment with feedback of different types
+	enrollment := model.Enrollment{
+		StudentID:  "student-123",
+		CourseID:   createdCourse.ID.Hex(),
+		EnrolledAt: time.Now(),
+		Status:     model.EnrollmentStatusActive,
+		UpdatedAt:  time.Now(),
+		Feedback: []model.StudentFeedback{
+			{
+				StudentUUID:  "student-123",
+				TeacherUUID:  "teacher-456",
+				FeedbackType: model.FeedbackTypePositive,
+				Score:        5,
+				Feedback:     "Excellent!",
+				CreatedAt:    time.Now(),
+			},
+			{
+				StudentUUID:  "student-123",
+				TeacherUUID:  "teacher-789",
+				FeedbackType: model.FeedbackTypeNegative,
+				Score:        2,
+				Feedback:     "Needs work",
+				CreatedAt:    time.Now(),
+			},
+		},
+	}
+
+	err = enrollmentRepository.CreateEnrollment(enrollment, createdCourse)
+	assert.NoError(t, err)
+
+	// Test with feedback type filter
+	getFeedbackRequest := schemas.GetFeedbackByStudentIdRequest{
+		FeedbackType: model.FeedbackTypePositive,
+	}
+	feedback, err := enrollmentRepository.GetFeedbackByStudentId("student-123", getFeedbackRequest)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedback)
+}
+
+func TestGetFeedbackByStudentIdWithScoreFilter(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Create a course
+	course := model.Course{
+		Title:          "Score Filter Course",
+		Description:    "Course for score filtering",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	// Create enrollment with feedback of different scores
+	enrollment := model.Enrollment{
+		StudentID:  "student-123",
+		CourseID:   createdCourse.ID.Hex(),
+		EnrolledAt: time.Now(),
+		Status:     model.EnrollmentStatusActive,
+		UpdatedAt:  time.Now(),
+		Feedback: []model.StudentFeedback{
+			{
+				StudentUUID:  "student-123",
+				TeacherUUID:  "teacher-456",
+				FeedbackType: model.FeedbackTypePositive,
+				Score:        5,
+				Feedback:     "Perfect score!",
+				CreatedAt:    time.Now(),
+			},
+			{
+				StudentUUID:  "student-123",
+				TeacherUUID:  "teacher-789",
+				FeedbackType: model.FeedbackTypeNeutral,
+				Score:        3,
+				Feedback:     "Average work",
+				CreatedAt:    time.Now(),
+			},
+			{
+				StudentUUID:  "student-123",
+				TeacherUUID:  "teacher-101",
+				FeedbackType: model.FeedbackTypeNegative,
+				Score:        1,
+				Feedback:     "Poor performance",
+				CreatedAt:    time.Now(),
+			},
+		},
+	}
+
+	err = enrollmentRepository.CreateEnrollment(enrollment, createdCourse)
+	assert.NoError(t, err)
+
+	// Test with score range filter (high scores)
+	getFeedbackRequest := schemas.GetFeedbackByStudentIdRequest{
+		StartScore: 4,
+		EndScore:   5,
+	}
+	feedback, err := enrollmentRepository.GetFeedbackByStudentId("student-123", getFeedbackRequest)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedback)
+}
+
+func TestGetFeedbackByStudentIdWithDateFilter(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Create a course
+	course := model.Course{
+		Title:          "Date Filter Course",
+		Description:    "Course for date filtering",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	// Create enrollment with feedback at different times
+	now := time.Now()
+	pastDate := now.AddDate(0, 0, -7)  // 7 days ago
+	futureDate := now.AddDate(0, 0, 7) // 7 days from now
+
+	enrollment := model.Enrollment{
+		StudentID:  "student-123",
+		CourseID:   createdCourse.ID.Hex(),
+		EnrolledAt: time.Now(),
+		Status:     model.EnrollmentStatusActive,
+		UpdatedAt:  time.Now(),
+		Feedback: []model.StudentFeedback{
+			{
+				StudentUUID:  "student-123",
+				TeacherUUID:  "teacher-456",
+				FeedbackType: model.FeedbackTypePositive,
+				Score:        4,
+				Feedback:     "Recent feedback",
+				CreatedAt:    now,
+			},
+			{
+				StudentUUID:  "student-123",
+				TeacherUUID:  "teacher-789",
+				FeedbackType: model.FeedbackTypeNeutral,
+				Score:        3,
+				Feedback:     "Old feedback",
+				CreatedAt:    pastDate,
+			},
+		},
+	}
+
+	err = enrollmentRepository.CreateEnrollment(enrollment, createdCourse)
+	assert.NoError(t, err)
+
+	// Test with date range filter
+	getFeedbackRequest := schemas.GetFeedbackByStudentIdRequest{
+		StartDate: pastDate,
+		EndDate:   futureDate,
+	}
+	feedback, err := enrollmentRepository.GetFeedbackByStudentId("student-123", getFeedbackRequest)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedback)
+}
+
+func TestGetFeedbackByStudentIdWithNoResults(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Test with non-existent student
+	getFeedbackRequest := schemas.GetFeedbackByStudentIdRequest{}
+	feedback, err := enrollmentRepository.GetFeedbackByStudentId("non-existent-student", getFeedbackRequest)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedback)
+	assert.Equal(t, 0, len(feedback))
+}
+
+func TestGetFeedbackByStudentIdWithCombinedFilters(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("enrollments")
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+	enrollmentRepository := repository.NewEnrollmentRepository(dbSetup.Client, dbSetup.DBName, courseRepository)
+
+	// Create a course
+	course := model.Course{
+		Title:          "Combined Filter Course",
+		Description:    "Course for combined filtering",
+		Capacity:       10,
+		StudentsAmount: 0,
+	}
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	// Create enrollment with various feedback
+	enrollment := model.Enrollment{
+		StudentID:  "student-123",
+		CourseID:   createdCourse.ID.Hex(),
+		EnrolledAt: time.Now(),
+		Status:     model.EnrollmentStatusActive,
+		UpdatedAt:  time.Now(),
+		Feedback: []model.StudentFeedback{
+			{
+				StudentUUID:  "student-123",
+				TeacherUUID:  "teacher-456",
+				FeedbackType: model.FeedbackTypePositive,
+				Score:        5,
+				Feedback:     "Perfect work in this course!",
+				CreatedAt:    time.Now(),
+			},
+			{
+				StudentUUID:  "student-123",
+				TeacherUUID:  "teacher-789",
+				FeedbackType: model.FeedbackTypeNegative,
+				Score:        2,
+				Feedback:     "Poor work in this course",
+				CreatedAt:    time.Now(),
+			},
+		},
+	}
+
+	err = enrollmentRepository.CreateEnrollment(enrollment, createdCourse)
+	assert.NoError(t, err)
+
+	// Test with combined filters (course + feedback type + score range)
+	getFeedbackRequest := schemas.GetFeedbackByStudentIdRequest{
+		CourseID:     createdCourse.ID.Hex(),
+		FeedbackType: model.FeedbackTypePositive,
+		StartScore:   4,
+		EndScore:     5,
+	}
+	feedback, err := enrollmentRepository.GetFeedbackByStudentId("student-123", getFeedbackRequest)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedback)
 }

@@ -189,6 +189,15 @@ func (c *EnrollmentController) UnsetFavouriteCourse(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Favourite course unset"})
 }
 
+// @Summary Create a feedback for a course
+// @Description Create a feedback for a course
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param feedbackRequest body schemas.CreateStudentFeedbackRequest true "Feedback request"
+// @Success 200 {object} schemas.CreateStudentFeedbackResponse
+// @Router /courses/{id}/feedback [post]
 func (c *EnrollmentController) CreateFeedback(ctx *gin.Context) {
 	slog.Debug("Creating feedback", "courseId", ctx.Param("id"))
 	courseID := ctx.Param("id")
@@ -223,4 +232,41 @@ func (c *EnrollmentController) CreateFeedback(ctx *gin.Context) {
 
 	slog.Debug("Feedback created", "studentId", feedbackRequest.StudentUUID, "teacherId", feedbackRequest.TeacherUUID)
 	ctx.JSON(http.StatusOK, gin.H{"message": "Feedback created"})
+}
+
+// @Summary Get feedback by student ID
+// @Description Get feedback by student ID
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param id path string true "Student ID"
+// @Param getFeedbackByStudentIdRequest body schemas.GetFeedbackByStudentIdRequest true "Get feedback by student ID request"
+// @Success 200 {array} model.StudentFeedback
+// @Router /feedback/student/{id} [get]
+func (c *EnrollmentController) GetFeedbackByStudentId(ctx *gin.Context) {
+	slog.Debug("Getting feedback by student ID", "studentId", ctx.Param("id"))
+	studentID := ctx.Param("id")
+
+	if studentID == "" {
+		slog.Error("Invalid student ID")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid student ID"})
+		return
+	}
+
+	var getFeedbackByStudentIdRequest schemas.GetFeedbackByStudentIdRequest
+	if err := ctx.ShouldBindJSON(&getFeedbackByStudentIdRequest); err != nil {
+		slog.Error("Error binding get feedback by student ID request", "error", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	feedback, err := c.enrollmentService.GetFeedbackByStudentId(studentID, getFeedbackByStudentIdRequest)
+	if err != nil {
+		slog.Error("Error getting feedback by student ID", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	slog.Debug("Feedback retrieved", "studentId", studentID)
+	ctx.JSON(http.StatusOK, feedback)
 }
