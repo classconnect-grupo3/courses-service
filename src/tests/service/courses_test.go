@@ -260,6 +260,33 @@ func (m *MockCourseRepository) GetCourseById(id string) (*model.Course, error) {
 			AuxTeachers: []string{"aux-teacher-2"},
 		}, nil
 	}
+	if id == "course-with-feedback" {
+		return &model.Course{
+			ID:          primitive.NewObjectID(),
+			Title:       "Feedback Course",
+			Description: "Course with feedback for testing",
+			TeacherUUID: "teacher-feedback",
+			AuxTeachers: []string{},
+		}, nil
+	}
+	if id == "course-no-feedback" {
+		return &model.Course{
+			ID:          primitive.NewObjectID(),
+			Title:       "No Feedback Course",
+			Description: "Course without feedback",
+			TeacherUUID: "teacher-no-feedback",
+			AuxTeachers: []string{},
+		}, nil
+	}
+	if id == "error-course" {
+		return &model.Course{
+			ID:          primitive.NewObjectID(),
+			Title:       "Error Course",
+			Description: "Course that causes repository errors",
+			TeacherUUID: "teacher-error",
+			AuxTeachers: []string{},
+		}, nil
+	}
 	if id == "123e4567-e89b-12d3-a456-426614174001" {
 		return nil, nil
 	}
@@ -327,6 +354,73 @@ func (m *MockCourseRepository) CreateCourseFeedback(courseID string, feedback mo
 	feedback.ID = primitive.NewObjectID()
 	feedback.CreatedAt = time.Now()
 	return &feedback, nil
+}
+
+// GetCourseFeedback implements repository.CourseRepositoryInterface.
+func (m *MockCourseRepository) GetCourseFeedback(courseID string, request schemas.GetCourseFeedbackRequest) ([]*model.CourseFeedback, error) {
+	if courseID == "course-with-feedback" {
+		feedbacks := []*model.CourseFeedback{
+			{
+				ID:           primitive.NewObjectID(),
+				StudentUUID:  "student-1",
+				FeedbackType: model.FeedbackTypePositive,
+				Score:        5,
+				Feedback:     "Excellent course!",
+				CreatedAt:    time.Now(),
+			},
+			{
+				ID:           primitive.NewObjectID(),
+				StudentUUID:  "student-2",
+				FeedbackType: model.FeedbackTypeNeutral,
+				Score:        3,
+				Feedback:     "Average course",
+				CreatedAt:    time.Now(),
+			},
+			{
+				ID:           primitive.NewObjectID(),
+				StudentUUID:  "student-3",
+				FeedbackType: model.FeedbackTypeNegative,
+				Score:        2,
+				Feedback:     "Needs improvement",
+				CreatedAt:    time.Now(),
+			},
+		}
+
+		// Apply filters if provided
+		filteredFeedbacks := []*model.CourseFeedback{}
+		for _, feedback := range feedbacks {
+			// Filter by feedback type if specified
+			if request.FeedbackType != "" && feedback.FeedbackType != request.FeedbackType {
+				continue
+			}
+			// Filter by score range if specified
+			if request.StartScore > 0 && feedback.Score < request.StartScore {
+				continue
+			}
+			if request.EndScore > 0 && feedback.Score > request.EndScore {
+				continue
+			}
+			// Filter by date range if specified
+			if !request.StartDate.IsZero() && feedback.CreatedAt.Before(request.StartDate) {
+				continue
+			}
+			if !request.EndDate.IsZero() && feedback.CreatedAt.After(request.EndDate) {
+				continue
+			}
+			filteredFeedbacks = append(filteredFeedbacks, feedback)
+		}
+		return filteredFeedbacks, nil
+	}
+	if courseID == "course-no-feedback" {
+		return []*model.CourseFeedback{}, nil
+	}
+	if courseID == "error-course" {
+		return nil, errors.New("Error getting course feedback")
+	}
+	if courseID == "non-existent-course" {
+		return nil, errors.New("Course not found")
+	}
+	return []*model.CourseFeedback{}, nil
 }
 
 // Helper function to create ObjectID from string
@@ -878,4 +972,132 @@ func TestCreateCourseFeedbackWithDifferentFeedbackTypes(t *testing.T) {
 		assert.Equal(t, tc.score, feedback.Score)
 		assert.Equal(t, tc.feedback, feedback.Feedback)
 	}
+}
+
+func TestGetCourseFeedback(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+
+	getFeedbackRequest := schemas.GetCourseFeedbackRequest{}
+
+	feedback, err := courseService.GetCourseFeedback("course-with-feedback", getFeedbackRequest)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedback)
+	assert.Equal(t, 3, len(feedback))
+
+	// Verify feedback details
+	assert.Equal(t, "student-1", feedback[0].StudentUUID)
+	assert.Equal(t, model.FeedbackTypePositive, feedback[0].FeedbackType)
+	assert.Equal(t, 5, feedback[0].Score)
+	assert.Equal(t, "Excellent course!", feedback[0].Feedback)
+
+	assert.Equal(t, "student-2", feedback[1].StudentUUID)
+	assert.Equal(t, model.FeedbackTypeNeutral, feedback[1].FeedbackType)
+	assert.Equal(t, 3, feedback[1].Score)
+	assert.Equal(t, "Average course", feedback[1].Feedback)
+
+	assert.Equal(t, "student-3", feedback[2].StudentUUID)
+	assert.Equal(t, model.FeedbackTypeNegative, feedback[2].FeedbackType)
+	assert.Equal(t, 2, feedback[2].Score)
+	assert.Equal(t, "Needs improvement", feedback[2].Feedback)
+}
+
+func TestGetCourseFeedbackWithNonExistentCourse(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+
+	getFeedbackRequest := schemas.GetCourseFeedbackRequest{}
+
+	feedback, err := courseService.GetCourseFeedback("non-existent-course", getFeedbackRequest)
+	assert.Error(t, err)
+	assert.Nil(t, feedback)
+	assert.Contains(t, err.Error(), "course not found")
+}
+
+func TestGetCourseFeedbackWithNoFeedback(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+
+	getFeedbackRequest := schemas.GetCourseFeedbackRequest{}
+
+	feedback, err := courseService.GetCourseFeedback("course-no-feedback", getFeedbackRequest)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedback)
+	assert.Equal(t, 0, len(feedback))
+}
+
+func TestGetCourseFeedbackWithFeedbackTypeFilter(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+
+	getFeedbackRequest := schemas.GetCourseFeedbackRequest{
+		FeedbackType: model.FeedbackTypePositive,
+	}
+
+	feedback, err := courseService.GetCourseFeedback("course-with-feedback", getFeedbackRequest)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedback)
+	assert.Equal(t, 1, len(feedback))
+	assert.Equal(t, model.FeedbackTypePositive, feedback[0].FeedbackType)
+	assert.Equal(t, "student-1", feedback[0].StudentUUID)
+}
+
+func TestGetCourseFeedbackWithScoreRangeFilter(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+
+	// Test filtering for high scores (4-5)
+	getFeedbackRequest := schemas.GetCourseFeedbackRequest{
+		StartScore: 4,
+		EndScore:   5,
+	}
+
+	feedback, err := courseService.GetCourseFeedback("course-with-feedback", getFeedbackRequest)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedback)
+	assert.Equal(t, 1, len(feedback))
+	assert.Equal(t, 5, feedback[0].Score)
+	assert.Equal(t, "student-1", feedback[0].StudentUUID)
+}
+
+func TestGetCourseFeedbackWithLowScoreFilter(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+
+	// Test filtering for low scores (1-2)
+	getFeedbackRequest := schemas.GetCourseFeedbackRequest{
+		StartScore: 1,
+		EndScore:   2,
+	}
+
+	feedback, err := courseService.GetCourseFeedback("course-with-feedback", getFeedbackRequest)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedback)
+	assert.Equal(t, 1, len(feedback))
+	assert.Equal(t, 2, feedback[0].Score)
+	assert.Equal(t, "student-3", feedback[0].StudentUUID)
+}
+
+func TestGetCourseFeedbackWithCombinedFilters(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+
+	// Test combining feedback type and score filters
+	getFeedbackRequest := schemas.GetCourseFeedbackRequest{
+		FeedbackType: model.FeedbackTypeNegative,
+		StartScore:   1,
+		EndScore:     3,
+	}
+
+	feedback, err := courseService.GetCourseFeedback("course-with-feedback", getFeedbackRequest)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedback)
+	assert.Equal(t, 1, len(feedback))
+	assert.Equal(t, model.FeedbackTypeNegative, feedback[0].FeedbackType)
+	assert.Equal(t, 2, feedback[0].Score)
+	assert.Equal(t, "student-3", feedback[0].StudentUUID)
+}
+
+func TestGetCourseFeedbackWithRepositoryError(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+
+	getFeedbackRequest := schemas.GetCourseFeedbackRequest{}
+
+	feedback, err := courseService.GetCourseFeedback("error-course", getFeedbackRequest)
+	assert.Error(t, err)
+	assert.Nil(t, feedback)
+	assert.Contains(t, err.Error(), "error getting course feedback")
 }

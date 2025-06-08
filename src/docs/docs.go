@@ -942,6 +942,89 @@ const docTemplate = `{
                 }
             }
         },
+        "/courses/{id}/feedback": {
+            "get": {
+                "description": "Get course feedback by course ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Get course feedback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Get course feedback request",
+                        "name": "getCourseFeedbackRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.GetCourseFeedbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.CourseFeedback"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create course feedback by course ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Create course feedback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Course feedback",
+                        "name": "feedback",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.CreateCourseFeedbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.CourseFeedback"
+                        }
+                    }
+                }
+            }
+        },
         "/courses/{id}/remove-aux-teacher": {
             "delete": {
                 "description": "Remove an aux teacher from a course by ID",
@@ -983,6 +1066,47 @@ const docTemplate = `{
                 }
             }
         },
+        "/courses/{id}/student-feedback": {
+            "post": {
+                "description": "Create a feedback for a course",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Create a feedback for a course",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Feedback request",
+                        "name": "feedbackRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.CreateStudentFeedbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.StudentFeedback"
+                        }
+                    }
+                }
+            }
+        },
         "/courses/{id}/unenroll": {
             "delete": {
                 "description": "Unenroll a student from a course",
@@ -1019,6 +1143,50 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/schemas.UnenrollStudentResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/feedback/student/{id}": {
+            "get": {
+                "description": "Get feedback by student ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Get feedback by student ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Student ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Get feedback by student ID request",
+                        "name": "getFeedbackByStudentIdRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.GetFeedbackByStudentIdRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.StudentFeedback"
+                            }
                         }
                     }
                 }
@@ -1339,6 +1507,12 @@ const docTemplate = `{
                 "end_date": {
                     "type": "string"
                 },
+                "feedback": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CourseFeedback"
+                    }
+                },
                 "id": {
                     "type": "string"
                 },
@@ -1368,6 +1542,29 @@ const docTemplate = `{
                 }
             }
         },
+        "model.CourseFeedback": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "feedback": {
+                    "type": "string"
+                },
+                "feedback_type": {
+                    "$ref": "#/definitions/model.FeedbackType"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "student_uuid": {
+                    "type": "string"
+                }
+            }
+        },
         "model.Enrollment": {
             "type": "object",
             "properties": {
@@ -1382,6 +1579,12 @@ const docTemplate = `{
                 },
                 "favourite": {
                     "type": "boolean"
+                },
+                "feedback": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.StudentFeedback"
+                    }
                 },
                 "id": {
                     "type": "string"
@@ -1408,6 +1611,19 @@ const docTemplate = `{
                 "EnrollmentStatusActive",
                 "EnrollmentStatusDropped",
                 "EnrollmentStatusCompleted"
+            ]
+        },
+        "model.FeedbackType": {
+            "type": "string",
+            "enum": [
+                "POSITIVO",
+                "NEGATIVO",
+                "NEUTRO"
+            ],
+            "x-enum-varnames": [
+                "FeedbackTypePositive",
+                "FeedbackTypeNegative",
+                "FeedbackTypeNeutral"
             ]
         },
         "model.Module": {
@@ -1485,6 +1701,32 @@ const docTemplate = `{
                 "QuestionTypeMultipleChoice",
                 "QuestionTypeFile"
             ]
+        },
+        "model.StudentFeedback": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "feedback": {
+                    "type": "string"
+                },
+                "feedback_type": {
+                    "$ref": "#/definitions/model.FeedbackType"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "student_uuid": {
+                    "type": "string"
+                },
+                "teacher_uuid": {
+                    "type": "string"
+                }
+            }
         },
         "model.Submission": {
             "type": "object",
@@ -1594,6 +1836,29 @@ const docTemplate = `{
                 }
             }
         },
+        "schemas.CreateCourseFeedbackRequest": {
+            "type": "object",
+            "required": [
+                "feedback",
+                "feedback_type",
+                "score",
+                "student_uuid"
+            ],
+            "properties": {
+                "feedback": {
+                    "type": "string"
+                },
+                "feedback_type": {
+                    "$ref": "#/definitions/model.FeedbackType"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "student_uuid": {
+                    "type": "string"
+                }
+            }
+        },
         "schemas.CreateCourseRequest": {
             "type": "object",
             "required": [
@@ -1651,6 +1916,37 @@ const docTemplate = `{
                 }
             }
         },
+        "schemas.CreateStudentFeedbackRequest": {
+            "type": "object",
+            "required": [
+                "course_id",
+                "feedback",
+                "feedback_type",
+                "score",
+                "student_uuid",
+                "teacher_uuid"
+            ],
+            "properties": {
+                "course_id": {
+                    "type": "string"
+                },
+                "feedback": {
+                    "type": "string"
+                },
+                "feedback_type": {
+                    "$ref": "#/definitions/model.FeedbackType"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "student_uuid": {
+                    "type": "string"
+                },
+                "teacher_uuid": {
+                    "type": "string"
+                }
+            }
+        },
         "schemas.DeleteCourseResponse": {
             "type": "object",
             "properties": {
@@ -1667,6 +1963,49 @@ const docTemplate = `{
             "properties": {
                 "student_id": {
                     "type": "string"
+                }
+            }
+        },
+        "schemas.GetCourseFeedbackRequest": {
+            "type": "object",
+            "properties": {
+                "end_date": {
+                    "type": "string"
+                },
+                "end_score": {
+                    "type": "integer"
+                },
+                "feedback_type": {
+                    "$ref": "#/definitions/model.FeedbackType"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "start_score": {
+                    "type": "integer"
+                }
+            }
+        },
+        "schemas.GetFeedbackByStudentIdRequest": {
+            "type": "object",
+            "properties": {
+                "course_id": {
+                    "type": "string"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "end_score": {
+                    "type": "integer"
+                },
+                "feedback_type": {
+                    "$ref": "#/definitions/model.FeedbackType"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "start_score": {
+                    "type": "integer"
                 }
             }
         },

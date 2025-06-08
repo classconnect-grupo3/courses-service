@@ -56,6 +56,7 @@ func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseControl
 	r.POST("/courses/:id/aux-teacher/add", controller.AddAuxTeacherToCourse)
 	r.DELETE("/courses/:id/aux-teacher/remove", controller.RemoveAuxTeacherFromCourse)
 	r.POST("/courses/:id/feedback", controller.CreateCourseFeedback)
+	r.GET("/courses/:id/feedback", controller.GetCourseFeedback)
 }
 
 func InitializeModulesRoutes(r *gin.Engine, controller *controller.ModuleController) {

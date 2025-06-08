@@ -210,6 +210,11 @@ func (m *MockAssignmentRepository) DeleteAssignment(id string) error {
 
 type MockCourseService struct{}
 
+// GetCourseFeedback implements service.CourseServiceInterface.
+func (m *MockCourseService) GetCourseFeedback(courseId string, getCourseFeedbackRequest schemas.GetCourseFeedbackRequest) ([]*model.CourseFeedback, error) {
+	panic("unimplemented")
+}
+
 // CreateCourseFeedback implements service.CourseServiceInterface.
 func (m *MockCourseService) CreateCourseFeedback(courseId string, feedbackRequest schemas.CreateCourseFeedbackRequest) (*model.CourseFeedback, error) {
 	if courseId == "error-creating-feedback" {

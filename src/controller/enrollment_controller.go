@@ -195,7 +195,7 @@ func (c *EnrollmentController) UnsetFavouriteCourse(ctx *gin.Context) {
 // @Produce json
 // @Param id path string true "Course ID"
 // @Param feedbackRequest body schemas.CreateStudentFeedbackRequest true "Feedback request"
-// @Success 200 {object} schemas.CreateStudentFeedbackResponse
+// @Success 200 {object} model.StudentFeedback
 // @Router /courses/{id}/student-feedback [post]
 func (c *EnrollmentController) CreateFeedback(ctx *gin.Context) {
 	slog.Debug("Creating feedback", "courseId", ctx.Param("id"))

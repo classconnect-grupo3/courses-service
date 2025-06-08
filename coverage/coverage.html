@@ -59,7 +59,7 @@
 				
 				<option value="file1">courses-service/src/controller/assignments_controller.go (100.0%)</option>
 				
-				<option value="file2">courses-service/src/controller/courses_controller.go (98.2%)</option>
+				<option value="file2">courses-service/src/controller/courses_controller.go (100.0%)</option>
 				
 				<option value="file3">courses-service/src/controller/enrollment_controller.go (97.5%)</option>
 				
@@ -79,7 +79,7 @@
 				
 				<option value="file11">courses-service/src/repository/assignment_repository.go (87.0%)</option>
 				
-				<option value="file12">courses-service/src/repository/course_repository.go (83.2%)</option>
+				<option value="file12">courses-service/src/repository/course_repository.go (82.4%)</option>
 				
 				<option value="file13">courses-service/src/repository/enrollment_repository.go (81.4%)</option>
 				
@@ -91,7 +91,7 @@
 				
 				<option value="file17">courses-service/src/service/assignment_service.go (100.0%)</option>
 				
-				<option value="file18">courses-service/src/service/course_service.go (94.7%)</option>
+				<option value="file18">courses-service/src/service/course_service.go (95.0%)</option>
 				
 				<option value="file19">courses-service/src/service/enrollment_service.go (96.2%)</option>
 				
@@ -666,7 +666,7 @@ func (c *CourseController) CreateCourseFeedback(ctx *gin.Context) <span class="c
                 return
         }</span>
 
-        <span class="cov8" title="1">if !slices.Contains(model.FeedbackTypes, feedback.FeedbackType) </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if !slices.Contains(model.FeedbackTypes, feedback.FeedbackType) </span><span class="cov8" title="1">{
                 slog.Error("Invalid feedback type")
                 ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid feedback type"})
                 return
@@ -682,7 +682,33 @@ func (c *CourseController) CreateCourseFeedback(ctx *gin.Context) <span class="c
         <span class="cov8" title="1">slog.Debug("Course feedback created", "feedback", feedbackModel)
         ctx.JSON(http.StatusOK, feedbackModel)</span>
 }
-</pre>
+
+func (c *CourseController) GetCourseFeedback(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Getting course feedback")
+        courseId := ctx.Param("id")
+        if courseId == "" </span><span class="cov8" title="1">{
+                slog.Error("Course ID is required")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">var getCourseFeedbackRequest schemas.GetCourseFeedbackRequest
+        if err := ctx.ShouldBindJSON(&amp;getCourseFeedbackRequest); err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error binding get course feedback request", "error", err)
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">feedback, err := c.service.GetCourseFeedback(courseId, getCourseFeedbackRequest)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error getting course feedback", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">slog.Debug("Course feedback retrieved", "feedback", feedback)
+        ctx.JSON(http.StatusOK, feedback)</span>
+}</pre>
 		
 		<pre class="file" id="file3" style="display: none">package controller
 
@@ -3549,6 +3575,8 @@ func (r *AssignmentRepository) DeleteAssignment(id string) error <span class="co
 import (
         "context"
         "courses-service/src/model"
+        "courses-service/src/schemas"
+        "errors"
         "fmt"
         "time"
 
@@ -3850,6 +3878,66 @@ func (r *CourseRepository) CreateCourseFeedback(courseID string, feedback model.
         }</span>
 
         <span class="cov8" title="1">return &amp;feedback, nil</span>
+}
+
+func (r *CourseRepository) matchesFeedbackFilters(feedback *model.CourseFeedback, request schemas.GetCourseFeedbackRequest) bool <span class="cov8" title="1">{
+        // Filter by feedback type
+        if request.FeedbackType != "" &amp;&amp; feedback.FeedbackType != request.FeedbackType </span><span class="cov8" title="1">{
+                return false
+        }</span>
+
+        // Filter by score range
+        <span class="cov8" title="1">if request.StartScore != 0 &amp;&amp; feedback.Score &lt; request.StartScore </span><span class="cov8" title="1">{
+                return false
+        }</span>
+        <span class="cov8" title="1">if request.EndScore != 0 &amp;&amp; feedback.Score &gt; request.EndScore </span><span class="cov0" title="0">{
+                return false
+        }</span>
+
+        // Filter by date range
+        <span class="cov8" title="1">if !request.StartDate.IsZero() &amp;&amp; feedback.CreatedAt.Before(request.StartDate) </span><span class="cov0" title="0">{
+                return false
+        }</span>
+        <span class="cov8" title="1">if !request.EndDate.IsZero() &amp;&amp; feedback.CreatedAt.After(request.EndDate) </span><span class="cov0" title="0">{
+                return false
+        }</span>
+
+        <span class="cov8" title="1">return true</span>
+}
+
+func (r *CourseRepository) GetCourseFeedback(courseID string, getCourseFeedbackRequest schemas.GetCourseFeedbackRequest) ([]*model.CourseFeedback, error) <span class="cov8" title="1">{
+        // Convert courseID to ObjectID
+        objectId, err := primitive.ObjectIDFromHex(courseID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.New("invalid course ID format: " + err.Error())
+        }</span>
+
+        // Get the course document
+        <span class="cov8" title="1">var course model.Course
+        err = r.courseCollection.FindOne(context.TODO(), bson.M{"_id": objectId}).Decode(&amp;course)
+        if err != nil </span><span class="cov0" title="0">{
+                if err == mongo.ErrNoDocuments </span><span class="cov0" title="0">{
+                        return nil, errors.New("course not found")
+                }</span>
+                <span class="cov0" title="0">return nil, errors.New("error getting course: " + err.Error())</span>
+        }
+
+        // If course has no feedback, return empty slice
+        <span class="cov8" title="1">if len(course.Feedback) == 0 </span><span class="cov8" title="1">{
+                return []*model.CourseFeedback{}, nil
+        }</span>
+
+        // Apply filters to the feedback
+        <span class="cov8" title="1">filteredFeedbacks := []*model.CourseFeedback{}
+        for _, feedback := range course.Feedback </span><span class="cov8" title="1">{
+                if r.matchesFeedbackFilters(&amp;feedback, getCourseFeedbackRequest) </span><span class="cov8" title="1">{
+                        // Create a copy to avoid pointer issues
+                        feedbackCopy := feedback
+                        filteredFeedbacks = append(filteredFeedbacks, &amp;feedbackCopy)
+                }</span>
+        }
+
+        <span class="cov8" title="1">return filteredFeedbacks, nil</span>
 }
 </pre>
 		
@@ -4613,6 +4701,7 @@ func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseControl
         r.POST("/courses/:id/aux-teacher/add", controller.AddAuxTeacherToCourse)
         r.DELETE("/courses/:id/aux-teacher/remove", controller.RemoveAuxTeacherFromCourse)
         r.POST("/courses/:id/feedback", controller.CreateCourseFeedback)
+        r.GET("/courses/:id/feedback", controller.GetCourseFeedback)
 }</span>
 
 func InitializeModulesRoutes(r *gin.Engine, controller *controller.ModuleController) <span class="cov8" title="1">{
@@ -5041,7 +5130,20 @@ func (s *CourseService) CreateCourseFeedback(courseId string, feedbackRequest sc
 
         return s.courseRepository.CreateCourseFeedback(courseId, feedback)</span>
 }
-</pre>
+
+func (s *CourseService) GetCourseFeedback(courseId string, getCourseFeedbackRequest schemas.GetCourseFeedbackRequest) ([]*model.CourseFeedback, error) <span class="cov8" title="1">{
+        _, err := s.courseRepository.GetCourseById(courseId)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.New("course not found: " + err.Error())
+        }</span>
+
+        <span class="cov8" title="1">feedback, err := s.courseRepository.GetCourseFeedback(courseId, getCourseFeedbackRequest)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.New("error getting course feedback: " + err.Error())
+        }</span>
+
+        <span class="cov8" title="1">return feedback, nil</span>
+}</pre>
 		
 		<pre class="file" id="file19" style="display: none">package service
 

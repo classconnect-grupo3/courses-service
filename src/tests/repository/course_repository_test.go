@@ -3,6 +3,7 @@ package repository_test
 import (
 	"courses-service/src/model"
 	"courses-service/src/repository"
+	"courses-service/src/schemas"
 	"courses-service/src/tests/testutil"
 	"fmt"
 	"testing"
@@ -720,4 +721,274 @@ func TestCreateCourseFeedbackWithDifferentFeedbackTypes(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, updatedCourse)
 	assert.Equal(t, 3, len(updatedCourse.Feedback))
+}
+
+func TestGetCourseFeedback(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	// Create a course with feedback
+	course := model.Course{
+		Title:       "Feedback Test Course",
+		Description: "Course for testing feedback retrieval",
+		Capacity:    15,
+		TeacherUUID: "teacher-456",
+		Feedback: []model.CourseFeedback{
+			{
+				ID:           primitive.NewObjectID(),
+				StudentUUID:  "student-1",
+				FeedbackType: model.FeedbackTypePositive,
+				Score:        5,
+				Feedback:     "Amazing course!",
+				CreatedAt:    time.Now(),
+			},
+			{
+				ID:           primitive.NewObjectID(),
+				StudentUUID:  "student-2",
+				FeedbackType: model.FeedbackTypeNeutral,
+				Score:        3,
+				Feedback:     "Decent course",
+				CreatedAt:    time.Now(),
+			},
+			{
+				ID:           primitive.NewObjectID(),
+				StudentUUID:  "student-3",
+				FeedbackType: model.FeedbackTypeNegative,
+				Score:        2,
+				Feedback:     "Disappointing course",
+				CreatedAt:    time.Now(),
+			},
+		},
+	}
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	// Get all feedback
+	getFeedbackRequest := schemas.GetCourseFeedbackRequest{}
+	feedbacks, err := courseRepository.GetCourseFeedback(createdCourse.ID.Hex(), getFeedbackRequest)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedbacks)
+	assert.Equal(t, 3, len(feedbacks))
+
+	// Verify feedback content
+	feedbackMap := make(map[string]*model.CourseFeedback)
+	for _, feedback := range feedbacks {
+		feedbackMap[feedback.StudentUUID] = feedback
+	}
+
+	assert.Equal(t, "Amazing course!", feedbackMap["student-1"].Feedback)
+	assert.Equal(t, model.FeedbackTypePositive, feedbackMap["student-1"].FeedbackType)
+	assert.Equal(t, 5, feedbackMap["student-1"].Score)
+
+	assert.Equal(t, "Decent course", feedbackMap["student-2"].Feedback)
+	assert.Equal(t, model.FeedbackTypeNeutral, feedbackMap["student-2"].FeedbackType)
+	assert.Equal(t, 3, feedbackMap["student-2"].Score)
+
+	assert.Equal(t, "Disappointing course", feedbackMap["student-3"].Feedback)
+	assert.Equal(t, model.FeedbackTypeNegative, feedbackMap["student-3"].FeedbackType)
+	assert.Equal(t, 2, feedbackMap["student-3"].Score)
+}
+
+func TestGetCourseFeedbackWithFeedbackTypeFilter(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	// Create a course with mixed feedback types
+	course := model.Course{
+		Title:       "Filter Test Course",
+		Description: "Course for testing feedback filtering",
+		Capacity:    10,
+		TeacherUUID: "teacher-789",
+		Feedback: []model.CourseFeedback{
+			{
+				ID:           primitive.NewObjectID(),
+				StudentUUID:  "student-positive",
+				FeedbackType: model.FeedbackTypePositive,
+				Score:        5,
+				Feedback:     "Great!",
+				CreatedAt:    time.Now(),
+			},
+			{
+				ID:           primitive.NewObjectID(),
+				StudentUUID:  "student-negative",
+				FeedbackType: model.FeedbackTypeNegative,
+				Score:        1,
+				Feedback:     "Terrible!",
+				CreatedAt:    time.Now(),
+			},
+		},
+	}
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	// Filter for positive feedback only
+	getFeedbackRequest := schemas.GetCourseFeedbackRequest{
+		FeedbackType: model.FeedbackTypePositive,
+	}
+	feedbacks, err := courseRepository.GetCourseFeedback(createdCourse.ID.Hex(), getFeedbackRequest)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedbacks)
+	assert.Equal(t, 1, len(feedbacks))
+	assert.Equal(t, model.FeedbackTypePositive, feedbacks[0].FeedbackType)
+	assert.Equal(t, "student-positive", feedbacks[0].StudentUUID)
+}
+
+func TestGetCourseFeedbackWithScoreRangeFilter(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	// Create a course with various scores
+	course := model.Course{
+		Title:       "Score Filter Test Course",
+		Description: "Course for testing score filtering",
+		Capacity:    10,
+		TeacherUUID: "teacher-score",
+		Feedback: []model.CourseFeedback{
+			{
+				ID:           primitive.NewObjectID(),
+				StudentUUID:  "student-high",
+				FeedbackType: model.FeedbackTypePositive,
+				Score:        5,
+				Feedback:     "Perfect score!",
+				CreatedAt:    time.Now(),
+			},
+			{
+				ID:           primitive.NewObjectID(),
+				StudentUUID:  "student-mid",
+				FeedbackType: model.FeedbackTypeNeutral,
+				Score:        3,
+				Feedback:     "Average score",
+				CreatedAt:    time.Now(),
+			},
+			{
+				ID:           primitive.NewObjectID(),
+				StudentUUID:  "student-low",
+				FeedbackType: model.FeedbackTypeNegative,
+				Score:        1,
+				Feedback:     "Low score",
+				CreatedAt:    time.Now(),
+			},
+		},
+	}
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	// Filter for high scores (4-5)
+	getFeedbackRequest := schemas.GetCourseFeedbackRequest{
+		StartScore: 4,
+		EndScore:   5,
+	}
+	feedbacks, err := courseRepository.GetCourseFeedback(createdCourse.ID.Hex(), getFeedbackRequest)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedbacks)
+	assert.Equal(t, 1, len(feedbacks))
+	assert.Equal(t, 5, feedbacks[0].Score)
+	assert.Equal(t, "student-high", feedbacks[0].StudentUUID)
+}
+
+func TestGetCourseFeedbackWithNoResults(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	// Create a course without feedback
+	course := model.Course{
+		Title:       "Empty Course",
+		Description: "Course with no feedback",
+		Capacity:    10,
+		TeacherUUID: "teacher-empty",
+		Feedback:    []model.CourseFeedback{},
+	}
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	// Try to get feedback
+	getFeedbackRequest := schemas.GetCourseFeedbackRequest{}
+	feedbacks, err := courseRepository.GetCourseFeedback(createdCourse.ID.Hex(), getFeedbackRequest)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedbacks)
+	assert.Equal(t, 0, len(feedbacks))
+}
+
+func TestGetCourseFeedbackWithInvalidCourseID(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	// Try to get feedback from non-existent course
+	getFeedbackRequest := schemas.GetCourseFeedbackRequest{}
+	feedbacks, err := courseRepository.GetCourseFeedback("non-existent-course-id", getFeedbackRequest)
+	assert.Error(t, err)
+	assert.Nil(t, feedbacks)
+}
+
+func TestGetCourseFeedbackWithCombinedFilters(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	courseRepository := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	// Create a course with diverse feedback
+	course := model.Course{
+		Title:       "Combined Filter Test",
+		Description: "Course for testing combined filters",
+		Capacity:    20,
+		TeacherUUID: "teacher-combined",
+		Feedback: []model.CourseFeedback{
+			{
+				ID:           primitive.NewObjectID(),
+				StudentUUID:  "student-pos-high",
+				FeedbackType: model.FeedbackTypePositive,
+				Score:        5,
+				Feedback:     "Excellent positive!",
+				CreatedAt:    time.Now(),
+			},
+			{
+				ID:           primitive.NewObjectID(),
+				StudentUUID:  "student-pos-low",
+				FeedbackType: model.FeedbackTypePositive,
+				Score:        2,
+				Feedback:     "Positive but low score",
+				CreatedAt:    time.Now(),
+			},
+			{
+				ID:           primitive.NewObjectID(),
+				StudentUUID:  "student-neg-high",
+				FeedbackType: model.FeedbackTypeNegative,
+				Score:        4,
+				Feedback:     "Negative but high score",
+				CreatedAt:    time.Now(),
+			},
+		},
+	}
+	createdCourse, err := courseRepository.CreateCourse(course)
+	assert.NoError(t, err)
+
+	// Filter for positive feedback with high scores (4-5)
+	getFeedbackRequest := schemas.GetCourseFeedbackRequest{
+		FeedbackType: model.FeedbackTypePositive,
+		StartScore:   4,
+		EndScore:     5,
+	}
+	feedbacks, err := courseRepository.GetCourseFeedback(createdCourse.ID.Hex(), getFeedbackRequest)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedbacks)
+	assert.Equal(t, 1, len(feedbacks))
+	assert.Equal(t, model.FeedbackTypePositive, feedbacks[0].FeedbackType)
+	assert.Equal(t, 5, feedbacks[0].Score)
+	assert.Equal(t, "student-pos-high", feedbacks[0].StudentUUID)
 }

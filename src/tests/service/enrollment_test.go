@@ -153,6 +153,11 @@ func (m *MockEnrollmentRepositoryForEnrollmentService) GetFeedbackByStudentId(st
 
 type MockCourseRepositoryForEnrollment struct{}
 
+// GetCourseFeedback implements repository.CourseRepositoryInterface.
+func (m *MockCourseRepositoryForEnrollment) GetCourseFeedback(courseID string, getCourseFeedbackRequest schemas.GetCourseFeedbackRequest) ([]*model.CourseFeedback, error) {
+	panic("unimplemented")
+}
+
 // CreateCourseFeedback implements repository.CourseRepositoryInterface.
 func (m *MockCourseRepositoryForEnrollment) CreateCourseFeedback(courseID string, feedback model.CourseFeedback) (*model.CourseFeedback, error) {
 	return nil, nil

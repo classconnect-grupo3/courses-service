@@ -29,3 +29,11 @@ type CreateCourseFeedbackRequest struct {
 	FeedbackType model.FeedbackType `json:"feedback_type" binding:"required"`
 	Feedback     string             `json:"feedback" binding:"required"`
 }
+
+type GetCourseFeedbackRequest struct {
+	FeedbackType model.FeedbackType `json:"feedback_type"`
+	StartScore   int                `json:"start_score"`
+	EndScore     int                `json:"end_score"`
+	StartDate    time.Time          `json:"start_date"`
+	EndDate      time.Time          `json:"end_date"`
+}

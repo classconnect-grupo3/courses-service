@@ -217,3 +217,17 @@ func (s *CourseService) CreateCourseFeedback(courseId string, feedbackRequest sc
 
 	return s.courseRepository.CreateCourseFeedback(courseId, feedback)
 }
+
+func (s *CourseService) GetCourseFeedback(courseId string, getCourseFeedbackRequest schemas.GetCourseFeedbackRequest) ([]*model.CourseFeedback, error) {
+	_, err := s.courseRepository.GetCourseById(courseId)
+	if err != nil {
+		return nil, errors.New("course not found: " + err.Error())
+	}
+
+	feedback, err := s.courseRepository.GetCourseFeedback(courseId, getCourseFeedbackRequest)
+	if err != nil {
+		return nil, errors.New("error getting course feedback: " + err.Error())
+	}
+
+	return feedback, nil
+}

@@ -19,6 +19,7 @@ type CourseRepositoryInterface interface {
 	RemoveAuxTeacherFromCourse(course *model.Course, auxTeacherId string) (*model.Course, error)
 	UpdateStudentsAmount(courseID string, newStudentsAmount int) error
 	CreateCourseFeedback(courseID string, feedback model.CourseFeedback) (*model.CourseFeedback, error)
+	GetCourseFeedback(courseID string, getCourseFeedbackRequest schemas.GetCourseFeedbackRequest) ([]*model.CourseFeedback, error)
 }
 
 type AssignmentRepositoryInterface interface {
