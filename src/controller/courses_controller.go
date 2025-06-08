@@ -3,7 +3,9 @@ package controller
 import (
 	"log/slog"
 	"net/http"
+	"slices"
 
+	"courses-service/src/model"
 	"courses-service/src/schemas"
 	"courses-service/src/service"
 
@@ -320,4 +322,82 @@ func (c *CourseController) GetFavouriteCourses(ctx *gin.Context) {
 	}
 	slog.Debug("Favourite courses retrieved", "courses", courses)
 	ctx.JSON(http.StatusOK, courses)
+}
+
+// @Summary Create course feedback
+// @Description Create course feedback by course ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param feedback body schemas.CreateCourseFeedbackRequest true "Course feedback"
+// @Success 200 {object} model.CourseFeedback
+// @Router /courses/{id}/feedback [post]
+func (c *CourseController) CreateCourseFeedback(ctx *gin.Context) {
+	slog.Debug("Creating course feedback")
+	courseId := ctx.Param("id")
+	if courseId == "" {
+		slog.Error("Course ID is required")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+		return
+	}
+
+	var feedback schemas.CreateCourseFeedbackRequest
+	if err := ctx.ShouldBindJSON(&feedback); err != nil {
+		slog.Error("Error binding create course feedback request", "error", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if !slices.Contains(model.FeedbackTypes, feedback.FeedbackType) {
+		slog.Error("Invalid feedback type")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid feedback type"})
+		return
+	}
+
+	feedbackModel, err := c.service.CreateCourseFeedback(courseId, feedback)
+	if err != nil {
+		slog.Error("Error creating course feedback", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	slog.Debug("Course feedback created", "feedback", feedbackModel)
+	ctx.JSON(http.StatusOK, feedbackModel)
+}
+
+// @Summary Get course feedback
+// @Description Get course feedback by course ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param getCourseFeedbackRequest body schemas.GetCourseFeedbackRequest true "Get course feedback request"
+// @Success 200 {array} model.CourseFeedback
+// @Router /courses/{id}/feedback [get]
+func (c *CourseController) GetCourseFeedback(ctx *gin.Context) {
+	slog.Debug("Getting course feedback")
+	courseId := ctx.Param("id")
+	if courseId == "" {
+		slog.Error("Course ID is required")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+		return
+	}
+
+	var getCourseFeedbackRequest schemas.GetCourseFeedbackRequest
+	if err := ctx.ShouldBindJSON(&getCourseFeedbackRequest); err != nil {
+		slog.Error("Error binding get course feedback request", "error", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	feedback, err := c.service.GetCourseFeedback(courseId, getCourseFeedbackRequest)
+	if err != nil {
+		slog.Error("Error getting course feedback", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	slog.Debug("Course feedback retrieved", "feedback", feedback)
+	ctx.JSON(http.StatusOK, feedback)
 }

@@ -15,6 +15,7 @@ type Enrollment struct {
 	Status        EnrollmentStatus   `json:"status" bson:"status"`
 	Favourite     bool               `json:"favourite" bson:"favourite"`
 	UpdatedAt     time.Time          `json:"updated_at" bson:"updated_at"`
+	Feedback      []StudentFeedback  `json:"feedback" bson:"feedback"`
 }
 
 type EnrollmentStatus string

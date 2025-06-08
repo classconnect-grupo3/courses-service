@@ -72,6 +72,10 @@ definitions:
         type: string
       end_date:
         type: string
+      feedback:
+        items:
+          $ref: '#/definitions/model.CourseFeedback'
+        type: array
       id:
         type: string
       modules:
@@ -91,6 +95,21 @@ definitions:
       updated_at:
         type: string
     type: object
+  model.CourseFeedback:
+    properties:
+      created_at:
+        type: string
+      feedback:
+        type: string
+      feedback_type:
+        $ref: '#/definitions/model.FeedbackType'
+      id:
+        type: string
+      score:
+        type: integer
+      student_uuid:
+        type: string
+    type: object
   model.Enrollment:
     properties:
       completed_date:
@@ -101,6 +120,10 @@ definitions:
         type: string
       favourite:
         type: boolean
+      feedback:
+        items:
+          $ref: '#/definitions/model.StudentFeedback'
+        type: array
       id:
         type: string
       status:
@@ -120,6 +143,16 @@ definitions:
     - EnrollmentStatusActive
     - EnrollmentStatusDropped
     - EnrollmentStatusCompleted
+  model.FeedbackType:
+    enum:
+    - POSITIVO
+    - NEGATIVO
+    - NEUTRO
+    type: string
+    x-enum-varnames:
+    - FeedbackTypePositive
+    - FeedbackTypeNegative
+    - FeedbackTypeNeutral
   model.Module:
     properties:
       content:
@@ -172,6 +205,23 @@ definitions:
     - QuestionTypeText
     - QuestionTypeMultipleChoice
     - QuestionTypeFile
+  model.StudentFeedback:
+    properties:
+      created_at:
+        type: string
+      feedback:
+        type: string
+      feedback_type:
+        $ref: '#/definitions/model.FeedbackType'
+      id:
+        type: string
+      score:
+        type: integer
+      student_uuid:
+        type: string
+      teacher_uuid:
+        type: string
+    type: object
   model.Submission:
     properties:
       answers:
@@ -248,6 +298,22 @@ definitions:
     - total_points
     - type
     type: object
+  schemas.CreateCourseFeedbackRequest:
+    properties:
+      feedback:
+        type: string
+      feedback_type:
+        $ref: '#/definitions/model.FeedbackType'
+      score:
+        type: integer
+      student_uuid:
+        type: string
+    required:
+    - feedback
+    - feedback_type
+    - score
+    - student_uuid
+    type: object
   schemas.CreateCourseRequest:
     properties:
       capacity:
@@ -289,6 +355,28 @@ definitions:
     - description
     - title
     type: object
+  schemas.CreateStudentFeedbackRequest:
+    properties:
+      course_id:
+        type: string
+      feedback:
+        type: string
+      feedback_type:
+        $ref: '#/definitions/model.FeedbackType'
+      score:
+        type: integer
+      student_uuid:
+        type: string
+      teacher_uuid:
+        type: string
+    required:
+    - course_id
+    - feedback
+    - feedback_type
+    - score
+    - student_uuid
+    - teacher_uuid
+    type: object
   schemas.DeleteCourseResponse:
     properties:
       message:
@@ -300,6 +388,34 @@ definitions:
         type: string
     required:
     - student_id
+    type: object
+  schemas.GetCourseFeedbackRequest:
+    properties:
+      end_date:
+        type: string
+      end_score:
+        type: integer
+      feedback_type:
+        $ref: '#/definitions/model.FeedbackType'
+      start_date:
+        type: string
+      start_score:
+        type: integer
+    type: object
+  schemas.GetFeedbackByStudentIdRequest:
+    properties:
+      course_id:
+        type: string
+      end_date:
+        type: string
+      end_score:
+        type: integer
+      feedback_type:
+        $ref: '#/definitions/model.FeedbackType'
+      start_date:
+        type: string
+      start_score:
+        type: integer
     type: object
   schemas.GradeSubmissionRequest:
     properties:
@@ -910,6 +1026,61 @@ paths:
       summary: Set a course as favourite
       tags:
       - enrollments
+  /courses/{id}/feedback:
+    get:
+      consumes:
+      - application/json
+      description: Get course feedback by course ID
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Get course feedback request
+        in: body
+        name: getCourseFeedbackRequest
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.GetCourseFeedbackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.CourseFeedback'
+            type: array
+      summary: Get course feedback
+      tags:
+      - courses
+    post:
+      consumes:
+      - application/json
+      description: Create course feedback by course ID
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Course feedback
+        in: body
+        name: feedback
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.CreateCourseFeedbackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CourseFeedback'
+      summary: Create course feedback
+      tags:
+      - courses
   /courses/{id}/remove-aux-teacher:
     delete:
       consumes:
@@ -937,6 +1108,33 @@ paths:
       summary: Remove an aux teacher from a course
       tags:
       - courses
+  /courses/{id}/student-feedback:
+    post:
+      consumes:
+      - application/json
+      description: Create a feedback for a course
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Feedback request
+        in: body
+        name: feedbackRequest
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.CreateStudentFeedbackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.StudentFeedback'
+      summary: Create a feedback for a course
+      tags:
+      - enrollments
   /courses/{id}/unenroll:
     delete:
       consumes:
@@ -1079,6 +1277,35 @@ paths:
       summary: Get courses by user ID
       tags:
       - courses
+  /feedback/student/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get feedback by student ID
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Get feedback by student ID request
+        in: body
+        name: getFeedbackByStudentIdRequest
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.GetFeedbackByStudentIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.StudentFeedback'
+            type: array
+      summary: Get feedback by student ID
+      tags:
+      - enrollments
   /modules:
     post:
       consumes:

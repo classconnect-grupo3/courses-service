@@ -103,6 +103,62 @@ func (m *MockCourseService) UpdateCourse(id string, updateCourseRequest schemas.
 	return &model.Course{}, nil
 }
 
+// CreateCourseFeedback implements service.CourseServiceInterface.
+func (m *MockCourseService) CreateCourseFeedback(courseId string, feedbackRequest schemas.CreateCourseFeedbackRequest) (*model.CourseFeedback, error) {
+	return &model.CourseFeedback{
+		ID:           primitive.NewObjectID(),
+		StudentUUID:  feedbackRequest.StudentUUID,
+		FeedbackType: feedbackRequest.FeedbackType,
+		Score:        feedbackRequest.Score,
+		Feedback:     feedbackRequest.Feedback,
+		CreatedAt:    time.Now(),
+	}, nil
+}
+
+// GetCourseFeedback implements service.CourseServiceInterface.
+func (m *MockCourseService) GetCourseFeedback(courseId string, getCourseFeedbackRequest schemas.GetCourseFeedbackRequest) ([]*model.CourseFeedback, error) {
+	if courseId == "course-with-feedback" {
+		feedbacks := []*model.CourseFeedback{
+			{
+				ID:           primitive.NewObjectID(),
+				StudentUUID:  "student-1",
+				FeedbackType: model.FeedbackTypePositive,
+				Score:        5,
+				Feedback:     "Great course!",
+				CreatedAt:    time.Now(),
+			},
+			{
+				ID:           primitive.NewObjectID(),
+				StudentUUID:  "student-2",
+				FeedbackType: model.FeedbackTypeNeutral,
+				Score:        3,
+				Feedback:     "OK course",
+				CreatedAt:    time.Now(),
+			},
+		}
+
+		// Apply filters
+		filteredFeedbacks := []*model.CourseFeedback{}
+		for _, feedback := range feedbacks {
+			if getCourseFeedbackRequest.FeedbackType != "" && feedback.FeedbackType != getCourseFeedbackRequest.FeedbackType {
+				continue
+			}
+			if getCourseFeedbackRequest.StartScore > 0 && feedback.Score < getCourseFeedbackRequest.StartScore {
+				continue
+			}
+			if getCourseFeedbackRequest.EndScore > 0 && feedback.Score > getCourseFeedbackRequest.EndScore {
+				continue
+			}
+			filteredFeedbacks = append(filteredFeedbacks, feedback)
+		}
+		return filteredFeedbacks, nil
+	}
+	if courseId == "course-no-feedback" {
+		return []*model.CourseFeedback{}, nil
+	}
+	return []*model.CourseFeedback{}, nil
+}
+
 type MockCourseServiceWithError struct{}
 
 // GetFavouriteCourses implements service.CourseServiceInterface.
@@ -156,6 +212,16 @@ func (m *MockCourseServiceWithError) GetCourseByTitle(title string) ([]*model.Co
 
 func (m *MockCourseServiceWithError) UpdateCourse(id string, updateCourseRequest schemas.UpdateCourseRequest) (*model.Course, error) {
 	return nil, errors.New("Error updating course")
+}
+
+// CreateCourseFeedback implements service.CourseServiceInterface.
+func (m *MockCourseServiceWithError) CreateCourseFeedback(courseId string, feedbackRequest schemas.CreateCourseFeedbackRequest) (*model.CourseFeedback, error) {
+	return nil, errors.New("Error creating course feedback")
+}
+
+// GetCourseFeedback implements service.CourseServiceInterface.
+func (m *MockCourseServiceWithError) GetCourseFeedback(courseId string, getCourseFeedbackRequest schemas.GetCourseFeedbackRequest) ([]*model.CourseFeedback, error) {
+	return nil, errors.New("Error getting course feedback")
 }
 
 func TestGetCourses(t *testing.T) {
@@ -292,6 +358,7 @@ func TestGetCoursesByUserIdWithError(t *testing.T) {
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
+
 func TestGetCourseByTitle(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/courses/title/Test Course", nil)
@@ -451,4 +518,329 @@ func TestGetFavouriteCoursesWithEmptyStudentId(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.Contains(t, w.Body.String(), "Student ID is required")
+}
+
+func TestCreateCourseFeedback(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{
+		"student_uuid": "student-123",
+		"score": 5,
+		"feedback_type": "POSITIVO",
+		"feedback": "Excellent course! Very informative and well structured."
+	}`
+
+	req, _ := http.NewRequest("POST", "/courses/course-123/feedback", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	responseBody := w.Body.String()
+	assert.Contains(t, responseBody, "student-123")
+	assert.Contains(t, responseBody, "POSITIVO")
+	assert.Contains(t, responseBody, "Excellent course!")
+}
+
+func TestCreateCourseFeedbackWithEmptyCourseID(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{
+		"student_uuid": "student-123",
+		"score": 4,
+		"feedback_type": "POSITIVO",
+		"feedback": "Good course"
+	}`
+
+	req, _ := http.NewRequest("POST", "/courses//feedback", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Course ID is required")
+}
+
+func TestCreateCourseFeedbackWithInvalidJSON(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{
+		"student_uuid": "student-123",
+		"invalid_field": "invalid"
+	}`
+
+	req, _ := http.NewRequest("POST", "/courses/course-123/feedback", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Error:Field validation")
+}
+
+func TestCreateCourseFeedbackWithMissingRequiredFields(t *testing.T) {
+	testCases := []struct {
+		name string
+		body string
+	}{
+		{
+			name: "Missing student_uuid",
+			body: `{
+				"score": 5,
+				"feedback_type": "POSITIVO",
+				"feedback": "Great course"
+			}`,
+		},
+		{
+			name: "Missing score",
+			body: `{
+				"student_uuid": "student-123",
+				"feedback_type": "POSITIVO",
+				"feedback": "Great course"
+			}`,
+		},
+		{
+			name: "Missing feedback_type",
+			body: `{
+				"student_uuid": "student-123",
+				"score": 5,
+				"feedback": "Great course"
+			}`,
+		},
+		{
+			name: "Missing feedback",
+			body: `{
+				"student_uuid": "student-123",
+				"score": 5,
+				"feedback_type": "POSITIVO"
+			}`,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest("POST", "/courses/course-123/feedback", strings.NewReader(tc.body))
+			req.Header.Set("Content-Type", "application/json")
+			normalRouter.ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusBadRequest, w.Code)
+			assert.Contains(t, w.Body.String(), "Error:Field validation")
+		})
+	}
+}
+
+func TestCreateCourseFeedbackWithDifferentFeedbackTypes(t *testing.T) {
+	testCases := []struct {
+		feedbackType string
+		score        int
+		feedback     string
+	}{
+		{"POSITIVO", 5, "Excellent course!"},
+		{"NEUTRO", 3, "Average course"},
+		{"NEGATIVO", 1, "Poor course"},
+	}
+
+	for _, tc := range testCases {
+		t.Run("FeedbackType_"+tc.feedbackType, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			body := `{
+				"student_uuid": "student-123",
+				"score": ` + string(rune(tc.score+'0')) + `,
+				"feedback_type": "` + tc.feedbackType + `",
+				"feedback": "` + tc.feedback + `"
+			}`
+
+			req, _ := http.NewRequest("POST", "/courses/course-123/feedback", strings.NewReader(body))
+			req.Header.Set("Content-Type", "application/json")
+			normalRouter.ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusOK, w.Code)
+			responseBody := w.Body.String()
+			assert.Contains(t, responseBody, tc.feedbackType)
+			assert.Contains(t, responseBody, tc.feedback)
+		})
+	}
+}
+
+func TestCreateCourseFeedbackWithServiceError(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{
+		"student_uuid": "student-123",
+		"score": 4,
+		"feedback_type": "POSITIVO",
+		"feedback": "Good course"
+	}`
+
+	req, _ := http.NewRequest("POST", "/courses/course-123/feedback", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	errorRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "Error creating course feedback")
+}
+
+func TestCreateCourseFeedbackWithScoreBoundaries(t *testing.T) {
+	testCases := []struct {
+		name  string
+		score int
+	}{
+		{"Score_1", 1},
+		{"Score_2", 2},
+		{"Score_3", 3},
+		{"Score_4", 4},
+		{"Score_5", 5},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			body := `{
+				"student_uuid": "student-123",
+				"score": ` + string(rune(tc.score+'0')) + `,
+				"feedback_type": "POSITIVO",
+				"feedback": "Course feedback"
+			}`
+
+			req, _ := http.NewRequest("POST", "/courses/course-123/feedback", strings.NewReader(body))
+			req.Header.Set("Content-Type", "application/json")
+			normalRouter.ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusOK, w.Code)
+			responseBody := w.Body.String()
+			assert.Contains(t, responseBody, "student-123")
+		})
+	}
+}
+
+func TestCreateCourseFeedbackWithInvalidFeedbackType(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"student_uuid": "student-123", "score": 4, "feedback_type": "INVALID_TYPE", "feedback": "Good course"}`
+
+	req, _ := http.NewRequest("POST", "/courses/course-123/feedback", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Invalid feedback type")
+}
+
+func TestGetCourseFeedback(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{}`
+
+	req, _ := http.NewRequest("GET", "/courses/course-with-feedback/feedback", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	// Verify that response contains feedback data
+	responseBody := w.Body.String()
+	assert.Contains(t, responseBody, "student-1")
+	assert.Contains(t, responseBody, "student-2")
+	assert.Contains(t, responseBody, "Great course!")
+	assert.Contains(t, responseBody, "OK course")
+}
+
+func TestGetCourseFeedbackWithEmptyCourseID(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{}`
+
+	req, _ := http.NewRequest("GET", "/courses//feedback", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Course ID is required")
+}
+
+func TestGetCourseFeedbackWithNoFeedback(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{}`
+
+	req, _ := http.NewRequest("GET", "/courses/course-no-feedback/feedback", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	responseBody := w.Body.String()
+	assert.Equal(t, "[]", strings.TrimSpace(responseBody))
+}
+
+func TestGetCourseFeedbackWithFeedbackTypeFilter(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"feedback_type": "POSITIVO"}`
+
+	req, _ := http.NewRequest("GET", "/courses/course-with-feedback/feedback", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	responseBody := w.Body.String()
+	assert.Contains(t, responseBody, "student-1")
+	assert.Contains(t, responseBody, "Great course!")
+	// Should not contain neutral feedback
+	assert.NotContains(t, responseBody, "student-2")
+}
+
+func TestGetCourseFeedbackWithScoreRangeFilter(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"start_score": 4, "end_score": 5}`
+
+	req, _ := http.NewRequest("GET", "/courses/course-with-feedback/feedback", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	responseBody := w.Body.String()
+	assert.Contains(t, responseBody, "student-1")
+	assert.Contains(t, responseBody, "Great course!")
+	// Should not contain lower score feedback
+	assert.NotContains(t, responseBody, "student-2")
+}
+
+func TestGetCourseFeedbackWithCombinedFilters(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"feedback_type": "POSITIVO", "start_score": 4, "end_score": 5}`
+
+	req, _ := http.NewRequest("GET", "/courses/course-with-feedback/feedback", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	responseBody := w.Body.String()
+	assert.Contains(t, responseBody, "student-1")
+	assert.Contains(t, responseBody, "Great course!")
+}
+
+func TestGetCourseFeedbackWithInvalidJSON(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"feedback_type": "POSITIVO", "start_score": invalid}`
+
+	req, _ := http.NewRequest("GET", "/courses/course-with-feedback/feedback", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "error")
+}
+
+func TestGetCourseFeedbackWithServiceError(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{}`
+
+	req, _ := http.NewRequest("GET", "/courses/error-course/feedback", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	errorRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "Error getting course feedback")
+}
+
+func TestGetCourseFeedbackWithDateRangeFilter(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"start_date": "2024-01-01T00:00:00Z", "end_date": "2024-12-31T23:59:59Z"}`
+
+	req, _ := http.NewRequest("GET", "/courses/course-with-feedback/feedback", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	responseBody := w.Body.String()
+	assert.Contains(t, responseBody, "student-1")
+	assert.Contains(t, responseBody, "student-2")
 }
