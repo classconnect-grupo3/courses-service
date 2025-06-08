@@ -318,7 +318,7 @@ func TestCreateFeedback(t *testing.T) {
 		"feedback": "Excellent work on the assignment!"
 	}`
 
-	req, _ := http.NewRequest("POST", "/courses/course-123/feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("POST", "/courses/course-123/student-feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalEnrollmentRouter.ServeHTTP(w, req)
 
@@ -337,7 +337,7 @@ func TestCreateFeedbackWithEmptyCourseID(t *testing.T) {
 		"feedback": "Great work!"
 	}`
 
-	req, _ := http.NewRequest("POST", "/courses//feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("POST", "/courses//student-feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalEnrollmentRouter.ServeHTTP(w, req)
 
@@ -352,7 +352,7 @@ func TestCreateFeedbackWithInvalidJSON(t *testing.T) {
 		"invalid_field": "invalid"
 	}`
 
-	req, _ := http.NewRequest("POST", "/courses/course-123/feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("POST", "/courses/course-123/student-feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalEnrollmentRouter.ServeHTTP(w, req)
 
@@ -371,7 +371,7 @@ func TestCreateFeedbackWithMissingRequiredFields(t *testing.T) {
 		"feedback": "Great work!"
 	}`
 
-	req, _ := http.NewRequest("POST", "/courses/course-123/feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("POST", "/courses/course-123/student-feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalEnrollmentRouter.ServeHTTP(w, req)
 
@@ -390,7 +390,7 @@ func TestCreateFeedbackWithServiceError(t *testing.T) {
 		"feedback": "Great work!"
 	}`
 
-	req, _ := http.NewRequest("POST", "/courses/course-123/feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("POST", "/courses/course-123/student-feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	errorEnrollmentRouter.ServeHTTP(w, req)
 
@@ -420,7 +420,7 @@ func TestCreateFeedbackWithDifferentFeedbackTypes(t *testing.T) {
 			"feedback": "Test feedback"
 		}`, tc.feedbackType, tc.score)
 
-		req, _ := http.NewRequest("POST", "/courses/course-123/feedback", strings.NewReader(body))
+		req, _ := http.NewRequest("POST", "/courses/course-123/student-feedback", strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
 		normalEnrollmentRouter.ServeHTTP(w, req)
 
@@ -440,7 +440,7 @@ func TestCreateFeedbackWithInvalidFeedbackType(t *testing.T) {
 		"feedback": "Great work!"
 	}`
 
-	req, _ := http.NewRequest("POST", "/courses/course-123/feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("POST", "/courses/course-123/student-feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalEnrollmentRouter.ServeHTTP(w, req)
 
@@ -468,7 +468,7 @@ func TestCreateFeedbackWithValidScoreBoundaries(t *testing.T) {
 			"feedback": "Score boundary test"
 		}`, tc.score)
 
-		req, _ := http.NewRequest("POST", "/courses/course-123/feedback", strings.NewReader(body))
+		req, _ := http.NewRequest("POST", "/courses/course-123/student-feedback", strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
 		normalEnrollmentRouter.ServeHTTP(w, req)
 

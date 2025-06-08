@@ -5,6 +5,7 @@ import (
 	"courses-service/src/schemas"
 	"courses-service/src/service"
 	"errors"
+	"time"
 
 	"testing"
 
@@ -101,8 +102,17 @@ func (m *MockEnrollmentRepository) GetEnrollmentsByCourseId(courseID string) ([]
 
 func (m *MockEnrollmentRepository) IsEnrolled(studentID, courseID string) (bool, error) {
 	// Return true for specific cases to test enrolled scenarios
+	if studentID == "enrolled-student" {
+		return true, nil
+	}
 	if studentID == "enrolled-teacher" {
 		return true, nil
+	}
+	if studentID == "error-checking-student" {
+		return false, errors.New("Error checking enrollment")
+	}
+	if studentID == "non-enrolled-student" {
+		return false, nil
 	}
 	return false, nil
 }
@@ -136,6 +146,7 @@ func (m *MockCourseRepository) GetCoursesByStudentId(studentId string) ([]*model
 				Title:       "Student Course",
 				Description: "Course for student",
 				TeacherUUID: "teacher-123",
+				AuxTeachers: []string{"aux-teacher-1", "aux-teacher-2"},
 				Capacity:    20,
 			},
 		}, nil
@@ -240,6 +251,15 @@ func (m *MockCourseRepository) GetCourseById(id string) (*model.Course, error) {
 			AuxTeachers: []string{"aux-teacher-1", "enrolled-teacher"},
 		}, nil
 	}
+	if id == "valid-course" {
+		return &model.Course{
+			ID:          primitive.NewObjectID(),
+			Title:       "Valid Course",
+			Description: "Course for feedback testing",
+			TeacherUUID: "teacher-456",
+			AuxTeachers: []string{"aux-teacher-2"},
+		}, nil
+	}
 	if id == "123e4567-e89b-12d3-a456-426614174001" {
 		return nil, nil
 	}
@@ -292,6 +312,21 @@ func (m *MockCourseRepository) UpdateCourse(id string, updateCourseRequest model
 
 func (m *MockCourseRepository) UpdateStudentsAmount(courseID string, newStudentsAmount int) error {
 	return nil
+}
+
+// CreateCourseFeedback implements repository.CourseRepositoryInterface.
+func (m *MockCourseRepository) CreateCourseFeedback(courseID string, feedback model.CourseFeedback) (*model.CourseFeedback, error) {
+	if courseID == "non-existent-course" {
+		return nil, errors.New("Course not found")
+	}
+	if feedback.StudentUUID == "error-student" {
+		return nil, errors.New("Error creating course feedback")
+	}
+
+	// Simulate successful creation
+	feedback.ID = primitive.NewObjectID()
+	feedback.CreatedAt = time.Now()
+	return &feedback, nil
 }
 
 // Helper function to create ObjectID from string
@@ -650,4 +685,197 @@ func (m *MockEnrollmentRepository) GetStudentFavouriteCourses(studentUUID string
 			Feedback:  []model.StudentFeedback{}, // Initialize as empty slice
 		},
 	}, nil
+}
+
+func TestCreateCourseFeedback(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+
+	feedbackRequest := schemas.CreateCourseFeedbackRequest{
+		StudentUUID:  "enrolled-student",
+		Score:        5,
+		FeedbackType: model.FeedbackTypePositive,
+		Feedback:     "Excellent course! Very informative.",
+	}
+
+	feedback, err := courseService.CreateCourseFeedback("valid-course", feedbackRequest)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedback)
+	assert.Equal(t, "enrolled-student", feedback.StudentUUID)
+	assert.Equal(t, model.FeedbackTypePositive, feedback.FeedbackType)
+	assert.Equal(t, 5, feedback.Score)
+	assert.Equal(t, "Excellent course! Very informative.", feedback.Feedback)
+	assert.False(t, feedback.ID.IsZero())
+	assert.False(t, feedback.CreatedAt.IsZero())
+}
+
+func TestCreateCourseFeedbackWithNonExistentCourse(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+
+	feedbackRequest := schemas.CreateCourseFeedbackRequest{
+		StudentUUID:  "enrolled-student",
+		Score:        3,
+		FeedbackType: model.FeedbackTypeNeutral,
+		Feedback:     "Average course",
+	}
+
+	feedback, err := courseService.CreateCourseFeedback("non-existent-course", feedbackRequest)
+	assert.Error(t, err)
+	assert.Nil(t, feedback)
+	assert.Contains(t, err.Error(), "course not found")
+}
+
+func TestCreateCourseFeedbackWithInvalidScoreTooLow(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+
+	feedbackRequest := schemas.CreateCourseFeedbackRequest{
+		StudentUUID:  "enrolled-student",
+		Score:        0, // Too low
+		FeedbackType: model.FeedbackTypeNegative,
+		Feedback:     "Poor course",
+	}
+
+	feedback, err := courseService.CreateCourseFeedback("valid-course", feedbackRequest)
+	assert.Error(t, err)
+	assert.Nil(t, feedback)
+	assert.Contains(t, err.Error(), "score must be between 1 and 5")
+}
+
+func TestCreateCourseFeedbackWithInvalidScoreTooHigh(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+
+	feedbackRequest := schemas.CreateCourseFeedbackRequest{
+		StudentUUID:  "enrolled-student",
+		Score:        6, // Too high
+		FeedbackType: model.FeedbackTypePositive,
+		Feedback:     "Great course",
+	}
+
+	feedback, err := courseService.CreateCourseFeedback("valid-course", feedbackRequest)
+	assert.Error(t, err)
+	assert.Nil(t, feedback)
+	assert.Contains(t, err.Error(), "score must be between 1 and 5")
+}
+
+func TestCreateCourseFeedbackWithValidScoreBoundaries(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+
+	// Test lower boundary (1)
+	feedbackRequest1 := schemas.CreateCourseFeedbackRequest{
+		StudentUUID:  "enrolled-student",
+		Score:        1,
+		FeedbackType: model.FeedbackTypeNegative,
+		Feedback:     "Needs significant improvement",
+	}
+
+	feedback1, err := courseService.CreateCourseFeedback("valid-course", feedbackRequest1)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedback1)
+	assert.Equal(t, 1, feedback1.Score)
+
+	// Test upper boundary (5)
+	feedbackRequest2 := schemas.CreateCourseFeedbackRequest{
+		StudentUUID:  "enrolled-student",
+		Score:        5,
+		FeedbackType: model.FeedbackTypePositive,
+		Feedback:     "Outstanding course!",
+	}
+
+	feedback2, err := courseService.CreateCourseFeedback("valid-course", feedbackRequest2)
+	assert.NoError(t, err)
+	assert.NotNil(t, feedback2)
+	assert.Equal(t, 5, feedback2.Score)
+}
+
+func TestCreateCourseFeedbackWithTeacherAsStudent(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+
+	feedbackRequest := schemas.CreateCourseFeedbackRequest{
+		StudentUUID:  "titular-teacher", // This is the teacher UUID
+		Score:        4,
+		FeedbackType: model.FeedbackTypePositive,
+		Feedback:     "Self feedback",
+	}
+
+	feedback, err := courseService.CreateCourseFeedback("123e4567-e89b-12d3-a456-426614174000", feedbackRequest)
+	assert.Error(t, err)
+	assert.Nil(t, feedback)
+	assert.Contains(t, err.Error(), "the teacher cannot give feedback to his own course")
+}
+
+func TestCreateCourseFeedbackWithAuxTeacherAsStudent(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+
+	feedbackRequest := schemas.CreateCourseFeedbackRequest{
+		StudentUUID:  "existing-aux-teacher", // This is an aux teacher
+		Score:        3,
+		FeedbackType: model.FeedbackTypeNeutral,
+		Feedback:     "Aux teacher feedback",
+	}
+
+	feedback, err := courseService.CreateCourseFeedback("123e4567-e89b-12d3-a456-426614174000", feedbackRequest)
+	assert.Error(t, err)
+	assert.Nil(t, feedback)
+	assert.Contains(t, err.Error(), "the teacher cannot give feedback to his own course")
+}
+
+func TestCreateCourseFeedbackWithNonEnrolledStudent(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+
+	feedbackRequest := schemas.CreateCourseFeedbackRequest{
+		StudentUUID:  "non-enrolled-student",
+		Score:        4,
+		FeedbackType: model.FeedbackTypePositive,
+		Feedback:     "Great course!",
+	}
+
+	feedback, err := courseService.CreateCourseFeedback("valid-course", feedbackRequest)
+	assert.Error(t, err)
+	assert.Nil(t, feedback)
+	assert.Contains(t, err.Error(), "the student is not enrolled in the course")
+}
+
+func TestCreateCourseFeedbackWithEnrollmentCheckError(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+
+	feedbackRequest := schemas.CreateCourseFeedbackRequest{
+		StudentUUID:  "error-checking-student",
+		Score:        3,
+		FeedbackType: model.FeedbackTypeNeutral,
+		Feedback:     "Average course",
+	}
+
+	feedback, err := courseService.CreateCourseFeedback("valid-course", feedbackRequest)
+	assert.Error(t, err)
+	assert.Nil(t, feedback)
+	assert.Contains(t, err.Error(), "Error checking enrollment")
+}
+
+func TestCreateCourseFeedbackWithDifferentFeedbackTypes(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+
+	testCases := []struct {
+		feedbackType model.FeedbackType
+		score        int
+		feedback     string
+	}{
+		{model.FeedbackTypePositive, 5, "Excellent course!"},
+		{model.FeedbackTypeNeutral, 3, "Average course"},
+		{model.FeedbackTypeNegative, 1, "Poor course"},
+	}
+
+	for _, tc := range testCases {
+		feedbackRequest := schemas.CreateCourseFeedbackRequest{
+			StudentUUID:  "enrolled-student",
+			Score:        tc.score,
+			FeedbackType: tc.feedbackType,
+			Feedback:     tc.feedback,
+		}
+
+		feedback, err := courseService.CreateCourseFeedback("valid-course", feedbackRequest)
+		assert.NoError(t, err)
+		assert.NotNil(t, feedback)
+		assert.Equal(t, tc.feedbackType, feedback.FeedbackType)
+		assert.Equal(t, tc.score, feedback.Score)
+		assert.Equal(t, tc.feedback, feedback.Feedback)
+	}
 }

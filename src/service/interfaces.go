@@ -20,6 +20,7 @@ type CourseServiceInterface interface {
 	AddAuxTeacherToCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error)
 	RemoveAuxTeacherFromCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error)
 	GetFavouriteCourses(studentId string) ([]*model.Course, error)
+	CreateCourseFeedback(courseId string, feedbackRequest schemas.CreateCourseFeedbackRequest) (*model.CourseFeedback, error)
 }
 
 type ModuleServiceInterface interface {

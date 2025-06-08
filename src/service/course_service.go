@@ -185,3 +185,35 @@ func (s *CourseService) GetFavouriteCourses(studentId string) ([]*model.Course, 
 	}
 	return favouriteCourses, nil
 }
+
+func (s *CourseService) CreateCourseFeedback(courseId string, feedbackRequest schemas.CreateCourseFeedbackRequest) (*model.CourseFeedback, error) {
+	course, err := s.courseRepository.GetCourseById(courseId)
+	if err != nil {
+		return nil, err
+	}
+
+	if feedbackRequest.Score < 1 || feedbackRequest.Score > 5 {
+		return nil, errors.New("score must be between 1 and 5")
+	}
+
+	// Check if the student is the teacher or an aux teacher (should not be allowed to give feedback)
+	if course.TeacherUUID == feedbackRequest.StudentUUID || slices.Contains(course.AuxTeachers, feedbackRequest.StudentUUID) {
+		return nil, errors.New("the teacher cannot give feedback to his own course")
+	}
+
+	if enrolled, err := s.enrollmentRepository.IsEnrolled(feedbackRequest.StudentUUID, courseId); err != nil {
+		return nil, err
+	} else if !enrolled {
+		return nil, errors.New("the student is not enrolled in the course")
+	}
+
+	feedback := model.CourseFeedback{
+		StudentUUID:  feedbackRequest.StudentUUID,
+		FeedbackType: feedbackRequest.FeedbackType,
+		Score:        feedbackRequest.Score,
+		Feedback:     feedbackRequest.Feedback,
+		CreatedAt:    time.Now(),
+	}
+
+	return s.courseRepository.CreateCourseFeedback(courseId, feedback)
+}

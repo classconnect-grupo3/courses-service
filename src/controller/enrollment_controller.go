@@ -4,7 +4,6 @@ import (
 	"courses-service/src/model"
 	"courses-service/src/schemas"
 	"courses-service/src/service"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"slices"
@@ -197,7 +196,7 @@ func (c *EnrollmentController) UnsetFavouriteCourse(ctx *gin.Context) {
 // @Param id path string true "Course ID"
 // @Param feedbackRequest body schemas.CreateStudentFeedbackRequest true "Feedback request"
 // @Success 200 {object} schemas.CreateStudentFeedbackResponse
-// @Router /courses/{id}/feedback [post]
+// @Router /courses/{id}/student-feedback [post]
 func (c *EnrollmentController) CreateFeedback(ctx *gin.Context) {
 	slog.Debug("Creating feedback", "courseId", ctx.Param("id"))
 	courseID := ctx.Param("id")
@@ -214,8 +213,6 @@ func (c *EnrollmentController) CreateFeedback(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	fmt.Printf("Feedback type: %+v\n", feedbackRequest.FeedbackType)
 
 	if !slices.Contains(model.FeedbackTypes, feedbackRequest.FeedbackType) {
 		slog.Error("Invalid feedback type")

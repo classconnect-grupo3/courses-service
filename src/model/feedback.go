@@ -25,3 +25,12 @@ type StudentFeedback struct {
 	Feedback     string             `json:"feedback" bson:"feedback"`
 	CreatedAt    time.Time          `json:"created_at" bson:"created_at,omitempty"`
 }
+
+type CourseFeedback struct {
+	ID           primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	StudentUUID  string             `json:"student_uuid" bson:"student_uuid"`
+	FeedbackType FeedbackType       `json:"feedback_type" bson:"feedback_type"`
+	Score        int                `json:"score" bson:"score"`
+	Feedback     string             `json:"feedback" bson:"feedback"`
+	CreatedAt    time.Time          `json:"created_at" bson:"created_at,omitempty"`
+}

@@ -210,6 +210,17 @@ func (m *MockAssignmentRepository) DeleteAssignment(id string) error {
 
 type MockCourseService struct{}
 
+// CreateCourseFeedback implements service.CourseServiceInterface.
+func (m *MockCourseService) CreateCourseFeedback(courseId string, feedbackRequest schemas.CreateCourseFeedbackRequest) (*model.CourseFeedback, error) {
+	if courseId == "error-creating-feedback" {
+		return nil, errors.New("Error creating feedback")
+	}
+	if courseId == "invalid-score" {
+		return nil, errors.New("Score must be between 1 and 5")
+	}
+	return nil, nil
+}
+
 func (m *MockCourseService) GetCourseById(id string) (*model.Course, error) {
 	if id == "valid-course-id" {
 		return &model.Course{

@@ -233,6 +233,11 @@ func (m *CourseMockService) GetFavouriteCourses(studentId string) ([]*model.Cour
 	return nil, nil
 }
 
+// CreateCourseFeedback implements service.CourseServiceInterface.
+func (m *CourseMockService) CreateCourseFeedback(courseId string, feedbackRequest schemas.CreateCourseFeedbackRequest) (*model.CourseFeedback, error) {
+	return nil, nil
+}
+
 // Helper function to create consistent ObjectIDs for testing
 func mustParseSubmissionObjectID(id string) primitive.ObjectID {
 	switch id {

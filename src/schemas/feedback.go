@@ -15,10 +15,17 @@ type CreateStudentFeedbackRequest struct {
 }
 
 type GetFeedbackByStudentIdRequest struct {
-	CourseID        string             `json:"course_id"`
-	FeedbackType    model.FeedbackType `json:"feedback_type"`
-	StartScore      int                `json:"start_score"`
-	EndScore        int                `json:"end_score"`
-	StartDate       time.Time          `json:"start_date"`
-	EndDate         time.Time          `json:"end_date"`
+	CourseID     string             `json:"course_id"`
+	FeedbackType model.FeedbackType `json:"feedback_type"`
+	StartScore   int                `json:"start_score"`
+	EndScore     int                `json:"end_score"`
+	StartDate    time.Time          `json:"start_date"`
+	EndDate      time.Time          `json:"end_date"`
+}
+
+type CreateCourseFeedbackRequest struct {
+	StudentUUID  string             `json:"student_uuid" binding:"required"`
+	Score        int                `json:"score" binding:"required"`
+	FeedbackType model.FeedbackType `json:"feedback_type" binding:"required"`
+	Feedback     string             `json:"feedback" binding:"required"`
 }

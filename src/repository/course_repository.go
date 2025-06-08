@@ -283,3 +283,25 @@ func (r *CourseRepository) UpdateStudentsAmount(courseID string, newStudentsAmou
 
 	return nil
 }
+
+func (r *CourseRepository) CreateCourseFeedback(courseID string, feedback model.CourseFeedback) (*model.CourseFeedback, error) {
+	feedback.ID = primitive.NewObjectID()
+
+	course, err := r.GetCourseById(courseID)
+	if err != nil {
+		return nil, err
+	}
+
+	if course.Feedback == nil {
+		course.Feedback = []model.CourseFeedback{}
+	}
+
+	course.Feedback = append(course.Feedback, feedback)
+
+	_, err = r.UpdateCourse(course.ID.Hex(), *course)
+	if err != nil {
+		return nil, err
+	}
+
+	return &feedback, nil
+}

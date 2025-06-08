@@ -153,6 +153,11 @@ func (m *MockEnrollmentRepositoryForEnrollmentService) GetFeedbackByStudentId(st
 
 type MockCourseRepositoryForEnrollment struct{}
 
+// CreateCourseFeedback implements repository.CourseRepositoryInterface.
+func (m *MockCourseRepositoryForEnrollment) CreateCourseFeedback(courseID string, feedback model.CourseFeedback) (*model.CourseFeedback, error) {
+	return nil, nil
+}
+
 func (m *MockCourseRepositoryForEnrollment) GetCourseById(id string) (*model.Course, error) {
 	if id == "non-existent-course" {
 		return nil, errors.New("Course not found")
