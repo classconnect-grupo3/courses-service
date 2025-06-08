@@ -56,13 +56,14 @@ func NewAiClient(config *config.Config) *AiClient {
 	}
 }
 
-func (c *AiClient) SummarizeCourseFeedbacks(feedbacks []*model.CourseFeedback) string {
+func (c *AiClient) SummarizeCourseFeedbacks(feedbacks []*model.CourseFeedback) (string, error) {
 	prompt := generateCourseFeedbacksPrompt(feedbacks)
 	response, err := c.Client.Models.GenerateContent(c.context, aiModel, genai.Text(prompt), nil)
 	if err != nil {
 		log.Fatal("Failed to generate content", err)
+		return "", err
 	}
-	return debugString(response)
+	return debugString(response), nil
 }
 
 func debugString[T any](r *T) string {

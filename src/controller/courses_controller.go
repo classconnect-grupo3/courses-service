@@ -428,7 +428,7 @@ func (c *CourseController) GetCourseFeedbackSummary(ctx *gin.Context) {
 		return
 	}
 
-	summary := c.aiClient.SummarizeCourseFeedbacks(feedbacks)
+	summary, err := c.aiClient.SummarizeCourseFeedbacks(feedbacks)
 	if err != nil {
 		slog.Error("Error getting course feedback summary", "error", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
