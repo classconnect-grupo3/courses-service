@@ -46,21 +46,21 @@ func NewAiClient(geminiApiKey string) *AiClient {
 	}
 }
 
-func (c *AiClient) SummarizeCourseFeedbacks(feedbacks []model.CourseFeedback) {
+func (c *AiClient) SummarizeCourseFeedbacks(feedbacks []model.CourseFeedback) string {
 	prompt := generateCourseFeedbacksPrompt(feedbacks)
 	response, err := c.Client.Models.GenerateContent(c.context, aiModel, genai.Text(prompt), nil)
 	if err != nil {
 		log.Fatal("Failed to generate content", err)
 	}
-	debugPrint(response)
+	return debugString(response)
 }
 
-func debugPrint[T any](r *T) {
+func debugString[T any](r *T) string {
 
 	response, err := json.MarshalIndent(*r, "", "  ")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println(string(response))
+	return string(response)
 }
