@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 
+	"courses-service/src/config"
 	"courses-service/src/model"
 
 	"google.golang.org/genai"
@@ -19,7 +20,7 @@ type AiClient struct {
 
 const aiModel = "gemini-2.0-flash"
 
-func generateCourseFeedbacksPrompt(feedbacks []model.CourseFeedback) string {
+func generateCourseFeedbacksPrompt(feedbacks []*model.CourseFeedback) string {
 	prompt := SummarizeCourseFeedbacksPrompt
 	for _, feedback := range feedbacks {
 		prompt += fmt.Sprintf("Puntuacion: %d\n", feedback.Score)
@@ -29,7 +30,16 @@ func generateCourseFeedbacksPrompt(feedbacks []model.CourseFeedback) string {
 	return prompt
 }
 
-func NewAiClient(geminiApiKey string) *AiClient {
+func NewAiClient(config *config.Config) *AiClient {
+
+	if config.Environment == "test" {
+		return &AiClient{
+			context:      context.Background(),
+			GeminiApiKey: "",
+			Client:       nil,
+		}
+	}
+	geminiApiKey := config.GeminiApiKey
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
 		APIKey: geminiApiKey,
@@ -46,7 +56,7 @@ func NewAiClient(geminiApiKey string) *AiClient {
 	}
 }
 
-func (c *AiClient) SummarizeCourseFeedbacks(feedbacks []model.CourseFeedback) string {
+func (c *AiClient) SummarizeCourseFeedbacks(feedbacks []*model.CourseFeedback) string {
 	prompt := generateCourseFeedbacksPrompt(feedbacks)
 	response, err := c.Client.Models.GenerateContent(c.context, aiModel, genai.Text(prompt), nil)
 	if err != nil {

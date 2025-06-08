@@ -1,6 +1,7 @@
 package router
 
 import (
+	"courses-service/src/ai"
 	"courses-service/src/config"
 	"courses-service/src/controller"
 	"courses-service/src/database"
@@ -57,6 +58,7 @@ func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseControl
 	r.DELETE("/courses/:id/aux-teacher/remove", controller.RemoveAuxTeacherFromCourse)
 	r.POST("/courses/:id/feedback", controller.CreateCourseFeedback)
 	r.GET("/courses/:id/feedback", controller.GetCourseFeedback)
+	r.GET("/courses/:id/feedback/summary", controller.GetCourseFeedbackSummary)
 }
 
 func InitializeModulesRoutes(r *gin.Engine, controller *controller.ModuleController) {
@@ -120,6 +122,8 @@ func NewRouter(config *config.Config) *gin.Engine {
 
 	slog.Debug("Connected to database")
 
+	aiClient := ai.NewAiClient(config)
+
 	courseRepo := repository.NewCourseRepository(dbClient, config.DBName)
 	enrollmentRepo := repository.NewEnrollmentRepository(dbClient, config.DBName, courseRepo)
 	assignmentRepository := repository.NewAssignmentRepository(dbClient, config.DBName)
@@ -132,7 +136,7 @@ func NewRouter(config *config.Config) *gin.Engine {
 	submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository, courseService)
 	moduleService := service.NewModuleService(moduleRepository)
 
-	courseController := controller.NewCourseController(courseService)
+	courseController := controller.NewCourseController(courseService, aiClient)
 	enrollmentController := controller.NewEnrollmentController(enrollmentService)
 	assignmentsController := controller.NewAssignmentsController(assignmentService)
 	submissionController := controller.NewSubmissionController(submissionService) // TODO change this when interface is added
