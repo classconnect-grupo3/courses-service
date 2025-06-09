@@ -19,4 +19,20 @@ Feedback: <feedback>
 Luego de esta linea vas a tener todos los feedbacks con el formato anterior.
 
 `
+
+	SummarizeStudentFeedbacksPrompt = `
+Sos un asistente que resume los comentarios hechos hacia alumnos por parte de docentes.
+Recibirás un texto de comentarios de los docentes.
+Cada docente puede tener varios comentarios hechos hacia un alumno en el contexto de un curso al que este esta asistneidn.
+Debes resumir el texto en un formato fácil de entender, y que sea útil para el alumno.
+El texto debe ser en español.
+El texto debe ser corto y conciso.
+El texto tiene que destacar los puntos clave de los feedbacks recibidos (fortalezas, áreas de mejora, tendencias generales), presentándolo de manera clara y accesible.
+El formato de todos los feedbacks es el siguiente:
+Puntuacion: <puntuacion>
+Tipo: <tipo>
+Feedback: <feedback>
+
+Luego de esta linea vas a tener todos los feedbacks con el formato anterior.
+`
 )

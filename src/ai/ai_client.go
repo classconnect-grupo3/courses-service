@@ -20,6 +20,16 @@ type AiClient struct {
 
 const aiModel = "gemini-2.0-flash"
 
+func generateStudentFeedbacksPrompt(feedbacks []*model.StudentFeedback) string {
+	prompt := SummarizeStudentFeedbacksPrompt
+	for _, feedback := range feedbacks {
+		prompt += fmt.Sprintf("Puntuacion: %d\n", feedback.Score)
+		prompt += fmt.Sprintf("Tipo: %s\n", feedback.FeedbackType)
+		prompt += fmt.Sprintf("Feedback: %s\n", feedback.Feedback)
+	}
+	return prompt
+}
+
 func generateCourseFeedbacksPrompt(feedbacks []*model.CourseFeedback) string {
 	prompt := SummarizeCourseFeedbacksPrompt
 	for _, feedback := range feedbacks {
@@ -58,6 +68,16 @@ func NewAiClient(config *config.Config) *AiClient {
 
 func (c *AiClient) SummarizeCourseFeedbacks(feedbacks []*model.CourseFeedback) (string, error) {
 	prompt := generateCourseFeedbacksPrompt(feedbacks)
+	response, err := c.Client.Models.GenerateContent(c.context, aiModel, genai.Text(prompt), nil)
+	if err != nil {
+		log.Fatal("Failed to generate content", err)
+		return "", err
+	}
+	return debugString(response), nil
+}
+
+func (c *AiClient) SummarizeStudentFeedbacks(feedbacks []*model.StudentFeedback) (string, error) {
+	prompt := generateStudentFeedbacksPrompt(feedbacks)
 	response, err := c.Client.Models.GenerateContent(c.context, aiModel, genai.Text(prompt), nil)
 	if err != nil {
 		log.Fatal("Failed to generate content", err)

@@ -428,6 +428,12 @@ func (c *CourseController) GetCourseFeedbackSummary(ctx *gin.Context) {
 		return
 	}
 
+	if len(feedbacks) == 0 {
+		slog.Error("No feedbacks found")
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "No feedbacks found"})
+		return
+	}
+
 	summary, err := c.aiClient.SummarizeCourseFeedbacks(feedbacks)
 	if err != nil {
 		slog.Error("Error getting course feedback summary", "error", err)

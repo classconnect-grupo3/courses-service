@@ -106,7 +106,7 @@ func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.Enrollmen
 	r.DELETE("/courses/:id/favourite", controller.UnsetFavouriteCourse)
 	r.POST("/courses/:id/student-feedback", controller.CreateFeedback)
 	r.GET("/feedback/student/:id", controller.GetFeedbackByStudentId)
-
+	r.GET("/feedback/student/:id/summary", controller.GetStudentFeedbackSummary)
 }
 
 func NewRouter(config *config.Config) *gin.Engine {
@@ -137,7 +137,7 @@ func NewRouter(config *config.Config) *gin.Engine {
 	moduleService := service.NewModuleService(moduleRepository)
 
 	courseController := controller.NewCourseController(courseService, aiClient)
-	enrollmentController := controller.NewEnrollmentController(enrollmentService)
+	enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient)
 	assignmentsController := controller.NewAssignmentsController(assignmentService)
 	submissionController := controller.NewSubmissionController(submissionService) // TODO change this when interface is added
 	moduleController := controller.NewModuleController(moduleService)
