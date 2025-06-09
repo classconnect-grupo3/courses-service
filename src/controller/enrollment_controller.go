@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"courses-service/src/ai"
 	"courses-service/src/model"
 	"courses-service/src/schemas"
 	"courses-service/src/service"
@@ -13,10 +14,11 @@ import (
 
 type EnrollmentController struct {
 	enrollmentService service.EnrollmentServiceInterface
+	aiClient          *ai.AiClient
 }
 
-func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface) *EnrollmentController {
-	return &EnrollmentController{enrollmentService: enrollmentService}
+func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface, aiClient *ai.AiClient) *EnrollmentController {
+	return &EnrollmentController{enrollmentService: enrollmentService, aiClient: aiClient}
 }
 
 // @Summary Enroll a student in a course
@@ -266,4 +268,38 @@ func (c *EnrollmentController) GetFeedbackByStudentId(ctx *gin.Context) {
 
 	slog.Debug("Feedback retrieved", "studentId", studentID)
 	ctx.JSON(http.StatusOK, feedback)
+}
+
+func (c *EnrollmentController) GetStudentFeedbackSummary(ctx *gin.Context) {
+	slog.Debug("Getting student feedback summary", "studentId", ctx.Param("id"))
+	studentID := ctx.Param("id")
+
+	if studentID == "" {
+		slog.Error("Invalid student ID")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid student ID"})
+		return
+	}
+
+	feedbacks, err := c.enrollmentService.GetFeedbackByStudentId(studentID, schemas.GetFeedbackByStudentIdRequest{})
+	if err != nil {
+		slog.Error("Error getting student feedback", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if len(feedbacks) == 0 {
+		slog.Error("No feedbacks found")
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "No feedbacks found"})
+		return
+	}
+
+	summary, err := c.aiClient.SummarizeStudentFeedbacks(feedbacks)
+	if err != nil {
+		slog.Error("Error summarizing student feedback", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	slog.Debug("Student feedback summary retrieved", "summary", summary)
+	ctx.JSON(http.StatusOK, summary)
 }

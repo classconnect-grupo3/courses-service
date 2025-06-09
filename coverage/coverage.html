@@ -3,7 +3,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-		<title>config: Go Coverage Report</title>
+		<title>ai: Go Coverage Report</title>
 		<style>
 			body {
 				background: black;
@@ -55,51 +55,53 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">courses-service/src/config/config.go (100.0%)</option>
+				<option value="file0">courses-service/src/ai/ai_client.go (5.3%)</option>
 				
-				<option value="file1">courses-service/src/controller/assignments_controller.go (100.0%)</option>
+				<option value="file1">courses-service/src/config/config.go (100.0%)</option>
 				
-				<option value="file2">courses-service/src/controller/courses_controller.go (100.0%)</option>
+				<option value="file2">courses-service/src/controller/assignments_controller.go (100.0%)</option>
 				
-				<option value="file3">courses-service/src/controller/enrollment_controller.go (97.5%)</option>
+				<option value="file3">courses-service/src/controller/courses_controller.go (89.3%)</option>
 				
-				<option value="file4">courses-service/src/controller/module_controller.go (100.0%)</option>
+				<option value="file4">courses-service/src/controller/enrollment_controller.go (82.5%)</option>
 				
-				<option value="file5">courses-service/src/controller/submission_controller.go (91.2%)</option>
+				<option value="file5">courses-service/src/controller/module_controller.go (100.0%)</option>
 				
-				<option value="file6">courses-service/src/database/connection.go (71.4%)</option>
+				<option value="file6">courses-service/src/controller/submission_controller.go (91.2%)</option>
 				
-				<option value="file7">courses-service/src/docs/docs.go (0.0%)</option>
+				<option value="file7">courses-service/src/database/connection.go (71.4%)</option>
 				
-				<option value="file8">courses-service/src/main.go (0.0%)</option>
+				<option value="file8">courses-service/src/docs/docs.go (0.0%)</option>
 				
-				<option value="file9">courses-service/src/middleware/student_auth.go (10.0%)</option>
+				<option value="file9">courses-service/src/main.go (0.0%)</option>
 				
-				<option value="file10">courses-service/src/middleware/teacher_auth.go (10.0%)</option>
+				<option value="file10">courses-service/src/middleware/student_auth.go (10.0%)</option>
 				
-				<option value="file11">courses-service/src/repository/assignment_repository.go (87.0%)</option>
+				<option value="file11">courses-service/src/middleware/teacher_auth.go (10.0%)</option>
 				
-				<option value="file12">courses-service/src/repository/course_repository.go (82.4%)</option>
+				<option value="file12">courses-service/src/repository/assignment_repository.go (87.0%)</option>
 				
-				<option value="file13">courses-service/src/repository/enrollment_repository.go (81.4%)</option>
+				<option value="file13">courses-service/src/repository/course_repository.go (82.4%)</option>
 				
-				<option value="file14">courses-service/src/repository/module_repository.go (89.9%)</option>
+				<option value="file14">courses-service/src/repository/enrollment_repository.go (81.4%)</option>
 				
-				<option value="file15">courses-service/src/repository/submission_repository.go (83.3%)</option>
+				<option value="file15">courses-service/src/repository/module_repository.go (89.9%)</option>
 				
-				<option value="file16">courses-service/src/router/router.go (96.3%)</option>
+				<option value="file16">courses-service/src/repository/submission_repository.go (83.3%)</option>
 				
-				<option value="file17">courses-service/src/service/assignment_service.go (100.0%)</option>
+				<option value="file17">courses-service/src/router/router.go (96.5%)</option>
 				
-				<option value="file18">courses-service/src/service/course_service.go (95.0%)</option>
+				<option value="file18">courses-service/src/service/assignment_service.go (100.0%)</option>
 				
-				<option value="file19">courses-service/src/service/enrollment_service.go (96.2%)</option>
+				<option value="file19">courses-service/src/service/course_service.go (95.0%)</option>
 				
-				<option value="file20">courses-service/src/service/module_service.go (100.0%)</option>
+				<option value="file20">courses-service/src/service/enrollment_service.go (96.2%)</option>
 				
-				<option value="file21">courses-service/src/service/submission_service.go (53.2%)</option>
+				<option value="file21">courses-service/src/service/module_service.go (100.0%)</option>
 				
-				<option value="file22">courses-service/src/tests/testutil/db_setup.go (72.2%)</option>
+				<option value="file22">courses-service/src/service/submission_service.go (53.2%)</option>
+				
+				<option value="file23">courses-service/src/tests/testutil/db_setup.go (72.2%)</option>
 				
 				</select>
 			</div>
@@ -113,7 +115,106 @@
 		</div>
 		<div id="content">
 		
-		<pre class="file" id="file0" style="display: none">package config
+		<pre class="file" id="file0" style="display: none">package ai
+
+import (
+        "context"
+        "encoding/json"
+        "fmt"
+        "log"
+
+        "courses-service/src/config"
+        "courses-service/src/model"
+
+        "google.golang.org/genai"
+)
+
+type AiClient struct {
+        context      context.Context
+        GeminiApiKey string
+        Client       *genai.Client
+}
+
+const aiModel = "gemini-2.0-flash"
+
+func generateStudentFeedbacksPrompt(feedbacks []*model.StudentFeedback) string <span class="cov0" title="0">{
+        prompt := SummarizeStudentFeedbacksPrompt
+        for _, feedback := range feedbacks </span><span class="cov0" title="0">{
+                prompt += fmt.Sprintf("Puntuacion: %d\n", feedback.Score)
+                prompt += fmt.Sprintf("Tipo: %s\n", feedback.FeedbackType)
+                prompt += fmt.Sprintf("Feedback: %s\n", feedback.Feedback)
+        }</span>
+        <span class="cov0" title="0">return prompt</span>
+}
+
+func generateCourseFeedbacksPrompt(feedbacks []*model.CourseFeedback) string <span class="cov0" title="0">{
+        prompt := SummarizeCourseFeedbacksPrompt
+        for _, feedback := range feedbacks </span><span class="cov0" title="0">{
+                prompt += fmt.Sprintf("Puntuacion: %d\n", feedback.Score)
+                prompt += fmt.Sprintf("Tipo: %s\n", feedback.FeedbackType)
+                prompt += fmt.Sprintf("Feedback: %s\n", feedback.Feedback)
+        }</span>
+        <span class="cov0" title="0">return prompt</span>
+}
+
+func NewAiClient(config *config.Config) *AiClient <span class="cov8" title="1">{
+
+        if config.Environment == "test" </span><span class="cov8" title="1">{
+                return &amp;AiClient{
+                        context:      context.Background(),
+                        GeminiApiKey: "",
+                        Client:       nil,
+                }
+        }</span>
+        <span class="cov0" title="0">geminiApiKey := config.GeminiApiKey
+        ctx := context.Background()
+        client, err := genai.NewClient(ctx, &amp;genai.ClientConfig{
+                APIKey: geminiApiKey,
+        })
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatal("Failed to create Gemini client", err)
+                return nil
+        }</span>
+        <span class="cov0" title="0">log.Println("Gemini client created")
+        return &amp;AiClient{
+                context:      ctx,
+                GeminiApiKey: geminiApiKey,
+                Client:       client,
+        }</span>
+}
+
+func (c *AiClient) SummarizeCourseFeedbacks(feedbacks []*model.CourseFeedback) (string, error) <span class="cov0" title="0">{
+        prompt := generateCourseFeedbacksPrompt(feedbacks)
+        response, err := c.Client.Models.GenerateContent(c.context, aiModel, genai.Text(prompt), nil)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatal("Failed to generate content", err)
+                return "", err
+        }</span>
+        <span class="cov0" title="0">return debugString(response), nil</span>
+}
+
+func (c *AiClient) SummarizeStudentFeedbacks(feedbacks []*model.StudentFeedback) (string, error) <span class="cov0" title="0">{
+        prompt := generateStudentFeedbacksPrompt(feedbacks)
+        response, err := c.Client.Models.GenerateContent(c.context, aiModel, genai.Text(prompt), nil)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatal("Failed to generate content", err)
+                return "", err
+        }</span>
+        <span class="cov0" title="0">return debugString(response), nil</span>
+}
+
+func debugString[T any](r *T) string <span class="cov0" title="0">{
+
+        response, err := json.MarshalIndent(*r, "", "  ")
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatal(err)
+        }</span>
+
+        <span class="cov0" title="0">return string(response)</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package config
 
 import "os"
 
@@ -125,22 +226,24 @@ type Config struct {
         Host        string
         Port        string
         Environment string
+        GeminiApiKey string
 }
 
 func NewConfig() *Config <span class="cov8" title="1">{
         return &amp;Config{
-                DBUsername:  os.Getenv("DB_USERNAME"),
-                DBPassword:  os.Getenv("DB_PASSWORD"),
-                DBName:      os.Getenv("DB_NAME"),
-                DBURI:       os.Getenv("DB_URI"),
-                Host:        os.Getenv("HOST"),
-                Port:        os.Getenv("PORT"),
-                Environment: os.Getenv("ENVIRONMENT"),
+                DBUsername:   os.Getenv("DB_USERNAME"),
+                DBPassword:   os.Getenv("DB_PASSWORD"),
+                DBName:       os.Getenv("DB_NAME"),
+                DBURI:        os.Getenv("DB_URI"),
+                Host:         os.Getenv("HOST"),
+                Port:         os.Getenv("PORT"),
+                Environment:  os.Getenv("ENVIRONMENT"),
+                GeminiApiKey: os.Getenv("GEMINI_API_KEY"),
         }
 }</span>
 </pre>
 		
-		<pre class="file" id="file1" style="display: none">package controller
+		<pre class="file" id="file2" style="display: none">package controller
 
 import (
         "log/slog"
@@ -315,13 +418,14 @@ func (c *AssignmentsController) DeleteAssignment(ctx *gin.Context) <span class="
 }
 </pre>
 		
-		<pre class="file" id="file2" style="display: none">package controller
+		<pre class="file" id="file3" style="display: none">package controller
 
 import (
         "log/slog"
         "net/http"
         "slices"
 
+        "courses-service/src/ai"
         "courses-service/src/model"
         "courses-service/src/schemas"
         "courses-service/src/service"
@@ -330,11 +434,12 @@ import (
 )
 
 type CourseController struct {
-        service service.CourseServiceInterface
+        service  service.CourseServiceInterface
+        aiClient *ai.AiClient
 }
 
-func NewCourseController(service service.CourseServiceInterface) *CourseController <span class="cov8" title="1">{
-        return &amp;CourseController{service: service}
+func NewCourseController(service service.CourseServiceInterface, aiClient *ai.AiClient) *CourseController <span class="cov8" title="1">{
+        return &amp;CourseController{service: service, aiClient: aiClient}
 }</span>
 
 // @Summary Get all courses
@@ -683,6 +788,15 @@ func (c *CourseController) CreateCourseFeedback(ctx *gin.Context) <span class="c
         ctx.JSON(http.StatusOK, feedbackModel)</span>
 }
 
+// @Summary Get course feedback
+// @Description Get course feedback by course ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param getCourseFeedbackRequest body schemas.GetCourseFeedbackRequest true "Get course feedback request"
+// @Success 200 {array} model.CourseFeedback
+// @Router /courses/{id}/feedback [get]
 func (c *CourseController) GetCourseFeedback(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting course feedback")
         courseId := ctx.Param("id")
@@ -708,11 +822,54 @@ func (c *CourseController) GetCourseFeedback(ctx *gin.Context) <span class="cov8
 
         <span class="cov8" title="1">slog.Debug("Course feedback retrieved", "feedback", feedback)
         ctx.JSON(http.StatusOK, feedback)</span>
-}</pre>
+}
+
+// @Summary Get course feedback summary
+// @Description Get course feedback summary by course ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Success 200 {string} string "Course feedback summary"
+// @Router /courses/{id}/feedback/summary [get]
+func (c *CourseController) GetCourseFeedbackSummary(ctx *gin.Context) <span class="cov0" title="0">{
+        slog.Debug("Getting course feedback summary")
+        courseId := ctx.Param("id")
+        if courseId == "" </span><span class="cov0" title="0">{
+                slog.Error("Course ID is required")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">feedbacks, err := c.service.GetCourseFeedback(courseId, schemas.GetCourseFeedbackRequest{})
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error getting course feedback", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">if len(feedbacks) == 0 </span><span class="cov0" title="0">{
+                slog.Error("No feedbacks found")
+                ctx.JSON(http.StatusNotFound, gin.H{"error": "No feedbacks found"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">summary, err := c.aiClient.SummarizeCourseFeedbacks(feedbacks)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error getting course feedback summary", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">slog.Debug("Course feedback summary retrieved", "summary", summary)
+        ctx.JSON(http.StatusOK, summary)</span>
+}
+</pre>
 		
-		<pre class="file" id="file3" style="display: none">package controller
+		<pre class="file" id="file4" style="display: none">package controller
 
 import (
+        "courses-service/src/ai"
         "courses-service/src/model"
         "courses-service/src/schemas"
         "courses-service/src/service"
@@ -725,10 +882,11 @@ import (
 
 type EnrollmentController struct {
         enrollmentService service.EnrollmentServiceInterface
+        aiClient          *ai.AiClient
 }
 
-func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface) *EnrollmentController <span class="cov8" title="1">{
-        return &amp;EnrollmentController{enrollmentService: enrollmentService}
+func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface, aiClient *ai.AiClient) *EnrollmentController <span class="cov8" title="1">{
+        return &amp;EnrollmentController{enrollmentService: enrollmentService, aiClient: aiClient}
 }</span>
 
 // @Summary Enroll a student in a course
@@ -907,7 +1065,7 @@ func (c *EnrollmentController) UnsetFavouriteCourse(ctx *gin.Context) <span clas
 // @Produce json
 // @Param id path string true "Course ID"
 // @Param feedbackRequest body schemas.CreateStudentFeedbackRequest true "Feedback request"
-// @Success 200 {object} schemas.CreateStudentFeedbackResponse
+// @Success 200 {object} model.StudentFeedback
 // @Router /courses/{id}/student-feedback [post]
 func (c *EnrollmentController) CreateFeedback(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Creating feedback", "courseId", ctx.Param("id"))
@@ -979,9 +1137,43 @@ func (c *EnrollmentController) GetFeedbackByStudentId(ctx *gin.Context) <span cl
         <span class="cov8" title="1">slog.Debug("Feedback retrieved", "studentId", studentID)
         ctx.JSON(http.StatusOK, feedback)</span>
 }
+
+func (c *EnrollmentController) GetStudentFeedbackSummary(ctx *gin.Context) <span class="cov0" title="0">{
+        slog.Debug("Getting student feedback summary", "studentId", ctx.Param("id"))
+        studentID := ctx.Param("id")
+
+        if studentID == "" </span><span class="cov0" title="0">{
+                slog.Error("Invalid student ID")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid student ID"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">feedbacks, err := c.enrollmentService.GetFeedbackByStudentId(studentID, schemas.GetFeedbackByStudentIdRequest{})
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error getting student feedback", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">if len(feedbacks) == 0 </span><span class="cov0" title="0">{
+                slog.Error("No feedbacks found")
+                ctx.JSON(http.StatusNotFound, gin.H{"error": "No feedbacks found"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">summary, err := c.aiClient.SummarizeStudentFeedbacks(feedbacks)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error summarizing student feedback", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">slog.Debug("Student feedback summary retrieved", "summary", summary)
+        ctx.JSON(http.StatusOK, summary)</span>
+}
 </pre>
 		
-		<pre class="file" id="file4" style="display: none">package controller
+		<pre class="file" id="file5" style="display: none">package controller
 
 import (
         "courses-service/src/model"
@@ -1135,7 +1327,7 @@ func (c *ModuleController) DeleteModule(ctx *gin.Context) <span class="cov8" tit
 }
 </pre>
 		
-		<pre class="file" id="file5" style="display: none">package controller
+		<pre class="file" id="file6" style="display: none">package controller
 
 import (
         "fmt"
@@ -1426,7 +1618,7 @@ func (c *SubmissionController) GradeSubmission(ctx *gin.Context) <span class="co
 }
 </pre>
 		
-		<pre class="file" id="file6" style="display: none">package database
+		<pre class="file" id="file7" style="display: none">package database
 
 import (
         "courses-service/src/config"
@@ -1456,7 +1648,7 @@ func NewMongoDBClient(config *config.Config) (*mongo.Client, error) <span class=
 }
 </pre>
 		
-		<pre class="file" id="file7" style="display: none">// Package docs Code generated by swaggo/swag. DO NOT EDIT
+		<pre class="file" id="file8" style="display: none">// Package docs Code generated by swaggo/swag. DO NOT EDIT
 package docs
 
 import "github.com/swaggo/swag"
@@ -2400,6 +2592,89 @@ const docTemplate = `{
                 }
             }
         },
+        "/courses/{id}/feedback": {
+            "get": {
+                "description": "Get course feedback by course ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Get course feedback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Get course feedback request",
+                        "name": "getCourseFeedbackRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.GetCourseFeedbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.CourseFeedback"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create course feedback by course ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Create course feedback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Course feedback",
+                        "name": "feedback",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.CreateCourseFeedbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.CourseFeedback"
+                        }
+                    }
+                }
+            }
+        },
         "/courses/{id}/remove-aux-teacher": {
             "delete": {
                 "description": "Remove an aux teacher from a course by ID",
@@ -2441,6 +2716,47 @@ const docTemplate = `{
                 }
             }
         },
+        "/courses/{id}/student-feedback": {
+            "post": {
+                "description": "Create a feedback for a course",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Create a feedback for a course",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Feedback request",
+                        "name": "feedbackRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.CreateStudentFeedbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.StudentFeedback"
+                        }
+                    }
+                }
+            }
+        },
         "/courses/{id}/unenroll": {
             "delete": {
                 "description": "Unenroll a student from a course",
@@ -2477,6 +2793,50 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/schemas.UnenrollStudentResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/feedback/student/{id}": {
+            "get": {
+                "description": "Get feedback by student ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Get feedback by student ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Student ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Get feedback by student ID request",
+                        "name": "getFeedbackByStudentIdRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.GetFeedbackByStudentIdRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.StudentFeedback"
+                            }
                         }
                     }
                 }
@@ -2797,6 +3157,12 @@ const docTemplate = `{
                 "end_date": {
                     "type": "string"
                 },
+                "feedback": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CourseFeedback"
+                    }
+                },
                 "id": {
                     "type": "string"
                 },
@@ -2826,6 +3192,29 @@ const docTemplate = `{
                 }
             }
         },
+        "model.CourseFeedback": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "feedback": {
+                    "type": "string"
+                },
+                "feedback_type": {
+                    "$ref": "#/definitions/model.FeedbackType"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "student_uuid": {
+                    "type": "string"
+                }
+            }
+        },
         "model.Enrollment": {
             "type": "object",
             "properties": {
@@ -2840,6 +3229,12 @@ const docTemplate = `{
                 },
                 "favourite": {
                     "type": "boolean"
+                },
+                "feedback": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.StudentFeedback"
+                    }
                 },
                 "id": {
                     "type": "string"
@@ -2866,6 +3261,19 @@ const docTemplate = `{
                 "EnrollmentStatusActive",
                 "EnrollmentStatusDropped",
                 "EnrollmentStatusCompleted"
+            ]
+        },
+        "model.FeedbackType": {
+            "type": "string",
+            "enum": [
+                "POSITIVO",
+                "NEGATIVO",
+                "NEUTRO"
+            ],
+            "x-enum-varnames": [
+                "FeedbackTypePositive",
+                "FeedbackTypeNegative",
+                "FeedbackTypeNeutral"
             ]
         },
         "model.Module": {
@@ -2943,6 +3351,32 @@ const docTemplate = `{
                 "QuestionTypeMultipleChoice",
                 "QuestionTypeFile"
             ]
+        },
+        "model.StudentFeedback": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "feedback": {
+                    "type": "string"
+                },
+                "feedback_type": {
+                    "$ref": "#/definitions/model.FeedbackType"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "student_uuid": {
+                    "type": "string"
+                },
+                "teacher_uuid": {
+                    "type": "string"
+                }
+            }
         },
         "model.Submission": {
             "type": "object",
@@ -3052,6 +3486,29 @@ const docTemplate = `{
                 }
             }
         },
+        "schemas.CreateCourseFeedbackRequest": {
+            "type": "object",
+            "required": [
+                "feedback",
+                "feedback_type",
+                "score",
+                "student_uuid"
+            ],
+            "properties": {
+                "feedback": {
+                    "type": "string"
+                },
+                "feedback_type": {
+                    "$ref": "#/definitions/model.FeedbackType"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "student_uuid": {
+                    "type": "string"
+                }
+            }
+        },
         "schemas.CreateCourseRequest": {
             "type": "object",
             "required": [
@@ -3109,6 +3566,37 @@ const docTemplate = `{
                 }
             }
         },
+        "schemas.CreateStudentFeedbackRequest": {
+            "type": "object",
+            "required": [
+                "course_id",
+                "feedback",
+                "feedback_type",
+                "score",
+                "student_uuid",
+                "teacher_uuid"
+            ],
+            "properties": {
+                "course_id": {
+                    "type": "string"
+                },
+                "feedback": {
+                    "type": "string"
+                },
+                "feedback_type": {
+                    "$ref": "#/definitions/model.FeedbackType"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "student_uuid": {
+                    "type": "string"
+                },
+                "teacher_uuid": {
+                    "type": "string"
+                }
+            }
+        },
         "schemas.DeleteCourseResponse": {
             "type": "object",
             "properties": {
@@ -3125,6 +3613,49 @@ const docTemplate = `{
             "properties": {
                 "student_id": {
                     "type": "string"
+                }
+            }
+        },
+        "schemas.GetCourseFeedbackRequest": {
+            "type": "object",
+            "properties": {
+                "end_date": {
+                    "type": "string"
+                },
+                "end_score": {
+                    "type": "integer"
+                },
+                "feedback_type": {
+                    "$ref": "#/definitions/model.FeedbackType"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "start_score": {
+                    "type": "integer"
+                }
+            }
+        },
+        "schemas.GetFeedbackByStudentIdRequest": {
+            "type": "object",
+            "properties": {
+                "course_id": {
+                    "type": "string"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "end_score": {
+                    "type": "integer"
+                },
+                "feedback_type": {
+                    "$ref": "#/definitions/model.FeedbackType"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "start_score": {
+                    "type": "integer"
                 }
             }
         },
@@ -3311,7 +3842,7 @@ func init() <span class="cov0" title="0">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file8" style="display: none">package main
+		<pre class="file" id="file9" style="display: none">package main
 
 import (
         "courses-service/src/config"
@@ -3342,7 +3873,7 @@ func main() <span class="cov0" title="0">{
 }
 </pre>
 		
-		<pre class="file" id="file9" style="display: none">package middleware
+		<pre class="file" id="file10" style="display: none">package middleware
 
 import (
         "github.com/gin-gonic/gin"
@@ -3371,7 +3902,7 @@ func StudentAuth() gin.HandlerFunc <span class="cov8" title="1">{
 }
 </pre>
 		
-		<pre class="file" id="file10" style="display: none">package middleware
+		<pre class="file" id="file11" style="display: none">package middleware
 
 import (
         "github.com/gin-gonic/gin"
@@ -3400,7 +3931,7 @@ func TeacherAuth() gin.HandlerFunc <span class="cov8" title="1">{
 }
 </pre>
 		
-		<pre class="file" id="file11" style="display: none">package repository
+		<pre class="file" id="file12" style="display: none">package repository
 
 import (
         "context"
@@ -3570,7 +4101,7 @@ func (r *AssignmentRepository) DeleteAssignment(id string) error <span class="co
 }
 </pre>
 		
-		<pre class="file" id="file12" style="display: none">package repository
+		<pre class="file" id="file13" style="display: none">package repository
 
 import (
         "context"
@@ -3941,7 +4472,7 @@ func (r *CourseRepository) GetCourseFeedback(courseID string, getCourseFeedbackR
 }
 </pre>
 		
-		<pre class="file" id="file13" style="display: none">package repository
+		<pre class="file" id="file14" style="display: none">package repository
 
 import (
         "context"
@@ -4232,7 +4763,7 @@ func (r *EnrollmentRepository) GetFeedbackByStudentId(studentID string, getFeedb
 }
 </pre>
 		
-		<pre class="file" id="file14" style="display: none">package repository
+		<pre class="file" id="file15" style="display: none">package repository
 
 import (
         "context"
@@ -4545,7 +5076,7 @@ func (r *ModuleRepository) GetModuleByOrder(courseID string, order int) (*model.
 }
 </pre>
 		
-		<pre class="file" id="file15" style="display: none">package repository
+		<pre class="file" id="file16" style="display: none">package repository
 
 import (
         "context"
@@ -4643,9 +5174,10 @@ func (r *MongoSubmissionRepository) GetByStudent(ctx context.Context, studentUUI
 }
 </pre>
 		
-		<pre class="file" id="file16" style="display: none">package router
+		<pre class="file" id="file17" style="display: none">package router
 
 import (
+        "courses-service/src/ai"
         "courses-service/src/config"
         "courses-service/src/controller"
         "courses-service/src/database"
@@ -4702,6 +5234,7 @@ func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseControl
         r.DELETE("/courses/:id/aux-teacher/remove", controller.RemoveAuxTeacherFromCourse)
         r.POST("/courses/:id/feedback", controller.CreateCourseFeedback)
         r.GET("/courses/:id/feedback", controller.GetCourseFeedback)
+        r.GET("/courses/:id/feedback/summary", controller.GetCourseFeedbackSummary)
 }</span>
 
 func InitializeModulesRoutes(r *gin.Engine, controller *controller.ModuleController) <span class="cov8" title="1">{
@@ -4749,7 +5282,7 @@ func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.Enrollmen
         r.DELETE("/courses/:id/favourite", controller.UnsetFavouriteCourse)
         r.POST("/courses/:id/student-feedback", controller.CreateFeedback)
         r.GET("/feedback/student/:id", controller.GetFeedbackByStudentId)
-
+        r.GET("/feedback/student/:id/summary", controller.GetStudentFeedbackSummary)
 }</span>
 
 func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
@@ -4765,6 +5298,8 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
 
         <span class="cov8" title="1">slog.Debug("Connected to database")
 
+        aiClient := ai.NewAiClient(config)
+
         courseRepo := repository.NewCourseRepository(dbClient, config.DBName)
         enrollmentRepo := repository.NewEnrollmentRepository(dbClient, config.DBName, courseRepo)
         assignmentRepository := repository.NewAssignmentRepository(dbClient, config.DBName)
@@ -4777,8 +5312,8 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
         submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository, courseService)
         moduleService := service.NewModuleService(moduleRepository)
 
-        courseController := controller.NewCourseController(courseService)
-        enrollmentController := controller.NewEnrollmentController(enrollmentService)
+        courseController := controller.NewCourseController(courseService, aiClient)
+        enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient)
         assignmentsController := controller.NewAssignmentsController(assignmentService)
         submissionController := controller.NewSubmissionController(submissionService) // TODO change this when interface is added
         moduleController := controller.NewModuleController(moduleService)
@@ -4804,7 +5339,7 @@ func InitializeRoutes(
 }</span>
 </pre>
 		
-		<pre class="file" id="file17" style="display: none">package service
+		<pre class="file" id="file18" style="display: none">package service
 
 import (
         "context"
@@ -4911,7 +5446,7 @@ func (s *AssignmentService) GetAssignmentsByCourseId(courseId string) ([]*model.
 }
 </pre>
 		
-		<pre class="file" id="file18" style="display: none">package service
+		<pre class="file" id="file19" style="display: none">package service
 
 import (
         "courses-service/src/model"
@@ -5143,9 +5678,10 @@ func (s *CourseService) GetCourseFeedback(courseId string, getCourseFeedbackRequ
         }</span>
 
         <span class="cov8" title="1">return feedback, nil</span>
-}</pre>
+}
+</pre>
 		
-		<pre class="file" id="file19" style="display: none">package service
+		<pre class="file" id="file20" style="display: none">package service
 
 import (
         "courses-service/src/model"
@@ -5385,7 +5921,7 @@ func (s *EnrollmentService) GetFeedbackByStudentId(studentID string, getFeedback
 }
 </pre>
 		
-		<pre class="file" id="file20" style="display: none">package service
+		<pre class="file" id="file21" style="display: none">package service
 
 import (
         "courses-service/src/model"
@@ -5476,7 +6012,7 @@ func (s *ModuleService) DeleteModule(id string) error <span class="cov8" title="
 }
 </pre>
 		
-		<pre class="file" id="file21" style="display: none">package service
+		<pre class="file" id="file22" style="display: none">package service
 
 import (
         "context"
@@ -5665,7 +6201,7 @@ func (s *SubmissionService) ValidateTeacherPermissions(ctx context.Context, assi
 }
 </pre>
 		
-		<pre class="file" id="file22" style="display: none">package testutil
+		<pre class="file" id="file23" style="display: none">package testutil
 
 import (
         "context"

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"slices"
 
+	"courses-service/src/ai"
 	"courses-service/src/model"
 	"courses-service/src/schemas"
 	"courses-service/src/service"
@@ -13,11 +14,12 @@ import (
 )
 
 type CourseController struct {
-	service service.CourseServiceInterface
+	service  service.CourseServiceInterface
+	aiClient *ai.AiClient
 }
 
-func NewCourseController(service service.CourseServiceInterface) *CourseController {
-	return &CourseController{service: service}
+func NewCourseController(service service.CourseServiceInterface, aiClient *ai.AiClient) *CourseController {
+	return &CourseController{service: service, aiClient: aiClient}
 }
 
 // @Summary Get all courses
@@ -400,4 +402,45 @@ func (c *CourseController) GetCourseFeedback(ctx *gin.Context) {
 
 	slog.Debug("Course feedback retrieved", "feedback", feedback)
 	ctx.JSON(http.StatusOK, feedback)
+}
+
+// @Summary Get course feedback summary
+// @Description Get course feedback summary by course ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Success 200 {string} string "Course feedback summary"
+// @Router /courses/{id}/feedback/summary [get]
+func (c *CourseController) GetCourseFeedbackSummary(ctx *gin.Context) {
+	slog.Debug("Getting course feedback summary")
+	courseId := ctx.Param("id")
+	if courseId == "" {
+		slog.Error("Course ID is required")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+		return
+	}
+
+	feedbacks, err := c.service.GetCourseFeedback(courseId, schemas.GetCourseFeedbackRequest{})
+	if err != nil {
+		slog.Error("Error getting course feedback", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if len(feedbacks) == 0 {
+		slog.Error("No feedbacks found")
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "No feedbacks found"})
+		return
+	}
+
+	summary, err := c.aiClient.SummarizeCourseFeedbacks(feedbacks)
+	if err != nil {
+		slog.Error("Error getting course feedback summary", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	slog.Debug("Course feedback summary retrieved", "summary", summary)
+	ctx.JSON(http.StatusOK, summary)
 }
