@@ -3,6 +3,8 @@ package repository
 import (
 	"context"
 	"courses-service/src/model"
+	"courses-service/src/schemas"
+	"errors"
 	"fmt"
 	"time"
 
@@ -282,4 +284,86 @@ func (r *CourseRepository) UpdateStudentsAmount(courseID string, newStudentsAmou
 	}
 
 	return nil
+}
+
+func (r *CourseRepository) CreateCourseFeedback(courseID string, feedback model.CourseFeedback) (*model.CourseFeedback, error) {
+	feedback.ID = primitive.NewObjectID()
+
+	course, err := r.GetCourseById(courseID)
+	if err != nil {
+		return nil, err
+	}
+
+	if course.Feedback == nil {
+		course.Feedback = []model.CourseFeedback{}
+	}
+
+	course.Feedback = append(course.Feedback, feedback)
+
+	_, err = r.UpdateCourse(course.ID.Hex(), *course)
+	if err != nil {
+		return nil, err
+	}
+
+	return &feedback, nil
+}
+
+func (r *CourseRepository) matchesFeedbackFilters(feedback *model.CourseFeedback, request schemas.GetCourseFeedbackRequest) bool {
+	// Filter by feedback type
+	if request.FeedbackType != "" && feedback.FeedbackType != request.FeedbackType {
+		return false
+	}
+
+	// Filter by score range
+	if request.StartScore != 0 && feedback.Score < request.StartScore {
+		return false
+	}
+	if request.EndScore != 0 && feedback.Score > request.EndScore {
+		return false
+	}
+
+	// Filter by date range
+	if !request.StartDate.IsZero() && feedback.CreatedAt.Before(request.StartDate) {
+		return false
+	}
+	if !request.EndDate.IsZero() && feedback.CreatedAt.After(request.EndDate) {
+		return false
+	}
+
+	return true
+}
+
+func (r *CourseRepository) GetCourseFeedback(courseID string, getCourseFeedbackRequest schemas.GetCourseFeedbackRequest) ([]*model.CourseFeedback, error) {
+	// Convert courseID to ObjectID
+	objectId, err := primitive.ObjectIDFromHex(courseID)
+	if err != nil {
+		return nil, errors.New("invalid course ID format: " + err.Error())
+	}
+
+	// Get the course document
+	var course model.Course
+	err = r.courseCollection.FindOne(context.TODO(), bson.M{"_id": objectId}).Decode(&course)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, errors.New("course not found")
+		}
+		return nil, errors.New("error getting course: " + err.Error())
+	}
+
+	// If course has no feedback, return empty slice
+	if len(course.Feedback) == 0 {
+		return []*model.CourseFeedback{}, nil
+	}
+
+	// Apply filters to the feedback
+	filteredFeedbacks := []*model.CourseFeedback{}
+	for _, feedback := range course.Feedback {
+		if r.matchesFeedbackFilters(&feedback, getCourseFeedbackRequest) {
+			// Create a copy to avoid pointer issues
+			feedbackCopy := feedback
+			filteredFeedbacks = append(filteredFeedbacks, &feedbackCopy)
+		}
+	}
+
+	return filteredFeedbacks, nil
 }

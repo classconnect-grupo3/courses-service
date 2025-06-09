@@ -3,7 +3,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-		<title>config: Go Coverage Report</title>
+		<title>ai: Go Coverage Report</title>
 		<style>
 			body {
 				background: black;
@@ -55,49 +55,53 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">courses-service/src/config/config.go (100.0%)</option>
+				<option value="file0">courses-service/src/ai/ai_client.go (5.3%)</option>
 				
-				<option value="file1">courses-service/src/controller/assignments_controller.go (1.5%)</option>
+				<option value="file1">courses-service/src/config/config.go (100.0%)</option>
 				
-				<option value="file2">courses-service/src/controller/courses_controller.go (100.0%)</option>
+				<option value="file2">courses-service/src/controller/assignments_controller.go (77.8%)</option>
 				
-				<option value="file3">courses-service/src/controller/enrollment_controller.go (100.0%)</option>
+				<option value="file3">courses-service/src/controller/courses_controller.go (89.3%)</option>
 				
-				<option value="file4">courses-service/src/controller/module_controller.go (100.0%)</option>
+				<option value="file4">courses-service/src/controller/enrollment_controller.go (82.5%)</option>
 				
-				<option value="file5">courses-service/src/controller/submission_controller.go (1.1%)</option>
+				<option value="file5">courses-service/src/controller/module_controller.go (100.0%)</option>
 				
-				<option value="file6">courses-service/src/database/connection.go (71.4%)</option>
+				<option value="file6">courses-service/src/controller/submission_controller.go (91.2%)</option>
 				
-				<option value="file7">courses-service/src/docs/docs.go (0.0%)</option>
+				<option value="file7">courses-service/src/database/connection.go (71.4%)</option>
 				
-				<option value="file8">courses-service/src/main.go (0.0%)</option>
+				<option value="file8">courses-service/src/docs/docs.go (0.0%)</option>
 				
-				<option value="file9">courses-service/src/middleware/student_auth.go (10.0%)</option>
+				<option value="file9">courses-service/src/main.go (0.0%)</option>
 				
-				<option value="file10">courses-service/src/repository/assignment_repository.go (1.4%)</option>
+				<option value="file10">courses-service/src/middleware/student_auth.go (10.0%)</option>
 				
-				<option value="file11">courses-service/src/repository/course_repository.go (83.3%)</option>
+				<option value="file11">courses-service/src/middleware/teacher_auth.go (10.0%)</option>
 				
-				<option value="file12">courses-service/src/repository/enrollment_repository.go (76.6%)</option>
+				<option value="file12">courses-service/src/repository/assignment_repository.go (87.0%)</option>
 				
-				<option value="file13">courses-service/src/repository/module_repository.go (89.9%)</option>
+				<option value="file13">courses-service/src/repository/course_repository.go (82.4%)</option>
 				
-				<option value="file14">courses-service/src/repository/submission_repository.go (2.4%)</option>
+				<option value="file14">courses-service/src/repository/enrollment_repository.go (81.4%)</option>
 				
-				<option value="file15">courses-service/src/router/router.go (95.8%)</option>
+				<option value="file15">courses-service/src/repository/module_repository.go (89.9%)</option>
 				
-				<option value="file16">courses-service/src/service/assignment_service.go (3.7%)</option>
+				<option value="file16">courses-service/src/repository/submission_repository.go (83.3%)</option>
 				
-				<option value="file17">courses-service/src/service/course_service.go (92.5%)</option>
+				<option value="file17">courses-service/src/router/router.go (96.5%)</option>
 				
-				<option value="file18">courses-service/src/service/enrollment_service.go (100.0%)</option>
+				<option value="file18">courses-service/src/service/assignment_service.go (100.0%)</option>
 				
-				<option value="file19">courses-service/src/service/module_service.go (2.9%)</option>
+				<option value="file19">courses-service/src/service/course_service.go (95.0%)</option>
 				
-				<option value="file20">courses-service/src/service/submission_service.go (2.0%)</option>
+				<option value="file20">courses-service/src/service/enrollment_service.go (96.2%)</option>
 				
-				<option value="file21">courses-service/src/tests/testutil/db_setup.go (72.2%)</option>
+				<option value="file21">courses-service/src/service/module_service.go (100.0%)</option>
+				
+				<option value="file22">courses-service/src/service/submission_service.go (53.2%)</option>
+				
+				<option value="file23">courses-service/src/tests/testutil/db_setup.go (72.2%)</option>
 				
 				</select>
 			</div>
@@ -111,43 +115,149 @@
 		</div>
 		<div id="content">
 		
-		<pre class="file" id="file0" style="display: none">package config
+		<pre class="file" id="file0" style="display: none">package ai
+
+import (
+        "context"
+        "encoding/json"
+        "fmt"
+        "log"
+
+        "courses-service/src/config"
+        "courses-service/src/model"
+
+        "google.golang.org/genai"
+)
+
+type AiClient struct {
+        context      context.Context
+        GeminiApiKey string
+        Client       *genai.Client
+}
+
+const aiModel = "gemini-2.0-flash"
+
+func generateStudentFeedbacksPrompt(feedbacks []*model.StudentFeedback) string <span class="cov0" title="0">{
+        prompt := SummarizeStudentFeedbacksPrompt
+        for _, feedback := range feedbacks </span><span class="cov0" title="0">{
+                prompt += fmt.Sprintf("Puntuacion: %d\n", feedback.Score)
+                prompt += fmt.Sprintf("Tipo: %s\n", feedback.FeedbackType)
+                prompt += fmt.Sprintf("Feedback: %s\n", feedback.Feedback)
+        }</span>
+        <span class="cov0" title="0">return prompt</span>
+}
+
+func generateCourseFeedbacksPrompt(feedbacks []*model.CourseFeedback) string <span class="cov0" title="0">{
+        prompt := SummarizeCourseFeedbacksPrompt
+        for _, feedback := range feedbacks </span><span class="cov0" title="0">{
+                prompt += fmt.Sprintf("Puntuacion: %d\n", feedback.Score)
+                prompt += fmt.Sprintf("Tipo: %s\n", feedback.FeedbackType)
+                prompt += fmt.Sprintf("Feedback: %s\n", feedback.Feedback)
+        }</span>
+        <span class="cov0" title="0">return prompt</span>
+}
+
+func NewAiClient(config *config.Config) *AiClient <span class="cov8" title="1">{
+
+        if config.Environment == "test" </span><span class="cov8" title="1">{
+                return &amp;AiClient{
+                        context:      context.Background(),
+                        GeminiApiKey: "",
+                        Client:       nil,
+                }
+        }</span>
+        <span class="cov0" title="0">geminiApiKey := config.GeminiApiKey
+        ctx := context.Background()
+        client, err := genai.NewClient(ctx, &amp;genai.ClientConfig{
+                APIKey: geminiApiKey,
+        })
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatal("Failed to create Gemini client", err)
+                return nil
+        }</span>
+        <span class="cov0" title="0">log.Println("Gemini client created")
+        return &amp;AiClient{
+                context:      ctx,
+                GeminiApiKey: geminiApiKey,
+                Client:       client,
+        }</span>
+}
+
+func (c *AiClient) SummarizeCourseFeedbacks(feedbacks []*model.CourseFeedback) (string, error) <span class="cov0" title="0">{
+        prompt := generateCourseFeedbacksPrompt(feedbacks)
+        response, err := c.Client.Models.GenerateContent(c.context, aiModel, genai.Text(prompt), nil)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatal("Failed to generate content", err)
+                return "", err
+        }</span>
+        <span class="cov0" title="0">return debugString(response), nil</span>
+}
+
+func (c *AiClient) SummarizeStudentFeedbacks(feedbacks []*model.StudentFeedback) (string, error) <span class="cov0" title="0">{
+        prompt := generateStudentFeedbacksPrompt(feedbacks)
+        response, err := c.Client.Models.GenerateContent(c.context, aiModel, genai.Text(prompt), nil)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatal("Failed to generate content", err)
+                return "", err
+        }</span>
+        <span class="cov0" title="0">return debugString(response), nil</span>
+}
+
+func debugString[T any](r *T) string <span class="cov0" title="0">{
+
+        response, err := json.MarshalIndent(*r, "", "  ")
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatal(err)
+        }</span>
+
+        <span class="cov0" title="0">return string(response)</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package config
 
 import "os"
 
 type Config struct {
-        DBUsername  string
-        DBPassword  string
-        DBName      string
-        DBURI       string
-        Host        string
-        Port        string
-        Environment string
+        DBUsername   string
+        DBPassword   string
+        DBName       string
+        DBURI        string
+        Host         string
+        Port         string
+        Environment  string
+        GeminiApiKey string
 }
 
 func NewConfig() *Config <span class="cov8" title="1">{
         return &amp;Config{
-                DBUsername:  os.Getenv("DB_USERNAME"),
-                DBPassword:  os.Getenv("DB_PASSWORD"),
-                DBName:      os.Getenv("DB_NAME"),
-                DBURI:       os.Getenv("DB_URI"),
-                Host:        os.Getenv("HOST"),
-                Port:        os.Getenv("PORT"),
-                Environment: os.Getenv("ENVIRONMENT"),
+                DBUsername:   os.Getenv("DB_USERNAME"),
+                DBPassword:   os.Getenv("DB_PASSWORD"),
+                DBName:       os.Getenv("DB_NAME"),
+                DBURI:        os.Getenv("DB_URI"),
+                Host:         os.Getenv("HOST"),
+                Port:         os.Getenv("PORT"),
+                Environment:  os.Getenv("ENVIRONMENT"),
+                GeminiApiKey: os.Getenv("GEMINI_API_KEY"),
         }
 }</span>
 </pre>
 		
-		<pre class="file" id="file1" style="display: none">package controller
+		<pre class="file" id="file2" style="display: none">package controller
 
 import (
+        "encoding/json"
+        "log"
         "log/slog"
         "net/http"
+        "os"
+        "time"
 
         "courses-service/src/schemas"
         "courses-service/src/service"
 
         "github.com/gin-gonic/gin"
+        "github.com/rabbitmq/amqp091-go"
 )
 
 type AssignmentsController struct {
@@ -165,17 +275,17 @@ func NewAssignmentsController(service service.AssignmentServiceInterface) *Assig
 // @Produce json
 // @Router /assignments [get]
 // @Success 200 {array} model.Assignment
-func (c *AssignmentsController) GetAssignments(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *AssignmentsController) GetAssignments(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting assignments")
 
         assignments, err := c.service.GetAssignments()
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error getting assignments", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">slog.Debug("Assignments retrieved", "assignments", assignments)
+        <span class="cov8" title="1">slog.Debug("Assignments retrieved", "assignments", assignments)
         ctx.JSON(http.StatusOK, assignments)</span>
 }
 
@@ -187,24 +297,85 @@ func (c *AssignmentsController) GetAssignments(ctx *gin.Context) <span class="co
 // @Param assignment body schemas.CreateAssignmentRequest true "Assignment to create"
 // @Success 201 {object} model.Assignment
 // @Router /assignments [post]
-func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) <span class="cov0" title="0">{
-        slog.Debug("Creating assignment")
+func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) <span class="cov8" title="1">{
+        log.Println("Creating assignment")
 
         var assignment schemas.CreateAssignmentRequest
-        if err := ctx.ShouldBindJSON(&amp;assignment); err != nil </span><span class="cov0" title="0">{
-                slog.Error("Error binding JSON", "error", err)
+        if err := ctx.ShouldBindJSON(&amp;assignment); err != nil </span><span class="cov8" title="1">{
+                log.Println("Error binding JSON:", err)
                 ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">createdAssignment, err := c.service.CreateAssignment(assignment)
-        if err != nil </span><span class="cov0" title="0">{
-                slog.Error("Error creating assignment", "error", err)
+        <span class="cov8" title="1">createdAssignment, err := c.service.CreateAssignment(assignment)
+        if err != nil </span><span class="cov8" title="1">{
+                log.Println("Error creating assignment:", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">slog.Debug("Assignment created", "assignment", createdAssignment)
+        // 🟡 Publicar evento en RabbitMQ con amqp091-go
+        <span class="cov8" title="1">go func() </span><span class="cov8" title="1">{
+                conn, err := amqp091.Dial(os.Getenv("RABBITMQ_URL"))
+                if err != nil </span><span class="cov8" title="1">{
+                        log.Println("RabbitMQ connection error:", err)
+                        return
+                }</span>
+                <span class="cov0" title="0">defer conn.Close()
+
+                ch, err := conn.Channel()
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Println("RabbitMQ channel error:", err)
+                        return
+                }</span>
+                <span class="cov0" title="0">defer ch.Close()
+
+                _, err = ch.QueueDeclare(
+                        os.Getenv("NOTIFICATIONS_QUEUE_NAME"),
+                        false,
+                        false,
+                        false,
+                        false,
+                        nil,
+                )
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Println("Queue declare error:", err)
+                        return
+                }</span>
+
+                <span class="cov0" title="0">event := map[string]interface{}{
+                        "event_type":          "assignment.created",
+                        "course_id":           createdAssignment.CourseID,
+                        "assignment_id":       createdAssignment.ID,
+                        "assignment_title":    createdAssignment.Title,
+                        "assignment_due_date": createdAssignment.DueDate.Format(time.RFC3339),
+                }
+
+                body, err := json.Marshal(event)
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Println("Error marshaling event:", err)
+                        return
+                }</span>
+
+                <span class="cov0" title="0">err = ch.Publish(
+                        "",
+                        os.Getenv("NOTIFICATIONS_QUEUE_NAME"),
+                        false,
+                        false,
+                        amqp091.Publishing{
+                                ContentType: "application/json",
+                                Body:        body,
+                        },
+                )
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Println("Error publishing message:", err)
+                        return
+                }</span>
+
+                <span class="cov0" title="0">log.Println("📤 Event published: assignment.created")</span>
+        }()
+
+        <span class="cov8" title="1">log.Println("Assignment created:", createdAssignment.ID)
         ctx.JSON(http.StatusCreated, createdAssignment)</span>
 }
 
@@ -216,23 +387,23 @@ func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) <span class="
 // @Param assignmentId path string true "Assignment ID"
 // @Success 200 {object} model.Assignment
 // @Router /assignments/{assignmentId} [get]
-func (c *AssignmentsController) GetAssignmentById(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *AssignmentsController) GetAssignmentById(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting assignment by ID")
         id := ctx.Param("assignmentId")
 
         assignment, err := c.service.GetAssignmentById(id)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error getting assignment", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">if assignment == nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if assignment == nil </span><span class="cov8" title="1">{
                 ctx.JSON(http.StatusNotFound, gin.H{"error": "assignment not found"})
                 return
         }</span>
 
-        <span class="cov0" title="0">slog.Debug("Assignment retrieved", "assignment", assignment)
+        <span class="cov8" title="1">slog.Debug("Assignment retrieved", "assignment", assignment)
         ctx.JSON(http.StatusOK, assignment)</span>
 }
 
@@ -244,18 +415,18 @@ func (c *AssignmentsController) GetAssignmentById(ctx *gin.Context) <span class=
 // @Param courseId path string true "Course ID"
 // @Success 200 {array} model.Assignment
 // @Router /assignments/course/{courseId} [get]
-func (c *AssignmentsController) GetAssignmentsByCourseId(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *AssignmentsController) GetAssignmentsByCourseId(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting assignments by course ID")
         courseId := ctx.Param("courseId")
 
         assignments, err := c.service.GetAssignmentsByCourseId(courseId)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error getting assignments", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">slog.Debug("Assignments retrieved", "assignments", assignments)
+        <span class="cov8" title="1">slog.Debug("Assignments retrieved", "assignments", assignments)
         ctx.JSON(http.StatusOK, assignments)</span>
 }
 
@@ -268,25 +439,25 @@ func (c *AssignmentsController) GetAssignmentsByCourseId(ctx *gin.Context) <span
 // @Param assignment body schemas.UpdateAssignmentRequest true "Assignment to update"
 // @Success 200 {object} model.Assignment
 // @Router /assignments/{assignmentId} [put]
-func (c *AssignmentsController) UpdateAssignment(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *AssignmentsController) UpdateAssignment(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Updating assignment")
         id := ctx.Param("assignmentId")
 
         var updateAssignmentRequest schemas.UpdateAssignmentRequest
-        if err := ctx.ShouldBindJSON(&amp;updateAssignmentRequest); err != nil </span><span class="cov0" title="0">{
+        if err := ctx.ShouldBindJSON(&amp;updateAssignmentRequest); err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error binding JSON", "error", err)
                 ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">updatedAssignment, err := c.service.UpdateAssignment(id, updateAssignmentRequest)
-        if err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">updatedAssignment, err := c.service.UpdateAssignment(id, updateAssignmentRequest)
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error updating assignment", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">slog.Debug("Assignment updated", "assignment", updatedAssignment)
+        <span class="cov8" title="1">slog.Debug("Assignment updated", "assignment", updatedAssignment)
         ctx.JSON(http.StatusOK, updatedAssignment)</span>
 }
 
@@ -298,27 +469,30 @@ func (c *AssignmentsController) UpdateAssignment(ctx *gin.Context) <span class="
 // @Param assignmentId path string true "Assignment ID"
 // @Success 200 {string} string "Assignment deleted successfully"
 // @Router /assignments/{assignmentId} [delete]
-func (c *AssignmentsController) DeleteAssignment(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *AssignmentsController) DeleteAssignment(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Deleting assignment")
         id := ctx.Param("assignmentId")
 
-        if err := c.service.DeleteAssignment(id); err != nil </span><span class="cov0" title="0">{
+        if err := c.service.DeleteAssignment(id); err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error deleting assignment", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">slog.Debug("Assignment deleted")
+        <span class="cov8" title="1">slog.Debug("Assignment deleted")
         ctx.JSON(http.StatusNoContent, nil)</span>
 }
 </pre>
 		
-		<pre class="file" id="file2" style="display: none">package controller
+		<pre class="file" id="file3" style="display: none">package controller
 
 import (
         "log/slog"
         "net/http"
+        "slices"
 
+        "courses-service/src/ai"
+        "courses-service/src/model"
         "courses-service/src/schemas"
         "courses-service/src/service"
 
@@ -326,11 +500,12 @@ import (
 )
 
 type CourseController struct {
-        service service.CourseServiceInterface
+        service  service.CourseServiceInterface
+        aiClient *ai.AiClient
 }
 
-func NewCourseController(service service.CourseServiceInterface) *CourseController <span class="cov8" title="1">{
-        return &amp;CourseController{service: service}
+func NewCourseController(service service.CourseServiceInterface, aiClient *ai.AiClient) *CourseController <span class="cov8" title="1">{
+        return &amp;CourseController{service: service, aiClient: aiClient}
 }</span>
 
 // @Summary Get all courses
@@ -609,25 +784,175 @@ func (c *CourseController) RemoveAuxTeacherFromCourse(ctx *gin.Context) <span cl
         <span class="cov8" title="1">slog.Debug("Aux teacher removed from course", "course", course)
         ctx.JSON(http.StatusOK, course)</span>
 }
+
+// @Summary Get favourite courses
+// @Description Get favourite courses by student ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param studentId path string true "Student ID"
+// @Success 200 {array} model.Course
+// @Router /courses/favourite/{studentId} [get]
+func (c *CourseController) GetFavouriteCourses(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Getting favourite courses")
+        studentId := ctx.Param("studentId")
+        if studentId == "" </span><span class="cov8" title="1">{
+                slog.Error("Student ID is required")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Student ID is required"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">courses, err := c.service.GetFavouriteCourses(studentId)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error getting favourite courses", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov8" title="1">slog.Debug("Favourite courses retrieved", "courses", courses)
+        ctx.JSON(http.StatusOK, courses)</span>
+}
+
+// @Summary Create course feedback
+// @Description Create course feedback by course ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param feedback body schemas.CreateCourseFeedbackRequest true "Course feedback"
+// @Success 200 {object} model.CourseFeedback
+// @Router /courses/{id}/feedback [post]
+func (c *CourseController) CreateCourseFeedback(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Creating course feedback")
+        courseId := ctx.Param("id")
+        if courseId == "" </span><span class="cov8" title="1">{
+                slog.Error("Course ID is required")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">var feedback schemas.CreateCourseFeedbackRequest
+        if err := ctx.ShouldBindJSON(&amp;feedback); err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error binding create course feedback request", "error", err)
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">if !slices.Contains(model.FeedbackTypes, feedback.FeedbackType) </span><span class="cov8" title="1">{
+                slog.Error("Invalid feedback type")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid feedback type"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">feedbackModel, err := c.service.CreateCourseFeedback(courseId, feedback)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error creating course feedback", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">slog.Debug("Course feedback created", "feedback", feedbackModel)
+        ctx.JSON(http.StatusOK, feedbackModel)</span>
+}
+
+// @Summary Get course feedback
+// @Description Get course feedback by course ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param getCourseFeedbackRequest body schemas.GetCourseFeedbackRequest true "Get course feedback request"
+// @Success 200 {array} model.CourseFeedback
+// @Router /courses/{id}/feedback [get]
+func (c *CourseController) GetCourseFeedback(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Getting course feedback")
+        courseId := ctx.Param("id")
+        if courseId == "" </span><span class="cov8" title="1">{
+                slog.Error("Course ID is required")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">var getCourseFeedbackRequest schemas.GetCourseFeedbackRequest
+        if err := ctx.ShouldBindJSON(&amp;getCourseFeedbackRequest); err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error binding get course feedback request", "error", err)
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">feedback, err := c.service.GetCourseFeedback(courseId, getCourseFeedbackRequest)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error getting course feedback", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">slog.Debug("Course feedback retrieved", "feedback", feedback)
+        ctx.JSON(http.StatusOK, feedback)</span>
+}
+
+// @Summary Get course feedback summary
+// @Description Get course feedback summary by course ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Success 200 {string} string "Course feedback summary"
+// @Router /courses/{id}/feedback/summary [get]
+func (c *CourseController) GetCourseFeedbackSummary(ctx *gin.Context) <span class="cov0" title="0">{
+        slog.Debug("Getting course feedback summary")
+        courseId := ctx.Param("id")
+        if courseId == "" </span><span class="cov0" title="0">{
+                slog.Error("Course ID is required")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">feedbacks, err := c.service.GetCourseFeedback(courseId, schemas.GetCourseFeedbackRequest{})
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error getting course feedback", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">if len(feedbacks) == 0 </span><span class="cov0" title="0">{
+                slog.Error("No feedbacks found")
+                ctx.JSON(http.StatusNotFound, gin.H{"error": "No feedbacks found"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">summary, err := c.aiClient.SummarizeCourseFeedbacks(feedbacks)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error getting course feedback summary", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">slog.Debug("Course feedback summary retrieved", "summary", summary)
+        ctx.JSON(http.StatusOK, summary)</span>
+}
 </pre>
 		
-		<pre class="file" id="file3" style="display: none">package controller
+		<pre class="file" id="file4" style="display: none">package controller
 
 import (
+        "courses-service/src/ai"
+        "courses-service/src/model"
         "courses-service/src/schemas"
         "courses-service/src/service"
         "log/slog"
         "net/http"
+        "slices"
 
         "github.com/gin-gonic/gin"
 )
 
 type EnrollmentController struct {
         enrollmentService service.EnrollmentServiceInterface
+        aiClient          *ai.AiClient
 }
 
-func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface) *EnrollmentController <span class="cov8" title="1">{
-        return &amp;EnrollmentController{enrollmentService: enrollmentService}
+func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface, aiClient *ai.AiClient) *EnrollmentController <span class="cov8" title="1">{
+        return &amp;EnrollmentController{enrollmentService: enrollmentService, aiClient: aiClient}
 }</span>
 
 // @Summary Enroll a student in a course
@@ -709,7 +1034,7 @@ func (c *EnrollmentController) UnenrollStudent(ctx *gin.Context) <span class="co
 // @Accept json
 // @Produce json
 // @Param id path string true "Course ID"
-// @Success 200 {object} []schemas.Enrollment
+// @Success 200 {array} model.Enrollment
 // @Router /courses/{id}/enrollments [get]
 func (c *EnrollmentController) GetEnrollmentsByCourseId(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Getting enrollments by course ID", "courseId", ctx.Param("id"))
@@ -724,9 +1049,197 @@ func (c *EnrollmentController) GetEnrollmentsByCourseId(ctx *gin.Context) <span 
 
         <span class="cov8" title="1">ctx.JSON(http.StatusOK, enrollments)</span>
 }
+
+// @Summary Set a course as favourite
+// @Description Set a course as favourite
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param favouriteCourseRequest body schemas.SetFavouriteCourseRequest true "Favourite course request"
+// @Success 200 {object} schemas.SetFavouriteCourseResponse
+// @Router /courses/{id}/favourite [post]
+func (c *EnrollmentController) SetFavouriteCourse(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Setting favourite course", "courseId", ctx.Param("id"))
+        courseID := ctx.Param("id")
+
+        if courseID == "" </span><span class="cov8" title="1">{
+                slog.Error("Invalid course ID")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid course ID"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">var favouriteCourseRequest schemas.SetFavouriteCourseRequest
+        if err := ctx.ShouldBindJSON(&amp;favouriteCourseRequest); err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error binding favourite course request", "error", err)
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">err := c.enrollmentService.SetFavouriteCourse(favouriteCourseRequest.StudentID, courseID)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error setting favourite course", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">slog.Debug("Favourite course set", "studentId", favouriteCourseRequest.StudentID, "courseId", courseID)
+        ctx.JSON(http.StatusOK, gin.H{"message": "Favourite course set"})</span>
+}
+
+// @Summary Unset a course as favourite
+// @Description Unset a course as favourite
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param unsetFavouriteCourseRequest body schemas.UnsetFavouriteCourseRequest true "Unset favourite course request"
+// @Success 200 {object} schemas.UnsetFavouriteCourseResponse
+// @Router /courses/{id}/favourite [delete]
+func (c *EnrollmentController) UnsetFavouriteCourse(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Unsetting favourite course", "courseId", ctx.Param("id"))
+        courseID := ctx.Param("id")
+
+        if courseID == "" </span><span class="cov8" title="1">{
+                slog.Error("Invalid course ID")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid course ID"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">var unsetFavouriteCourseRequest schemas.UnsetFavouriteCourseRequest
+        if err := ctx.ShouldBindJSON(&amp;unsetFavouriteCourseRequest); err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error binding unset favourite course request", "error", err)
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">err := c.enrollmentService.UnsetFavouriteCourse(unsetFavouriteCourseRequest.StudentID, courseID)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error unsetting favourite course", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">slog.Debug("Favourite course unset", "studentId", unsetFavouriteCourseRequest.StudentID, "courseId", courseID)
+        ctx.JSON(http.StatusOK, gin.H{"message": "Favourite course unset"})</span>
+}
+
+// @Summary Create a feedback for a course
+// @Description Create a feedback for a course
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param feedbackRequest body schemas.CreateStudentFeedbackRequest true "Feedback request"
+// @Success 200 {object} model.StudentFeedback
+// @Router /courses/{id}/student-feedback [post]
+func (c *EnrollmentController) CreateFeedback(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Creating feedback", "courseId", ctx.Param("id"))
+        courseID := ctx.Param("id")
+
+        if courseID == "" </span><span class="cov8" title="1">{
+                slog.Error("Invalid course ID")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid course ID"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">var feedbackRequest schemas.CreateStudentFeedbackRequest
+        if err := ctx.ShouldBindJSON(&amp;feedbackRequest); err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error binding feedback request", "error", err)
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">if !slices.Contains(model.FeedbackTypes, feedbackRequest.FeedbackType) </span><span class="cov8" title="1">{
+                slog.Error("Invalid feedback type")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid feedback type"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">err := c.enrollmentService.CreateStudentFeedback(feedbackRequest)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error creating feedback", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">slog.Debug("Feedback created", "studentId", feedbackRequest.StudentUUID, "teacherId", feedbackRequest.TeacherUUID)
+        ctx.JSON(http.StatusOK, gin.H{"message": "Feedback created"})</span>
+}
+
+// @Summary Get feedback by student ID
+// @Description Get feedback by student ID
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param id path string true "Student ID"
+// @Param getFeedbackByStudentIdRequest body schemas.GetFeedbackByStudentIdRequest true "Get feedback by student ID request"
+// @Success 200 {array} model.StudentFeedback
+// @Router /feedback/student/{id} [get]
+func (c *EnrollmentController) GetFeedbackByStudentId(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Getting feedback by student ID", "studentId", ctx.Param("id"))
+        studentID := ctx.Param("id")
+
+        if studentID == "" </span><span class="cov0" title="0">{
+                slog.Error("Invalid student ID")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid student ID"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">var getFeedbackByStudentIdRequest schemas.GetFeedbackByStudentIdRequest
+        if err := ctx.ShouldBindJSON(&amp;getFeedbackByStudentIdRequest); err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error binding get feedback by student ID request", "error", err)
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">feedback, err := c.enrollmentService.GetFeedbackByStudentId(studentID, getFeedbackByStudentIdRequest)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error getting feedback by student ID", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">slog.Debug("Feedback retrieved", "studentId", studentID)
+        ctx.JSON(http.StatusOK, feedback)</span>
+}
+
+func (c *EnrollmentController) GetStudentFeedbackSummary(ctx *gin.Context) <span class="cov0" title="0">{
+        slog.Debug("Getting student feedback summary", "studentId", ctx.Param("id"))
+        studentID := ctx.Param("id")
+
+        if studentID == "" </span><span class="cov0" title="0">{
+                slog.Error("Invalid student ID")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid student ID"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">feedbacks, err := c.enrollmentService.GetFeedbackByStudentId(studentID, schemas.GetFeedbackByStudentIdRequest{})
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error getting student feedback", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">if len(feedbacks) == 0 </span><span class="cov0" title="0">{
+                slog.Error("No feedbacks found")
+                ctx.JSON(http.StatusNotFound, gin.H{"error": "No feedbacks found"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">summary, err := c.aiClient.SummarizeStudentFeedbacks(feedbacks)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error summarizing student feedback", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">slog.Debug("Student feedback summary retrieved", "summary", summary)
+        ctx.JSON(http.StatusOK, summary)</span>
+}
 </pre>
 		
-		<pre class="file" id="file4" style="display: none">package controller
+		<pre class="file" id="file5" style="display: none">package controller
 
 import (
         "courses-service/src/model"
@@ -880,22 +1393,25 @@ func (c *ModuleController) DeleteModule(ctx *gin.Context) <span class="cov8" tit
 }
 </pre>
 		
-		<pre class="file" id="file5" style="display: none">package controller
+		<pre class="file" id="file6" style="display: none">package controller
 
 import (
+        "fmt"
         "net/http"
         "time"
 
         "courses-service/src/model"
+        "courses-service/src/schemas"
         "courses-service/src/service"
+
         "github.com/gin-gonic/gin"
 )
 
 type SubmissionController struct {
-        submissionService *service.SubmissionService
+        submissionService service.SubmissionServiceInterface
 }
 
-func NewSubmissionController(submissionService *service.SubmissionService) *SubmissionController <span class="cov8" title="1">{
+func NewSubmissionController(submissionService service.SubmissionServiceInterface) *SubmissionController <span class="cov8" title="1">{
         return &amp;SubmissionController{
                 submissionService: submissionService,
         }
@@ -914,25 +1430,25 @@ type CreateSubmissionRequest struct {
 // @Param submission body CreateSubmissionRequest true "Submission to create"
 // @Success 201 {object} model.Submission
 // @Router /assignments/{assignmentId}/submissions [post]
-func (c *SubmissionController) CreateSubmission(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *SubmissionController) CreateSubmission(ctx *gin.Context) <span class="cov8" title="1">{
         assignmentID := ctx.Param("assignmentId")
         var req CreateSubmissionRequest
-        if err := ctx.ShouldBindJSON(&amp;req); err != nil </span><span class="cov0" title="0">{
+        if err := ctx.ShouldBindJSON(&amp;req); err != nil </span><span class="cov8" title="1">{
                 ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
                 return
         }</span>
 
         // Get student info from context (assuming middleware sets this)
-        <span class="cov0" title="0">studentUUID := ctx.GetString("student_uuid")
+        <span class="cov8" title="1">studentUUID := ctx.GetString("student_uuid")
         studentName := ctx.GetString("student_name")
 
         submission, err := c.submissionService.GetOrCreateSubmission(ctx, assignmentID, studentUUID, studentName)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">submission.Answers = req.Answers
+        <span class="cov8" title="1">submission.Answers = req.Answers
         submission.UpdatedAt = time.Now()
 
         if err := c.submissionService.UpdateSubmission(ctx, submission); err != nil </span><span class="cov0" title="0">{
@@ -940,7 +1456,7 @@ func (c *SubmissionController) CreateSubmission(ctx *gin.Context) <span class="c
                 return
         }</span>
 
-        <span class="cov0" title="0">ctx.JSON(http.StatusOK, submission)</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, submission)</span>
 }
 
 // @Summary Get a submission by ID
@@ -952,28 +1468,28 @@ func (c *SubmissionController) CreateSubmission(ctx *gin.Context) <span class="c
 // @Param id path string true "Submission ID"
 // @Success 200 {object} model.Submission
 // @Router /assignments/{assignmentId}/submissions/{id} [get]
-func (c *SubmissionController) GetSubmission(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *SubmissionController) GetSubmission(ctx *gin.Context) <span class="cov8" title="1">{
         assignmentID := ctx.Param("assignmentId")
         id := ctx.Param("id")
 
         submission, err := c.submissionService.GetSubmission(ctx, id)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">if submission == nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if submission == nil </span><span class="cov8" title="1">{
                 ctx.JSON(http.StatusNotFound, gin.H{"error": "submission not found"})
                 return
         }</span>
 
         // Validate submission belongs to the assignment
-        <span class="cov0" title="0">if submission.AssignmentID != assignmentID </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if submission.AssignmentID != assignmentID </span><span class="cov8" title="1">{
                 ctx.JSON(http.StatusNotFound, gin.H{"error": "submission not found"})
                 return
         }</span>
 
-        <span class="cov0" title="0">ctx.JSON(http.StatusOK, submission)</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, submission)</span>
 }
 
 // @Summary Update a submission
@@ -986,41 +1502,42 @@ func (c *SubmissionController) GetSubmission(ctx *gin.Context) <span class="cov0
 // @Param submission body model.Submission true "Submission to update"
 // @Success 200 {object} model.Submission
 // @Router /assignments/{assignmentId}/submissions/{id} [put]
-func (c *SubmissionController) UpdateSubmission(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *SubmissionController) UpdateSubmission(ctx *gin.Context) <span class="cov8" title="1">{
         assignmentID := ctx.Param("assignmentId")
         id := ctx.Param("id")
 
         var submission model.Submission
-        if err := ctx.ShouldBindJSON(&amp;submission); err != nil </span><span class="cov0" title="0">{
+        if err := ctx.ShouldBindJSON(&amp;submission); err != nil </span><span class="cov8" title="1">{
                 ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
                 return
         }</span>
 
         // Validate submission ID matches URL
-        <span class="cov0" title="0">if submission.ID.Hex() != id </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if submission.ID.Hex() != id </span><span class="cov8" title="1">{
+                fmt.Printf("submission ID mismatch: %s != %s\n", submission.ID.Hex(), id)
                 ctx.JSON(http.StatusBadRequest, gin.H{"error": "submission ID mismatch"})
                 return
         }</span>
 
         // Validate submission belongs to the assignment
-        <span class="cov0" title="0">if submission.AssignmentID != assignmentID </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if submission.AssignmentID != assignmentID </span><span class="cov8" title="1">{
                 ctx.JSON(http.StatusBadRequest, gin.H{"error": "assignment ID mismatch"})
                 return
         }</span>
 
         // Validate student ownership
-        <span class="cov0" title="0">studentUUID := ctx.GetString("student_uuid")
-        if submission.StudentUUID != studentUUID </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">studentUUID := ctx.GetString("student_uuid")
+        if submission.StudentUUID != studentUUID </span><span class="cov8" title="1">{
                 ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
                 return
         }</span>
 
-        <span class="cov0" title="0">if err := c.submissionService.UpdateSubmission(ctx, &amp;submission); err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if err := c.submissionService.UpdateSubmission(ctx, &amp;submission); err != nil </span><span class="cov0" title="0">{
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">ctx.JSON(http.StatusOK, submission)</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, submission)</span>
 }
 
 // @Summary Submit a submission
@@ -1032,37 +1549,37 @@ func (c *SubmissionController) UpdateSubmission(ctx *gin.Context) <span class="c
 // @Param id path string true "Submission ID"
 // @Success 200 {object} model.Submission
 // @Router /assignments/{assignmentId}/submissions/{id}/submit [post]
-func (c *SubmissionController) SubmitSubmission(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *SubmissionController) SubmitSubmission(ctx *gin.Context) <span class="cov8" title="1">{
         assignmentID := ctx.Param("assignmentId")
         id := ctx.Param("id")
 
         // Validate submission belongs to the assignment
         submission, err := c.submissionService.GetSubmission(ctx, id)
+        if err != nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov8" title="1">if submission == nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusNotFound, gin.H{"error": "submission not found"})
+                return
+        }</span>
+        <span class="cov8" title="1">if submission.AssignmentID != assignmentID </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusNotFound, gin.H{"error": "submission not found"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">if err := c.submissionService.SubmitSubmission(ctx, id); err != nil </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">submission, err = c.submissionService.GetSubmission(ctx, id)
         if err != nil </span><span class="cov0" title="0">{
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
-        <span class="cov0" title="0">if submission == nil </span><span class="cov0" title="0">{
-                ctx.JSON(http.StatusNotFound, gin.H{"error": "submission not found"})
-                return
-        }</span>
-        <span class="cov0" title="0">if submission.AssignmentID != assignmentID </span><span class="cov0" title="0">{
-                ctx.JSON(http.StatusNotFound, gin.H{"error": "submission not found"})
-                return
-        }</span>
 
-        <span class="cov0" title="0">if err := c.submissionService.SubmitSubmission(ctx, id); err != nil </span><span class="cov0" title="0">{
-                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-                return
-        }</span>
-
-        <span class="cov0" title="0">submission, err = c.submissionService.GetSubmission(ctx, id)
-        if err != nil </span><span class="cov0" title="0">{
-                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-                return
-        }</span>
-
-        <span class="cov0" title="0">ctx.JSON(http.StatusOK, submission)</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, submission)</span>
 }
 
 // @Summary Get submissions by assignment ID
@@ -1073,16 +1590,16 @@ func (c *SubmissionController) SubmitSubmission(ctx *gin.Context) <span class="c
 // @Param assignmentId path string true "Assignment ID"
 // @Success 200 {array} model.Submission
 // @Router /assignments/{assignmentId}/submissions [get]
-func (c *SubmissionController) GetSubmissionsByAssignment(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *SubmissionController) GetSubmissionsByAssignment(ctx *gin.Context) <span class="cov8" title="1">{
         assignmentID := ctx.Param("assignmentId")
 
         submissions, err := c.submissionService.GetSubmissionsByAssignment(ctx, assignmentID)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">ctx.JSON(http.StatusOK, submissions)</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, submissions)</span>
 }
 
 // @Summary Get submissions by student ID
@@ -1093,27 +1610,81 @@ func (c *SubmissionController) GetSubmissionsByAssignment(ctx *gin.Context) <spa
 // @Param studentUUID path string true "Student ID"
 // @Success 200 {array} model.Submission
 // @Router /students/{studentUUID}/submissions [get]
-func (c *SubmissionController) GetSubmissionsByStudent(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *SubmissionController) GetSubmissionsByStudent(ctx *gin.Context) <span class="cov8" title="1">{
         studentUUID := ctx.Param("studentUUID")
 
         // Validate student access
         requestingStudentUUID := ctx.GetString("student_uuid")
-        if studentUUID != requestingStudentUUID </span><span class="cov0" title="0">{
+        if studentUUID != requestingStudentUUID </span><span class="cov8" title="1">{
                 ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
                 return
         }</span>
 
-        <span class="cov0" title="0">submissions, err := c.submissionService.GetSubmissionsByStudent(ctx, studentUUID)
+        <span class="cov8" title="1">submissions, err := c.submissionService.GetSubmissionsByStudent(ctx, studentUUID)
+        if err != nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, submissions)</span>
+}
+
+// @Summary Grade a submission
+// @Description Grade a submission by ID (for teachers)
+// @Tags submissions
+// @Accept json
+// @Produce json
+// @Param assignmentId path string true "Assignment ID"
+// @Param id path string true "Submission ID"
+// @Param gradeRequest body schemas.GradeSubmissionRequest true "Grade request"
+// @Success 200 {object} model.Submission
+// @Router /assignments/{assignmentId}/submissions/{id}/grade [put]
+func (c *SubmissionController) GradeSubmission(ctx *gin.Context) <span class="cov8" title="1">{
+        assignmentID := ctx.Param("assignmentId")
+        id := ctx.Param("id")
+
+        var gradeRequest schemas.GradeSubmissionRequest
+        if err := ctx.ShouldBindJSON(&amp;gradeRequest); err != nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        // Get teacher info from context
+        <span class="cov8" title="1">teacherUUID := ctx.GetString("teacher_uuid")
+
+        // Validate teacher permissions for this assignment
+        if err := c.submissionService.ValidateTeacherPermissions(ctx, assignmentID, teacherUUID); err != nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        // Validate submission belongs to the assignment
+        <span class="cov8" title="1">submission, err := c.submissionService.GetSubmission(ctx, id)
+        if err != nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov8" title="1">if submission == nil </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusNotFound, gin.H{"error": "submission not found"})
+                return
+        }</span>
+        <span class="cov8" title="1">if submission.AssignmentID != assignmentID </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusNotFound, gin.H{"error": "submission not found"})
+                return
+        }</span>
+
+        // Grade the submission
+        <span class="cov8" title="1">gradedSubmission, err := c.submissionService.GradeSubmission(ctx, id, gradeRequest.Score, gradeRequest.Feedback)
         if err != nil </span><span class="cov0" title="0">{
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">ctx.JSON(http.StatusOK, submissions)</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, gradedSubmission)</span>
 }
 </pre>
 		
-		<pre class="file" id="file6" style="display: none">package database
+		<pre class="file" id="file7" style="display: none">package database
 
 import (
         "courses-service/src/config"
@@ -1143,7 +1714,7 @@ func NewMongoDBClient(config *config.Config) (*mongo.Client, error) <span class=
 }
 </pre>
 		
-		<pre class="file" id="file7" style="display: none">// Package docs Code generated by swaggo/swag. DO NOT EDIT
+		<pre class="file" id="file8" style="display: none">// Package docs Code generated by swaggo/swag. DO NOT EDIT
 package docs
 
 import "github.com/swaggo/swag"
@@ -1517,6 +2088,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/assignments/{assignmentId}/submissions/{id}/grade": {
+            "put": {
+                "description": "Grade a submission by ID (for teachers)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submissions"
+                ],
+                "summary": "Grade a submission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Assignment ID",
+                        "name": "assignmentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Submission ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Grade request",
+                        "name": "gradeRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.GradeSubmissionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Submission"
+                        }
+                    }
+                }
+            }
+        },
         "/assignments/{assignmentId}/submissions/{id}/submit": {
             "post": {
                 "description": "Submit a submission by ID",
@@ -1609,6 +2228,41 @@ const docTemplate = `{
                         "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/model.Course"
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/favourite/{studentId}": {
+            "get": {
+                "description": "Get favourite courses by student ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Get favourite courses",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Student ID",
+                        "name": "studentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Course"
+                            }
                         }
                     }
                 }
@@ -1889,6 +2543,204 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/courses/{id}/enrollments": {
+            "get": {
+                "description": "Get enrollments by course ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Get enrollments by course ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Enrollment"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/{id}/favourite": {
+            "post": {
+                "description": "Set a course as favourite",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Set a course as favourite",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Favourite course request",
+                        "name": "favouriteCourseRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.SetFavouriteCourseRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.SetFavouriteCourseResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Unset a course as favourite",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Unset a course as favourite",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Unset favourite course request",
+                        "name": "unsetFavouriteCourseRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.UnsetFavouriteCourseRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.UnsetFavouriteCourseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/{id}/feedback": {
+            "get": {
+                "description": "Get course feedback by course ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Get course feedback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Get course feedback request",
+                        "name": "getCourseFeedbackRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.GetCourseFeedbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.CourseFeedback"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create course feedback by course ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Create course feedback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Course feedback",
+                        "name": "feedback",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.CreateCourseFeedbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.CourseFeedback"
+                        }
+                    }
+                }
+            }
+        },
         "/courses/{id}/remove-aux-teacher": {
             "delete": {
                 "description": "Remove an aux teacher from a course by ID",
@@ -1930,6 +2782,47 @@ const docTemplate = `{
                 }
             }
         },
+        "/courses/{id}/student-feedback": {
+            "post": {
+                "description": "Create a feedback for a course",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Create a feedback for a course",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Feedback request",
+                        "name": "feedbackRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.CreateStudentFeedbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.StudentFeedback"
+                        }
+                    }
+                }
+            }
+        },
         "/courses/{id}/unenroll": {
             "delete": {
                 "description": "Unenroll a student from a course",
@@ -1966,6 +2859,50 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/schemas.UnenrollStudentResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/feedback/student/{id}": {
+            "get": {
+                "description": "Get feedback by student ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Get feedback by student ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Student ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Get feedback by student ID request",
+                        "name": "getFeedbackByStudentIdRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.GetFeedbackByStudentIdRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.StudentFeedback"
+                            }
                         }
                     }
                 }
@@ -2195,14 +3132,8 @@ const docTemplate = `{
                 "content": {
                     "description": "Can be string, []string for multiple choice, or file URL"
                 },
-                "feedback": {
-                    "type": "string"
-                },
                 "question_id": {
                     "type": "string"
-                },
-                "score": {
-                    "type": "number"
                 },
                 "type": {
                     "description": "text, multiple_choice, file",
@@ -2292,6 +3223,12 @@ const docTemplate = `{
                 "end_date": {
                     "type": "string"
                 },
+                "feedback": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CourseFeedback"
+                    }
+                },
                 "id": {
                     "type": "string"
                 },
@@ -2320,6 +3257,90 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "model.CourseFeedback": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "feedback": {
+                    "type": "string"
+                },
+                "feedback_type": {
+                    "$ref": "#/definitions/model.FeedbackType"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "student_uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Enrollment": {
+            "type": "object",
+            "properties": {
+                "completed_date": {
+                    "type": "string"
+                },
+                "course_id": {
+                    "type": "string"
+                },
+                "enrolled_at": {
+                    "type": "string"
+                },
+                "favourite": {
+                    "type": "boolean"
+                },
+                "feedback": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.StudentFeedback"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/model.EnrollmentStatus"
+                },
+                "student_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.EnrollmentStatus": {
+            "type": "string",
+            "enum": [
+                "active",
+                "dropped",
+                "completed"
+            ],
+            "x-enum-varnames": [
+                "EnrollmentStatusActive",
+                "EnrollmentStatusDropped",
+                "EnrollmentStatusCompleted"
+            ]
+        },
+        "model.FeedbackType": {
+            "type": "string",
+            "enum": [
+                "POSITIVO",
+                "NEGATIVO",
+                "NEUTRO"
+            ],
+            "x-enum-varnames": [
+                "FeedbackTypePositive",
+                "FeedbackTypeNegative",
+                "FeedbackTypeNeutral"
+            ]
         },
         "model.Module": {
             "type": "object",
@@ -2396,6 +3417,32 @@ const docTemplate = `{
                 "QuestionTypeMultipleChoice",
                 "QuestionTypeFile"
             ]
+        },
+        "model.StudentFeedback": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "feedback": {
+                    "type": "string"
+                },
+                "feedback_type": {
+                    "$ref": "#/definitions/model.FeedbackType"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "student_uuid": {
+                    "type": "string"
+                },
+                "teacher_uuid": {
+                    "type": "string"
+                }
+            }
         },
         "model.Submission": {
             "type": "object",
@@ -2505,6 +3552,29 @@ const docTemplate = `{
                 }
             }
         },
+        "schemas.CreateCourseFeedbackRequest": {
+            "type": "object",
+            "required": [
+                "feedback",
+                "feedback_type",
+                "score",
+                "student_uuid"
+            ],
+            "properties": {
+                "feedback": {
+                    "type": "string"
+                },
+                "feedback_type": {
+                    "$ref": "#/definitions/model.FeedbackType"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "student_uuid": {
+                    "type": "string"
+                }
+            }
+        },
         "schemas.CreateCourseRequest": {
             "type": "object",
             "required": [
@@ -2562,6 +3632,37 @@ const docTemplate = `{
                 }
             }
         },
+        "schemas.CreateStudentFeedbackRequest": {
+            "type": "object",
+            "required": [
+                "course_id",
+                "feedback",
+                "feedback_type",
+                "score",
+                "student_uuid",
+                "teacher_uuid"
+            ],
+            "properties": {
+                "course_id": {
+                    "type": "string"
+                },
+                "feedback": {
+                    "type": "string"
+                },
+                "feedback_type": {
+                    "$ref": "#/definitions/model.FeedbackType"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "student_uuid": {
+                    "type": "string"
+                },
+                "teacher_uuid": {
+                    "type": "string"
+                }
+            }
+        },
         "schemas.DeleteCourseResponse": {
             "type": "object",
             "properties": {
@@ -2581,6 +3682,60 @@ const docTemplate = `{
                 }
             }
         },
+        "schemas.GetCourseFeedbackRequest": {
+            "type": "object",
+            "properties": {
+                "end_date": {
+                    "type": "string"
+                },
+                "end_score": {
+                    "type": "integer"
+                },
+                "feedback_type": {
+                    "$ref": "#/definitions/model.FeedbackType"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "start_score": {
+                    "type": "integer"
+                }
+            }
+        },
+        "schemas.GetFeedbackByStudentIdRequest": {
+            "type": "object",
+            "properties": {
+                "course_id": {
+                    "type": "string"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "end_score": {
+                    "type": "integer"
+                },
+                "feedback_type": {
+                    "$ref": "#/definitions/model.FeedbackType"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "start_score": {
+                    "type": "integer"
+                }
+            }
+        },
+        "schemas.GradeSubmissionRequest": {
+            "type": "object",
+            "properties": {
+                "feedback": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                }
+            }
+        },
         "schemas.RemoveAuxTeacherFromCourseRequest": {
             "type": "object",
             "required": [
@@ -2592,6 +3747,25 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "teacher_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.SetFavouriteCourseRequest": {
+            "type": "object",
+            "required": [
+                "student_id"
+            ],
+            "properties": {
+                "student_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.SetFavouriteCourseResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
                     "type": "string"
                 }
             }
@@ -2608,6 +3782,25 @@ const docTemplate = `{
             }
         },
         "schemas.UnenrollStudentResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.UnsetFavouriteCourseRequest": {
+            "type": "object",
+            "required": [
+                "student_id"
+            ],
+            "properties": {
+                "student_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.UnsetFavouriteCourseResponse": {
             "type": "object",
             "properties": {
                 "message": {
@@ -2715,7 +3908,7 @@ func init() <span class="cov0" title="0">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file8" style="display: none">package main
+		<pre class="file" id="file9" style="display: none">package main
 
 import (
         "courses-service/src/config"
@@ -2746,7 +3939,7 @@ func main() <span class="cov0" title="0">{
 }
 </pre>
 		
-		<pre class="file" id="file9" style="display: none">package middleware
+		<pre class="file" id="file10" style="display: none">package middleware
 
 import (
         "github.com/gin-gonic/gin"
@@ -2775,7 +3968,36 @@ func StudentAuth() gin.HandlerFunc <span class="cov8" title="1">{
 }
 </pre>
 		
-		<pre class="file" id="file10" style="display: none">package repository
+		<pre class="file" id="file11" style="display: none">package middleware
+
+import (
+        "github.com/gin-gonic/gin"
+        "net/http"
+)
+
+// TeacherAuth is a middleware that extracts teacher information from the X-Teacher-UUID and X-Teacher-Name
+// headers and sets them in the context for handlers to use.
+func TeacherAuth() gin.HandlerFunc <span class="cov8" title="1">{
+        return func(c *gin.Context) </span><span class="cov0" title="0">{
+                teacherUUID := c.GetHeader("X-Teacher-UUID")
+                teacherName := c.GetHeader("X-Teacher-Name")
+
+                if teacherUUID == "" </span><span class="cov0" title="0">{
+                        c.JSON(http.StatusUnauthorized, gin.H{"error": "X-Teacher-UUID header is required"})
+                        c.Abort()
+                        return
+                }</span>
+
+                // Set values in context for downstream handlers
+                <span class="cov0" title="0">c.Set("teacher_uuid", teacherUUID)
+                c.Set("teacher_name", teacherName)
+
+                c.Next()</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package repository
 
 import (
         "context"
@@ -2802,144 +4024,156 @@ func NewAssignmentRepository(db *mongo.Client, dbName string) AssignmentReposito
         }
 }</span>
 
-func (r *AssignmentRepository) CreateAssignment(assignment model.Assignment) (*model.Assignment, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) CreateAssignment(assignment model.Assignment) (*model.Assignment, error) <span class="cov8" title="1">{
         result, err := r.assignmentCollection.InsertOne(context.TODO(), assignment)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to create assignment: %v", err)
         }</span>
 
-        <span class="cov0" title="0">assignment.ID = result.InsertedID.(primitive.ObjectID)
+        <span class="cov8" title="1">assignment.ID = result.InsertedID.(primitive.ObjectID)
         return &amp;assignment, nil</span>
 }
 
-func (r *AssignmentRepository) GetAssignments() ([]*model.Assignment, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) GetAssignments() ([]*model.Assignment, error) <span class="cov8" title="1">{
         cursor, err := r.assignmentCollection.Find(context.TODO(), bson.M{})
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to get assignments: %v", err)
         }</span>
 
-        <span class="cov0" title="0">var assignments []*model.Assignment
+        <span class="cov8" title="1">var assignments []*model.Assignment
         if err := cursor.All(context.TODO(), &amp;assignments); err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to get assignments: %v", err)
         }</span>
 
-        <span class="cov0" title="0">return assignments, nil</span>
+        // Ensure we return an empty slice instead of nil when no documents are found
+        <span class="cov8" title="1">if assignments == nil </span><span class="cov8" title="1">{
+                assignments = []*model.Assignment{}
+        }</span>
+
+        <span class="cov8" title="1">return assignments, nil</span>
 }
 
-func (r *AssignmentRepository) GetByID(ctx context.Context, id string) (*model.Assignment, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) GetByID(ctx context.Context, id string) (*model.Assignment, error) <span class="cov8" title="1">{
         var assignment model.Assignment
         objectId, err := primitive.ObjectIDFromHex(id)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, fmt.Errorf("failed to get assignment by id: %v", err)
         }</span>
 
-        <span class="cov0" title="0">err = r.assignmentCollection.FindOne(ctx, bson.M{"_id": objectId}).Decode(&amp;assignment)
-        if err != nil </span><span class="cov0" title="0">{
-                if err == mongo.ErrNoDocuments </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">err = r.assignmentCollection.FindOne(ctx, bson.M{"_id": objectId}).Decode(&amp;assignment)
+        if err != nil </span><span class="cov8" title="1">{
+                if err == mongo.ErrNoDocuments </span><span class="cov8" title="1">{
                         return nil, nil
                 }</span>
                 <span class="cov0" title="0">return nil, fmt.Errorf("failed to get assignment by id: %v", err)</span>
         }
 
-        <span class="cov0" title="0">return &amp;assignment, nil</span>
+        <span class="cov8" title="1">return &amp;assignment, nil</span>
 }
 
-func (r *AssignmentRepository) GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error) <span class="cov8" title="1">{
         cursor, err := r.assignmentCollection.Find(context.TODO(), bson.M{"course_id": courseId})
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to get assignments by course id: %v", err)
         }</span>
 
-        <span class="cov0" title="0">var assignments []*model.Assignment
+        <span class="cov8" title="1">var assignments []*model.Assignment
         if err := cursor.All(context.TODO(), &amp;assignments); err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to get assignments by course id: %v", err)
         }</span>
 
-        <span class="cov0" title="0">return assignments, nil</span>
+        // Ensure we return an empty slice instead of nil when no documents are found
+        <span class="cov8" title="1">if assignments == nil </span><span class="cov8" title="1">{
+                assignments = []*model.Assignment{}
+        }</span>
+
+        <span class="cov8" title="1">return assignments, nil</span>
 }
 
-func filterEmptyAssignmentFields(assignment model.Assignment) bson.M <span class="cov0" title="0">{
+func filterEmptyAssignmentFields(assignment model.Assignment) bson.M <span class="cov8" title="1">{
         update := bson.M{}
 
-        if assignment.Title != "" </span><span class="cov0" title="0">{
+        if assignment.Title != "" </span><span class="cov8" title="1">{
                 update["title"] = assignment.Title
         }</span>
-        <span class="cov0" title="0">if assignment.Description != "" </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if assignment.Description != "" </span><span class="cov8" title="1">{
                 update["description"] = assignment.Description
         }</span>
-        <span class="cov0" title="0">if assignment.Type != "" </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if assignment.Type != "" </span><span class="cov8" title="1">{
                 update["type"] = assignment.Type
         }</span>
-        <span class="cov0" title="0">if !assignment.DueDate.IsZero() </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if !assignment.DueDate.IsZero() </span><span class="cov0" title="0">{
                 update["due_date"] = assignment.DueDate
         }</span>
-        <span class="cov0" title="0">if assignment.Status != "" </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if assignment.Status != "" </span><span class="cov8" title="1">{
                 update["status"] = assignment.Status
         }</span>
-        <span class="cov0" title="0">if assignment.GracePeriod &gt; 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if assignment.GracePeriod &gt; 0 </span><span class="cov8" title="1">{
                 update["grace_period"] = assignment.GracePeriod
         }</span>
-        <span class="cov0" title="0">if len(assignment.SubmissionRules) &gt; 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if len(assignment.SubmissionRules) &gt; 0 </span><span class="cov8" title="1">{
                 update["submission_rules"] = assignment.SubmissionRules
         }</span>
-        <span class="cov0" title="0">if assignment.Instructions != "" </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if assignment.Instructions != "" </span><span class="cov8" title="1">{
                 update["instructions"] = assignment.Instructions
         }</span>
-        <span class="cov0" title="0">if len(assignment.Questions) &gt; 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if len(assignment.Questions) &gt; 0 </span><span class="cov8" title="1">{
                 update["questions"] = assignment.Questions
         }</span>
-        <span class="cov0" title="0">if assignment.TotalPoints &gt; 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if assignment.TotalPoints &gt; 0 </span><span class="cov8" title="1">{
                 update["total_points"] = assignment.TotalPoints
         }</span>
-        <span class="cov0" title="0">if assignment.PassingScore &gt; 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if assignment.PassingScore &gt; 0 </span><span class="cov8" title="1">{
                 update["passing_score"] = assignment.PassingScore
         }</span>
-        <span class="cov0" title="0">update["updated_at"] = primitive.NewDateTimeFromTime(time.Now())
+        <span class="cov8" title="1">update["updated_at"] = primitive.NewDateTimeFromTime(time.Now())
 
         return update</span>
 }
 
-func (r *AssignmentRepository) UpdateAssignment(id string, updateAssignment model.Assignment) (*model.Assignment, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) UpdateAssignment(id string, updateAssignment model.Assignment) (*model.Assignment, error) <span class="cov8" title="1">{
         objectId, err := primitive.ObjectIDFromHex(id)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, fmt.Errorf("failed to update assignment: %v", err)
         }</span>
 
-        <span class="cov0" title="0">update := filterEmptyAssignmentFields(updateAssignment)
+        <span class="cov8" title="1">update := filterEmptyAssignmentFields(updateAssignment)
 
         _, err = r.assignmentCollection.UpdateOne(context.TODO(), bson.M{"_id": objectId}, bson.M{"$set": update})
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to update assignment: %v", err)
         }</span>
 
-        <span class="cov0" title="0">updatedAssignment, err := r.GetByID(context.TODO(), id)
+        <span class="cov8" title="1">updatedAssignment, err := r.GetByID(context.TODO(), id)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to get updated assignment: %v", err)
         }</span>
 
-        <span class="cov0" title="0">return updatedAssignment, nil</span>
+        <span class="cov8" title="1">return updatedAssignment, nil</span>
 }
 
-func (r *AssignmentRepository) DeleteAssignment(id string) error <span class="cov0" title="0">{
+func (r *AssignmentRepository) DeleteAssignment(id string) error <span class="cov8" title="1">{
         objectId, err := primitive.ObjectIDFromHex(id)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("failed to delete assignment: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">_, err = r.assignmentCollection.DeleteOne(context.TODO(), bson.M{"_id": objectId})
         if err != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("failed to delete assignment: %v", err)
         }</span>
 
-        <span class="cov0" title="0">_, err = r.assignmentCollection.DeleteOne(context.TODO(), bson.M{"_id": objectId})
-        if err != nil </span><span class="cov0" title="0">{
-                return fmt.Errorf("failed to delete assignment: %v", err)
-        }</span>
-
-        <span class="cov0" title="0">return nil</span>
+        <span class="cov8" title="1">return nil</span>
 }
 </pre>
 		
-		<pre class="file" id="file11" style="display: none">package repository
+		<pre class="file" id="file13" style="display: none">package repository
 
 import (
         "context"
         "courses-service/src/model"
+        "courses-service/src/schemas"
+        "errors"
         "fmt"
         "time"
 
@@ -3220,13 +4454,97 @@ func (r *CourseRepository) UpdateStudentsAmount(courseID string, newStudentsAmou
 
         <span class="cov8" title="1">return nil</span>
 }
+
+func (r *CourseRepository) CreateCourseFeedback(courseID string, feedback model.CourseFeedback) (*model.CourseFeedback, error) <span class="cov8" title="1">{
+        feedback.ID = primitive.NewObjectID()
+
+        course, err := r.GetCourseById(courseID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">if course.Feedback == nil </span><span class="cov0" title="0">{
+                course.Feedback = []model.CourseFeedback{}
+        }</span>
+
+        <span class="cov8" title="1">course.Feedback = append(course.Feedback, feedback)
+
+        _, err = r.UpdateCourse(course.ID.Hex(), *course)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return &amp;feedback, nil</span>
+}
+
+func (r *CourseRepository) matchesFeedbackFilters(feedback *model.CourseFeedback, request schemas.GetCourseFeedbackRequest) bool <span class="cov8" title="1">{
+        // Filter by feedback type
+        if request.FeedbackType != "" &amp;&amp; feedback.FeedbackType != request.FeedbackType </span><span class="cov8" title="1">{
+                return false
+        }</span>
+
+        // Filter by score range
+        <span class="cov8" title="1">if request.StartScore != 0 &amp;&amp; feedback.Score &lt; request.StartScore </span><span class="cov8" title="1">{
+                return false
+        }</span>
+        <span class="cov8" title="1">if request.EndScore != 0 &amp;&amp; feedback.Score &gt; request.EndScore </span><span class="cov0" title="0">{
+                return false
+        }</span>
+
+        // Filter by date range
+        <span class="cov8" title="1">if !request.StartDate.IsZero() &amp;&amp; feedback.CreatedAt.Before(request.StartDate) </span><span class="cov0" title="0">{
+                return false
+        }</span>
+        <span class="cov8" title="1">if !request.EndDate.IsZero() &amp;&amp; feedback.CreatedAt.After(request.EndDate) </span><span class="cov0" title="0">{
+                return false
+        }</span>
+
+        <span class="cov8" title="1">return true</span>
+}
+
+func (r *CourseRepository) GetCourseFeedback(courseID string, getCourseFeedbackRequest schemas.GetCourseFeedbackRequest) ([]*model.CourseFeedback, error) <span class="cov8" title="1">{
+        // Convert courseID to ObjectID
+        objectId, err := primitive.ObjectIDFromHex(courseID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.New("invalid course ID format: " + err.Error())
+        }</span>
+
+        // Get the course document
+        <span class="cov8" title="1">var course model.Course
+        err = r.courseCollection.FindOne(context.TODO(), bson.M{"_id": objectId}).Decode(&amp;course)
+        if err != nil </span><span class="cov0" title="0">{
+                if err == mongo.ErrNoDocuments </span><span class="cov0" title="0">{
+                        return nil, errors.New("course not found")
+                }</span>
+                <span class="cov0" title="0">return nil, errors.New("error getting course: " + err.Error())</span>
+        }
+
+        // If course has no feedback, return empty slice
+        <span class="cov8" title="1">if len(course.Feedback) == 0 </span><span class="cov8" title="1">{
+                return []*model.CourseFeedback{}, nil
+        }</span>
+
+        // Apply filters to the feedback
+        <span class="cov8" title="1">filteredFeedbacks := []*model.CourseFeedback{}
+        for _, feedback := range course.Feedback </span><span class="cov8" title="1">{
+                if r.matchesFeedbackFilters(&amp;feedback, getCourseFeedbackRequest) </span><span class="cov8" title="1">{
+                        // Create a copy to avoid pointer issues
+                        feedbackCopy := feedback
+                        filteredFeedbacks = append(filteredFeedbacks, &amp;feedbackCopy)
+                }</span>
+        }
+
+        <span class="cov8" title="1">return filteredFeedbacks, nil</span>
+}
 </pre>
 		
-		<pre class="file" id="file12" style="display: none">package repository
+		<pre class="file" id="file14" style="display: none">package repository
 
 import (
         "context"
         "courses-service/src/model"
+        "courses-service/src/schemas"
+        "fmt"
         "log/slog"
 
         "go.mongodb.org/mongo-driver/bson"
@@ -3341,9 +4659,177 @@ func (r *EnrollmentRepository) DeleteEnrollment(studentID string, course *model.
         }</span>
         <span class="cov8" title="1">return nil</span>
 }
+
+func (r *EnrollmentRepository) SetFavouriteCourse(studentID, courseID string) error <span class="cov8" title="1">{
+        filter := bson.M{
+                "student_id": studentID,
+                "course_id":  courseID,
+        }
+
+        update := bson.M{
+                "$set": bson.M{
+                        "favourite": true,
+                },
+        }
+
+        res, err := r.enrollmentCollection.UpdateOne(context.TODO(), filter, update)
+        if res.MatchedCount == 0 </span><span class="cov8" title="1">{
+                return fmt.Errorf("enrollment not found for student %s in course %s", studentID, courseID)
+        }</span>
+        <span class="cov8" title="1">if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("error setting favourite course for student %s in course %s", studentID, courseID)
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (r *EnrollmentRepository) UnsetFavouriteCourse(studentID, courseID string) error <span class="cov8" title="1">{
+        filter := bson.M{
+                "student_id": studentID,
+                "course_id":  courseID,
+        }
+
+        update := bson.M{
+                "$set": bson.M{
+                        "favourite": false,
+                },
+        }
+
+        res, err := r.enrollmentCollection.UpdateOne(context.TODO(), filter, update)
+        if res.MatchedCount == 0 </span><span class="cov8" title="1">{
+                return fmt.Errorf("enrollment not found for student %s in course %s", studentID, courseID)
+        }</span>
+        <span class="cov8" title="1">if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("error unsetting favourite course for student %s in course %s", studentID, courseID)
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (r *EnrollmentRepository) GetEnrollmentByStudentIdAndCourseId(studentID, courseID string) (*model.Enrollment, error) <span class="cov8" title="1">{
+        filter := bson.M{
+                "student_id": studentID,
+                "course_id":  courseID,
+        }
+
+        var enrollment model.Enrollment
+        err := r.enrollmentCollection.FindOne(context.TODO(), filter).Decode(&amp;enrollment)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return &amp;enrollment, nil</span>
+}
+
+func (r *EnrollmentRepository) GetEnrollmentsByStudentId(studentID string) ([]*model.Enrollment, error) <span class="cov8" title="1">{
+        filter := bson.M{
+                "student_id": studentID,
+        }
+
+        cursor, err := r.enrollmentCollection.Find(context.TODO(), filter)
+        if err != nil </span><span class="cov0" title="0">{
+                if err == mongo.ErrNoDocuments </span><span class="cov0" title="0">{
+                        return []*model.Enrollment{}, nil
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+        <span class="cov8" title="1">defer cursor.Close(context.TODO())
+
+        var enrollments []*model.Enrollment
+        if err := cursor.All(context.TODO(), &amp;enrollments); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return enrollments, nil</span>
+}
+
+func (r *EnrollmentRepository) CreateStudentFeedback(feedbackRequest model.StudentFeedback, enrollmentID string) error <span class="cov8" title="1">{
+        feedbackRequest.ID = primitive.NewObjectID()
+
+        // Convert string ID to ObjectID
+        objID, err := primitive.ObjectIDFromHex(enrollmentID)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("invalid enrollment ID: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">_, err = r.enrollmentCollection.UpdateOne(context.TODO(), bson.M{"_id": objID}, bson.M{"$push": bson.M{"feedback": feedbackRequest}})
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (r *EnrollmentRepository) matchesFeedbackFilters(feedback *model.StudentFeedback, request schemas.GetFeedbackByStudentIdRequest) bool <span class="cov8" title="1">{
+        // Filter by feedback type
+        if request.FeedbackType != "" &amp;&amp; feedback.FeedbackType != request.FeedbackType </span><span class="cov8" title="1">{
+                return false
+        }</span>
+
+        // Filter by score range
+        <span class="cov8" title="1">if request.StartScore != 0 &amp;&amp; feedback.Score &lt; request.StartScore </span><span class="cov8" title="1">{
+                return false
+        }</span>
+        <span class="cov8" title="1">if request.EndScore != 0 &amp;&amp; feedback.Score &gt; request.EndScore </span><span class="cov0" title="0">{
+                return false
+        }</span>
+
+        // Filter by date range
+        <span class="cov8" title="1">if !request.StartDate.IsZero() &amp;&amp; feedback.CreatedAt.Before(request.StartDate) </span><span class="cov8" title="1">{
+                return false
+        }</span>
+        <span class="cov8" title="1">if !request.EndDate.IsZero() &amp;&amp; feedback.CreatedAt.After(request.EndDate) </span><span class="cov0" title="0">{
+                return false
+        }</span>
+
+        <span class="cov8" title="1">return true</span>
+}
+
+func (r *EnrollmentRepository) GetFeedbackByStudentId(studentID string, getFeedbackByStudentIdRequest schemas.GetFeedbackByStudentIdRequest) ([]*model.StudentFeedback, error) <span class="cov8" title="1">{
+        // Build base filter for enrollments of the student
+        filter := bson.M{
+                "student_id": studentID,
+                "feedback":   bson.M{"$exists": true, "$ne": []interface{}{}}, // Must have non-empty feedback array
+        }
+
+        // Add course filter if specified
+        if getFeedbackByStudentIdRequest.CourseID != "" </span><span class="cov8" title="1">{
+                filter["course_id"] = getFeedbackByStudentIdRequest.CourseID
+        }</span>
+
+        // Find all enrollments for this student
+        <span class="cov8" title="1">cursor, err := r.enrollmentCollection.Find(context.TODO(), filter)
+        if err != nil </span><span class="cov0" title="0">{
+                return []*model.StudentFeedback{}, nil // Return empty slice on error instead of nil
+        }</span>
+        <span class="cov8" title="1">defer cursor.Close(context.TODO())
+
+        var enrollments []*model.Enrollment
+        if err := cursor.All(context.TODO(), &amp;enrollments); err != nil </span><span class="cov0" title="0">{
+                return []*model.StudentFeedback{}, nil // Return empty slice on error instead of nil
+        }</span>
+
+        // Extract and filter feedbacks from enrollments
+        <span class="cov8" title="1">var allFeedbacks []*model.StudentFeedback
+        for _, enrollment := range enrollments </span><span class="cov8" title="1">{
+                for _, feedback := range enrollment.Feedback </span><span class="cov8" title="1">{
+                        // Apply feedback filters
+                        if r.matchesFeedbackFilters(&amp;feedback, getFeedbackByStudentIdRequest) </span><span class="cov8" title="1">{
+                                // Create a copy to avoid pointer issues
+                                feedbackCopy := feedback
+                                allFeedbacks = append(allFeedbacks, &amp;feedbackCopy)
+                        }</span>
+                }
+        }
+
+        // Ensure we always return a non-nil slice
+        <span class="cov8" title="1">if allFeedbacks == nil </span><span class="cov8" title="1">{
+                allFeedbacks = []*model.StudentFeedback{}
+        }</span>
+
+        <span class="cov8" title="1">return allFeedbacks, nil</span>
+}
 </pre>
 		
-		<pre class="file" id="file13" style="display: none">package repository
+		<pre class="file" id="file15" style="display: none">package repository
 
 import (
         "context"
@@ -3656,7 +5142,7 @@ func (r *ModuleRepository) GetModuleByOrder(courseID string, order int) (*model.
 }
 </pre>
 		
-		<pre class="file" id="file14" style="display: none">package repository
+		<pre class="file" id="file16" style="display: none">package repository
 
 import (
         "context"
@@ -3678,85 +5164,86 @@ func NewMongoSubmissionRepository(db *mongo.Database) SubmissionRepositoryInterf
         }
 }</span>
 
-func (r *MongoSubmissionRepository) Create(ctx context.Context, submission *model.Submission) error <span class="cov0" title="0">{
+func (r *MongoSubmissionRepository) Create(ctx context.Context, submission *model.Submission) error <span class="cov8" title="1">{
         result, err := r.collection.InsertOne(ctx, submission)
         if err != nil </span><span class="cov0" title="0">{
                 return err
         }</span>
-        <span class="cov0" title="0">submission.ID = result.InsertedID.(primitive.ObjectID)
+        <span class="cov8" title="1">submission.ID = result.InsertedID.(primitive.ObjectID)
         return nil</span>
 }
 
-func (r *MongoSubmissionRepository) Update(ctx context.Context, submission *model.Submission) error <span class="cov0" title="0">{
+func (r *MongoSubmissionRepository) Update(ctx context.Context, submission *model.Submission) error <span class="cov8" title="1">{
         filter := bson.M{"_id": submission.ID}
         _, err := r.collection.ReplaceOne(ctx, filter, submission)
         return err
 }</span>
 
-func (r *MongoSubmissionRepository) GetByID(ctx context.Context, id string) (*model.Submission, error) <span class="cov0" title="0">{
+func (r *MongoSubmissionRepository) GetByID(ctx context.Context, id string) (*model.Submission, error) <span class="cov8" title="1">{
         objectID, err := primitive.ObjectIDFromHex(id)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">var submission model.Submission
+        <span class="cov8" title="1">var submission model.Submission
         err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&amp;submission)
-        if err != nil </span><span class="cov0" title="0">{
-                if err == mongo.ErrNoDocuments </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
+                if err == mongo.ErrNoDocuments </span><span class="cov8" title="1">{
                         return nil, nil
                 }</span>
                 <span class="cov0" title="0">return nil, err</span>
         }
-        <span class="cov0" title="0">return &amp;submission, nil</span>
+        <span class="cov8" title="1">return &amp;submission, nil</span>
 }
 
-func (r *MongoSubmissionRepository) GetByAssignmentAndStudent(ctx context.Context, assignmentID, studentUUID string) (*model.Submission, error) <span class="cov0" title="0">{
+func (r *MongoSubmissionRepository) GetByAssignmentAndStudent(ctx context.Context, assignmentID, studentUUID string) (*model.Submission, error) <span class="cov8" title="1">{
         var submission model.Submission
         err := r.collection.FindOne(ctx, bson.M{
                 "assignment_id": assignmentID,
                 "student_uuid":  studentUUID,
         }).Decode(&amp;submission)
-        if err != nil </span><span class="cov0" title="0">{
-                if err == mongo.ErrNoDocuments </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
+                if err == mongo.ErrNoDocuments </span><span class="cov8" title="1">{
                         return nil, nil
                 }</span>
                 <span class="cov0" title="0">return nil, err</span>
         }
-        <span class="cov0" title="0">return &amp;submission, nil</span>
+        <span class="cov8" title="1">return &amp;submission, nil</span>
 }
 
-func (r *MongoSubmissionRepository) GetByAssignment(ctx context.Context, assignmentID string) ([]model.Submission, error) <span class="cov0" title="0">{
+func (r *MongoSubmissionRepository) GetByAssignment(ctx context.Context, assignmentID string) ([]model.Submission, error) <span class="cov8" title="1">{
         cursor, err := r.collection.Find(ctx, bson.M{"assignment_id": assignmentID})
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
-        <span class="cov0" title="0">defer cursor.Close(ctx)
+        <span class="cov8" title="1">defer cursor.Close(ctx)
 
-        var submissions []model.Submission
+        var submissions []model.Submission = make([]model.Submission, 0)
         if err = cursor.All(ctx, &amp;submissions); err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
-        <span class="cov0" title="0">return submissions, nil</span>
+        <span class="cov8" title="1">return submissions, nil</span>
 }
 
-func (r *MongoSubmissionRepository) GetByStudent(ctx context.Context, studentUUID string) ([]model.Submission, error) <span class="cov0" title="0">{
+func (r *MongoSubmissionRepository) GetByStudent(ctx context.Context, studentUUID string) ([]model.Submission, error) <span class="cov8" title="1">{
         cursor, err := r.collection.Find(ctx, bson.M{"student_uuid": studentUUID})
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
-        <span class="cov0" title="0">defer cursor.Close(ctx)
+        <span class="cov8" title="1">defer cursor.Close(ctx)
 
-        var submissions []model.Submission
+        var submissions []model.Submission = make([]model.Submission, 0)
         if err = cursor.All(ctx, &amp;submissions); err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
-        <span class="cov0" title="0">return submissions, nil</span>
+        <span class="cov8" title="1">return submissions, nil</span>
 }
 </pre>
 		
-		<pre class="file" id="file15" style="display: none">package router
+		<pre class="file" id="file17" style="display: none">package router
 
 import (
+        "courses-service/src/ai"
         "courses-service/src/config"
         "courses-service/src/controller"
         "courses-service/src/database"
@@ -3803,6 +5290,7 @@ func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseControl
         r.POST("/courses", controller.CreateCourse)
         r.GET("/courses/teacher/:teacherId", controller.GetCourseByTeacherId)
         r.GET("/courses/student/:studentId", controller.GetCoursesByStudentId)
+        r.GET("/courses/student/:studentId/favourite", controller.GetFavouriteCourses)
         r.GET("/courses/user/:userId", controller.GetCoursesByUserId)
         r.GET("/courses/title/:title", controller.GetCourseByTitle)
         r.GET("/courses/:id", controller.GetCourseById)
@@ -3810,6 +5298,9 @@ func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseControl
         r.PUT("/courses/:id", controller.UpdateCourse)
         r.POST("/courses/:id/aux-teacher/add", controller.AddAuxTeacherToCourse)
         r.DELETE("/courses/:id/aux-teacher/remove", controller.RemoveAuxTeacherFromCourse)
+        r.POST("/courses/:id/feedback", controller.CreateCourseFeedback)
+        r.GET("/courses/:id/feedback", controller.GetCourseFeedback)
+        r.GET("/courses/:id/feedback/summary", controller.GetCourseFeedbackSummary)
 }</span>
 
 func InitializeModulesRoutes(r *gin.Engine, controller *controller.ModuleController) <span class="cov8" title="1">{
@@ -3840,6 +5331,11 @@ func InitializeSubmissionRoutes(r *gin.Engine, controller *controller.Submission
         studentAuthGroup.POST("/assignments/:assignmentId/submissions/:id/submit", controller.SubmitSubmission)
         studentAuthGroup.GET("/students/:studentUUID/submissions", controller.GetSubmissionsByStudent)
 
+        // Aplicar el middleware de autenticación de docentes para calificar
+        teacherAuthGroup := r.Group("")
+        teacherAuthGroup.Use(middleware.TeacherAuth())
+        teacherAuthGroup.PUT("/assignments/:assignmentId/submissions/:id/grade", controller.GradeSubmission)
+
         // Esta ruta no requiere autenticación de estudiante
         r.GET("/assignments/:assignmentId/submissions", controller.GetSubmissionsByAssignment)
 }</span>
@@ -3848,6 +5344,11 @@ func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.Enrollmen
         r.GET("/courses/:id/enrollments", controller.GetEnrollmentsByCourseId)
         r.POST("/courses/:id/enroll", controller.EnrollStudent)
         r.DELETE("/courses/:id/unenroll", controller.UnenrollStudent)
+        r.POST("/courses/:id/favourite", controller.SetFavouriteCourse)
+        r.DELETE("/courses/:id/favourite", controller.UnsetFavouriteCourse)
+        r.POST("/courses/:id/student-feedback", controller.CreateFeedback)
+        r.GET("/feedback/student/:id", controller.GetFeedbackByStudentId)
+        r.GET("/feedback/student/:id/summary", controller.GetStudentFeedbackSummary)
 }</span>
 
 func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
@@ -3863,6 +5364,8 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
 
         <span class="cov8" title="1">slog.Debug("Connected to database")
 
+        aiClient := ai.NewAiClient(config)
+
         courseRepo := repository.NewCourseRepository(dbClient, config.DBName)
         enrollmentRepo := repository.NewEnrollmentRepository(dbClient, config.DBName, courseRepo)
         assignmentRepository := repository.NewAssignmentRepository(dbClient, config.DBName)
@@ -3872,11 +5375,11 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
         courseService := service.NewCourseService(courseRepo, enrollmentRepo)
         enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
         assignmentService := service.NewAssignmentService(assignmentRepository, courseService)
-        submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository)
+        submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository, courseService)
         moduleService := service.NewModuleService(moduleRepository)
 
-        courseController := controller.NewCourseController(courseService)
-        enrollmentController := controller.NewEnrollmentController(enrollmentService)
+        courseController := controller.NewCourseController(courseService, aiClient)
+        enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient)
         assignmentsController := controller.NewAssignmentsController(assignmentService)
         submissionController := controller.NewSubmissionController(submissionService) // TODO change this when interface is added
         moduleController := controller.NewModuleController(moduleService)
@@ -3902,7 +5405,7 @@ func InitializeRoutes(
 }</span>
 </pre>
 		
-		<pre class="file" id="file16" style="display: none">package service
+		<pre class="file" id="file18" style="display: none">package service
 
 import (
         "context"
@@ -3922,28 +5425,28 @@ func NewAssignmentService(assignmentRepository repository.AssignmentRepositoryIn
         return &amp;AssignmentService{assignmentRepository: assignmentRepository, courseService: courseService}
 }</span>
 
-func (s *AssignmentService) GetAssignments() ([]*model.Assignment, error) <span class="cov0" title="0">{
+func (s *AssignmentService) GetAssignments() ([]*model.Assignment, error) <span class="cov8" title="1">{
         return s.assignmentRepository.GetAssignments()
 }</span>
 
-func (s *AssignmentService) GetAssignmentById(id string) (*model.Assignment, error) <span class="cov0" title="0">{
-        if id == "" </span><span class="cov0" title="0">{
+func (s *AssignmentService) GetAssignmentById(id string) (*model.Assignment, error) <span class="cov8" title="1">{
+        if id == "" </span><span class="cov8" title="1">{
                 return nil, errors.New("id is required")
         }</span>
-        <span class="cov0" title="0">return s.assignmentRepository.GetByID(context.TODO(), id)</span>
+        <span class="cov8" title="1">return s.assignmentRepository.GetByID(context.TODO(), id)</span>
 }
 
-func (s *AssignmentService) CreateAssignment(c schemas.CreateAssignmentRequest) (*model.Assignment, error) <span class="cov0" title="0">{
+func (s *AssignmentService) CreateAssignment(c schemas.CreateAssignmentRequest) (*model.Assignment, error) <span class="cov8" title="1">{
         // Validate course exists
         course, err := s.courseService.GetCourseById(c.CourseID)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
-        <span class="cov0" title="0">if course == nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if course == nil </span><span class="cov8" title="1">{
                 return nil, errors.New("course not found")
         }</span>
 
-        <span class="cov0" title="0">assignment := model.Assignment{
+        <span class="cov8" title="1">assignment := model.Assignment{
                 Title:        c.Title,
                 Description:  c.Description,
                 Instructions: c.Instructions,
@@ -3962,21 +5465,21 @@ func (s *AssignmentService) CreateAssignment(c schemas.CreateAssignmentRequest) 
         return s.assignmentRepository.CreateAssignment(assignment)</span>
 }
 
-func (s *AssignmentService) UpdateAssignment(id string, updateAssignmentRequest schemas.UpdateAssignmentRequest) (*model.Assignment, error) <span class="cov0" title="0">{
-        if id == "" </span><span class="cov0" title="0">{
+func (s *AssignmentService) UpdateAssignment(id string, updateAssignmentRequest schemas.UpdateAssignmentRequest) (*model.Assignment, error) <span class="cov8" title="1">{
+        if id == "" </span><span class="cov8" title="1">{
                 return nil, errors.New("id is required")
         }</span>
 
         // Check if assignment exists
-        <span class="cov0" title="0">existingAssignment, err := s.assignmentRepository.GetByID(context.TODO(), id)
-        if err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">existingAssignment, err := s.assignmentRepository.GetByID(context.TODO(), id)
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
-        <span class="cov0" title="0">if existingAssignment == nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if existingAssignment == nil </span><span class="cov8" title="1">{
                 return nil, errors.New("assignment not found")
         }</span>
 
-        <span class="cov0" title="0">assignment := model.Assignment{
+        <span class="cov8" title="1">assignment := model.Assignment{
                 Title:        updateAssignmentRequest.Title,
                 Description:  updateAssignmentRequest.Description,
                 Instructions: updateAssignmentRequest.Instructions,
@@ -3994,22 +5497,22 @@ func (s *AssignmentService) UpdateAssignment(id string, updateAssignmentRequest 
         return s.assignmentRepository.UpdateAssignment(id, assignment)</span>
 }
 
-func (s *AssignmentService) DeleteAssignment(id string) error <span class="cov0" title="0">{
-        if id == "" </span><span class="cov0" title="0">{
+func (s *AssignmentService) DeleteAssignment(id string) error <span class="cov8" title="1">{
+        if id == "" </span><span class="cov8" title="1">{
                 return errors.New("id is required")
         }</span>
-        <span class="cov0" title="0">return s.assignmentRepository.DeleteAssignment(id)</span>
+        <span class="cov8" title="1">return s.assignmentRepository.DeleteAssignment(id)</span>
 }
 
-func (s *AssignmentService) GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error) <span class="cov0" title="0">{
-        if courseId == "" </span><span class="cov0" title="0">{
+func (s *AssignmentService) GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error) <span class="cov8" title="1">{
+        if courseId == "" </span><span class="cov8" title="1">{
                 return nil, errors.New("course id is required")
         }</span>
-        <span class="cov0" title="0">return s.assignmentRepository.GetAssignmentsByCourseId(courseId)</span>
+        <span class="cov8" title="1">return s.assignmentRepository.GetAssignmentsByCourseId(courseId)</span>
 }
 </pre>
 		
-		<pre class="file" id="file17" style="display: none">package service
+		<pre class="file" id="file19" style="display: none">package service
 
 import (
         "courses-service/src/model"
@@ -4043,6 +5546,9 @@ func (s *CourseService) CreateCourse(c schemas.CreateCourseRequest) (*model.Cour
                 Description: c.Description,
                 TeacherUUID: c.TeacherID,
                 Capacity:    c.Capacity,
+                Modules:     []model.Module{},
+                AuxTeachers: []string{},
+                Feedback:    []model.CourseFeedback{},
                 CreatedAt:   time.Now(),
                 UpdatedAt:   time.Now(),
                 StartDate:   c.StartDate,
@@ -4169,14 +5675,89 @@ func (s *CourseService) RemoveAuxTeacherFromCourse(id string, titularTeacherId s
         }</span>
         <span class="cov8" title="1">return s.courseRepository.RemoveAuxTeacherFromCourse(course, auxTeacherId)</span>
 }
+
+func (s *CourseService) GetFavouriteCourses(studentId string) ([]*model.Course, error) <span class="cov8" title="1">{
+        if studentId == "" </span><span class="cov8" title="1">{
+                return nil, errors.New("studentId is required")
+        }</span>
+
+        <span class="cov8" title="1">enrollments, err := s.enrollmentRepository.GetEnrollmentsByStudentId(studentId)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">courses, err := s.courseRepository.GetCoursesByStudentId(studentId)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">favouriteCourses := make([]*model.Course, 0)
+
+        for _, course := range courses </span><span class="cov8" title="1">{
+                for _, enrollment := range enrollments </span><span class="cov8" title="1">{
+                        if enrollment.CourseID == course.ID.Hex() &amp;&amp; enrollment.Favourite </span><span class="cov8" title="1">{
+                                favouriteCourses = append(favouriteCourses, course)
+                        }</span>
+                }
+        }
+        <span class="cov8" title="1">return favouriteCourses, nil</span>
+}
+
+func (s *CourseService) CreateCourseFeedback(courseId string, feedbackRequest schemas.CreateCourseFeedbackRequest) (*model.CourseFeedback, error) <span class="cov8" title="1">{
+        course, err := s.courseRepository.GetCourseById(courseId)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">if feedbackRequest.Score &lt; 1 || feedbackRequest.Score &gt; 5 </span><span class="cov8" title="1">{
+                return nil, errors.New("score must be between 1 and 5")
+        }</span>
+
+        // Check if the student is the teacher or an aux teacher (should not be allowed to give feedback)
+        <span class="cov8" title="1">if course.TeacherUUID == feedbackRequest.StudentUUID || slices.Contains(course.AuxTeachers, feedbackRequest.StudentUUID) </span><span class="cov8" title="1">{
+                return nil, errors.New("the teacher cannot give feedback to his own course")
+        }</span>
+
+        <span class="cov8" title="1">if enrolled, err := s.enrollmentRepository.IsEnrolled(feedbackRequest.StudentUUID, courseId); err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span> else<span class="cov8" title="1"> if !enrolled </span><span class="cov8" title="1">{
+                return nil, errors.New("the student is not enrolled in the course")
+        }</span>
+
+        <span class="cov8" title="1">feedback := model.CourseFeedback{
+                StudentUUID:  feedbackRequest.StudentUUID,
+                FeedbackType: feedbackRequest.FeedbackType,
+                Score:        feedbackRequest.Score,
+                Feedback:     feedbackRequest.Feedback,
+                CreatedAt:    time.Now(),
+        }
+
+        return s.courseRepository.CreateCourseFeedback(courseId, feedback)</span>
+}
+
+func (s *CourseService) GetCourseFeedback(courseId string, getCourseFeedbackRequest schemas.GetCourseFeedbackRequest) ([]*model.CourseFeedback, error) <span class="cov8" title="1">{
+        _, err := s.courseRepository.GetCourseById(courseId)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.New("course not found: " + err.Error())
+        }</span>
+
+        <span class="cov8" title="1">feedback, err := s.courseRepository.GetCourseFeedback(courseId, getCourseFeedbackRequest)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.New("error getting course feedback: " + err.Error())
+        }</span>
+
+        <span class="cov8" title="1">return feedback, nil</span>
+}
 </pre>
 		
-		<pre class="file" id="file18" style="display: none">package service
+		<pre class="file" id="file20" style="display: none">package service
 
 import (
         "courses-service/src/model"
         "courses-service/src/repository"
+        "courses-service/src/schemas"
         "fmt"
+        "slices"
         "time"
 
         "go.mongodb.org/mongo-driver/mongo"
@@ -4245,6 +5826,7 @@ func (s *EnrollmentService) EnrollStudent(studentID, courseID string) error <spa
                 EnrolledAt: time.Now(),
                 Status:     model.EnrollmentStatusActive,
                 UpdatedAt:  time.Now(),
+                Feedback:   []model.StudentFeedback{},
         }
 
         err = s.enrollmentRepository.CreateEnrollment(enrollment, course)
@@ -4284,9 +5866,131 @@ func (s *EnrollmentService) UnenrollStudent(studentID, courseID string) error <s
 
         <span class="cov8" title="1">return nil</span>
 }
+
+func (s *EnrollmentService) SetFavouriteCourse(studentID, courseID string) error <span class="cov8" title="1">{
+        if studentID == "" || courseID == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf("student ID and course ID are required")
+        }</span>
+
+        <span class="cov8" title="1">course, err := s.courseRepository.GetCourseById(courseID)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("course %s not found for favourite course", courseID)
+        }</span>
+
+        <span class="cov8" title="1">if course.TeacherUUID == studentID </span><span class="cov8" title="1">{
+                return fmt.Errorf("teacher %s cannot set favourite course %s", studentID, courseID)
+        }</span>
+
+        <span class="cov8" title="1">enrolled, err := s.enrollmentRepository.IsEnrolled(studentID, courseID)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("error checking if student %s is enrolled in course %s", studentID, courseID)
+        }</span>
+        <span class="cov8" title="1">if !enrolled </span><span class="cov8" title="1">{
+                return fmt.Errorf("student %s is not enrolled in course %s", studentID, courseID)
+        }</span>
+
+        <span class="cov8" title="1">err = s.enrollmentRepository.SetFavouriteCourse(studentID, courseID)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("error setting favourite course for student %s in course %s", studentID, courseID)
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (s *EnrollmentService) UnsetFavouriteCourse(studentID, courseID string) error <span class="cov8" title="1">{
+        if studentID == "" || courseID == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf("student ID and course ID are required")
+        }</span>
+
+        <span class="cov8" title="1">course, err := s.courseRepository.GetCourseById(courseID)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("course %s not found for unset favourite course", courseID)
+        }</span>
+
+        <span class="cov8" title="1">if course.TeacherUUID == studentID </span><span class="cov8" title="1">{
+                return fmt.Errorf("teacher %s cannot unset favourite course %s", studentID, courseID)
+        }</span>
+
+        <span class="cov8" title="1">enrolled, err := s.enrollmentRepository.IsEnrolled(studentID, courseID)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("error checking if student %s is enrolled in course %s", studentID, courseID)
+        }</span>
+        <span class="cov8" title="1">if !enrolled </span><span class="cov8" title="1">{
+                return fmt.Errorf("student %s is not enrolled in course %s", studentID, courseID)
+        }</span>
+
+        <span class="cov8" title="1">err = s.enrollmentRepository.UnsetFavouriteCourse(studentID, courseID)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("error unsetting favourite course for student %s in course %s", studentID, courseID)
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (s *EnrollmentService) GetEnrollmentByStudentIdAndCourseId(studentID, courseID string) (*model.Enrollment, error) <span class="cov8" title="1">{
+        if studentID == "" || courseID == "" </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("student ID and course ID are required")
+        }</span>
+
+        <span class="cov8" title="1">enrollment, err := s.enrollmentRepository.GetEnrollmentByStudentIdAndCourseId(studentID, courseID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("error getting enrollment by student ID and course ID: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">return enrollment, nil</span>
+}
+
+func (s *EnrollmentService) CreateStudentFeedback(feedbackRequest schemas.CreateStudentFeedbackRequest) error <span class="cov8" title="1">{
+        if feedbackRequest.Score &lt; 1 || feedbackRequest.Score &gt; 5 </span><span class="cov8" title="1">{
+                return fmt.Errorf("score must be between 1 and 5, not %d", feedbackRequest.Score)
+        }</span>
+
+        <span class="cov8" title="1">enrollment, err := s.GetEnrollmentByStudentIdAndCourseId(feedbackRequest.StudentUUID, feedbackRequest.CourseID)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">course, err := s.courseRepository.GetCourseById(feedbackRequest.CourseID)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("error getting course by ID: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">if course.TeacherUUID != feedbackRequest.TeacherUUID &amp;&amp; !slices.Contains(course.AuxTeachers, feedbackRequest.TeacherUUID) </span><span class="cov8" title="1">{
+                return fmt.Errorf("teacher %s is not the teacher or aux teacher of course %s", feedbackRequest.TeacherUUID, feedbackRequest.CourseID)
+        }</span>
+
+        <span class="cov8" title="1">feedback := model.StudentFeedback{
+                StudentUUID:  feedbackRequest.StudentUUID,
+                TeacherUUID:  feedbackRequest.TeacherUUID,
+                FeedbackType: feedbackRequest.FeedbackType,
+                Score:        feedbackRequest.Score,
+                Feedback:     feedbackRequest.Feedback,
+                CreatedAt:    time.Now(),
+        }
+
+        err = s.enrollmentRepository.CreateStudentFeedback(feedback, enrollment.ID.Hex())
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("error creating student feedback: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (s *EnrollmentService) GetFeedbackByStudentId(studentID string, getFeedbackByStudentIdRequest schemas.GetFeedbackByStudentIdRequest) ([]*model.StudentFeedback, error) <span class="cov8" title="1">{
+        if studentID == "" </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("student ID is required")
+        }</span>
+
+        <span class="cov8" title="1">feedback, err := s.enrollmentRepository.GetFeedbackByStudentId(studentID, getFeedbackByStudentIdRequest)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("error getting feedback by student ID: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">return feedback, nil</span>
+}
 </pre>
 		
-		<pre class="file" id="file19" style="display: none">package service
+		<pre class="file" id="file21" style="display: none">package service
 
 import (
         "courses-service/src/model"
@@ -4305,82 +6009,83 @@ func NewModuleService(moduleRepository repository.ModuleRepositoryInterface) *Mo
         return &amp;ModuleService{moduleRepository: moduleRepository}
 }</span>
 
-func (s *ModuleService) CreateModule(module schemas.CreateModuleRequest) (*model.Module, error) <span class="cov0" title="0">{
+func (s *ModuleService) CreateModule(module schemas.CreateModuleRequest) (*model.Module, error) <span class="cov8" title="1">{
         fmt.Printf("Creating module: %v\n", module)
-        if _, err := s.moduleRepository.GetModuleByName(module.CourseID, module.Title); err == nil </span><span class="cov0" title="0">{
+        if _, err := s.moduleRepository.GetModuleByName(module.CourseID, module.Title); err == nil </span><span class="cov8" title="1">{
                 return nil, fmt.Errorf("module with title %s already exists in course %s", module.Title, module.CourseID)
         }</span>
 
-        <span class="cov0" title="0">moduleModel := model.Module{
+        <span class="cov8" title="1">moduleModel := model.Module{
                 Title:       module.Title,
                 Description: module.Description,
                 Content:     module.Content,
         }
 
         order, err := s.moduleRepository.GetNextModuleOrder(module.CourseID)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
-        <span class="cov0" title="0">moduleModel.Order = order
+        <span class="cov8" title="1">moduleModel.Order = order
 
         return s.moduleRepository.CreateModule(module.CourseID, moduleModel)</span>
 }
 
-func (s *ModuleService) GetModulesByCourseId(courseId string) ([]model.Module, error) <span class="cov0" title="0">{
+func (s *ModuleService) GetModulesByCourseId(courseId string) ([]model.Module, error) <span class="cov8" title="1">{
         slog.Debug("Getting modules by course id", "courseId", courseId)
-        if courseId == "" </span><span class="cov0" title="0">{
+        if courseId == "" </span><span class="cov8" title="1">{
                 return nil, errors.New("courseId is required")
         }</span>
-        <span class="cov0" title="0">return s.moduleRepository.GetModulesByCourseId(courseId)</span>
+        <span class="cov8" title="1">return s.moduleRepository.GetModulesByCourseId(courseId)</span>
 }
 
-func (s *ModuleService) GetModuleById(id string) (*model.Module, error) <span class="cov0" title="0">{
+func (s *ModuleService) GetModuleById(id string) (*model.Module, error) <span class="cov8" title="1">{
         slog.Debug("Getting module by id", "id", id)
-        if id == "" </span><span class="cov0" title="0">{
+        if id == "" </span><span class="cov8" title="1">{
                 return nil, errors.New("module id is required")
         }</span>
-        <span class="cov0" title="0">return s.moduleRepository.GetModuleById(id)</span>
+        <span class="cov8" title="1">return s.moduleRepository.GetModuleById(id)</span>
 }
 
-func (s *ModuleService) GetModuleByOrder(courseID string, order int) (*model.Module, error) <span class="cov0" title="0">{
+func (s *ModuleService) GetModuleByOrder(courseID string, order int) (*model.Module, error) <span class="cov8" title="1">{
         slog.Debug("Getting module by order", "courseID", courseID, "order", order)
-        if courseID == "" </span><span class="cov0" title="0">{
+        if courseID == "" </span><span class="cov8" title="1">{
                 return nil, errors.New("courseId is required")
         }</span>
-        <span class="cov0" title="0">return s.moduleRepository.GetModuleByOrder(courseID, order)</span>
+        <span class="cov8" title="1">return s.moduleRepository.GetModuleByOrder(courseID, order)</span>
 }
-func (s *ModuleService) UpdateModule(id string, module model.Module) (*model.Module, error) <span class="cov0" title="0">{
+func (s *ModuleService) UpdateModule(id string, module model.Module) (*model.Module, error) <span class="cov8" title="1">{
         slog.Debug("Updating module", "id", id, "module", module)
-        if id == "" </span><span class="cov0" title="0">{
+        if id == "" </span><span class="cov8" title="1">{
                 return nil, errors.New("module id is required")
         }</span>
 
-        <span class="cov0" title="0">existingModule, err := s.moduleRepository.GetModuleByName(module.CourseID, module.Title)
-        if err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">existingModule, err := s.moduleRepository.GetModuleByName(module.CourseID, module.Title)
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
 
         // Check if the module we are updating is the same as the existing module
-        <span class="cov0" title="0">if existingModule.ID != module.ID </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if existingModule.ID != module.ID </span><span class="cov8" title="1">{
                 return nil, fmt.Errorf("module with title %s already exists in course %s", module.Title, module.CourseID)
         }</span>
 
-        <span class="cov0" title="0">return s.moduleRepository.UpdateModule(id, module)</span>
+        <span class="cov8" title="1">return s.moduleRepository.UpdateModule(id, module)</span>
 }
 
-func (s *ModuleService) DeleteModule(id string) error <span class="cov0" title="0">{
+func (s *ModuleService) DeleteModule(id string) error <span class="cov8" title="1">{
         slog.Debug("Deleting module", "id", id)
-        if id == "" </span><span class="cov0" title="0">{
+        if id == "" </span><span class="cov8" title="1">{
                 return errors.New("module id is required")
         }</span>
-        <span class="cov0" title="0">return s.moduleRepository.DeleteModule(id)</span>
+        <span class="cov8" title="1">return s.moduleRepository.DeleteModule(id)</span>
 }
 </pre>
 		
-		<pre class="file" id="file20" style="display: none">package service
+		<pre class="file" id="file22" style="display: none">package service
 
 import (
         "context"
+        "errors"
         "time"
 
         "courses-service/src/model"
@@ -4390,27 +6095,29 @@ import (
 type SubmissionService struct {
         submissionRepo repository.SubmissionRepositoryInterface
         assignmentRepo repository.AssignmentRepositoryInterface
+        courseService  CourseServiceInterface
 }
 
-func NewSubmissionService(submissionRepo repository.SubmissionRepositoryInterface, assignmentRepo repository.AssignmentRepositoryInterface) *SubmissionService <span class="cov8" title="1">{
+func NewSubmissionService(submissionRepo repository.SubmissionRepositoryInterface, assignmentRepo repository.AssignmentRepositoryInterface, courseService CourseServiceInterface) *SubmissionService <span class="cov8" title="1">{
         return &amp;SubmissionService{
                 submissionRepo: submissionRepo,
                 assignmentRepo: assignmentRepo,
+                courseService:  courseService,
         }
 }</span>
 
-func (s *SubmissionService) CreateSubmission(ctx context.Context, submission *model.Submission) error <span class="cov0" title="0">{
+func (s *SubmissionService) CreateSubmission(ctx context.Context, submission *model.Submission) error <span class="cov8" title="1">{
         // Get assignment to validate submission
         assignment, err := s.assignmentRepo.GetByID(ctx, submission.AssignmentID)
         if err != nil </span><span class="cov0" title="0">{
                 return err
         }</span>
-        <span class="cov0" title="0">if assignment == nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if assignment == nil </span><span class="cov8" title="1">{
                 return ErrAssignmentNotFound
         }</span>
 
         // Initialize submission
-        <span class="cov0" title="0">submission.CreatedAt = time.Now()
+        <span class="cov8" title="1">submission.CreatedAt = time.Now()
         submission.UpdatedAt = submission.CreatedAt
         submission.Status = model.SubmissionStatusDraft
 
@@ -4464,7 +6171,7 @@ func (s *SubmissionService) SubmitSubmission(ctx context.Context, submissionID s
         <span class="cov0" title="0">return s.submissionRepo.Update(ctx, submission)</span>
 }
 
-func (s *SubmissionService) GetSubmission(ctx context.Context, id string) (*model.Submission, error) <span class="cov0" title="0">{
+func (s *SubmissionService) GetSubmission(ctx context.Context, id string) (*model.Submission, error) <span class="cov8" title="1">{
         return s.submissionRepo.GetByID(ctx, id)
 }</span>
 
@@ -4476,18 +6183,18 @@ func (s *SubmissionService) GetSubmissionsByStudent(ctx context.Context, student
         return s.submissionRepo.GetByStudent(ctx, studentUUID)
 }</span>
 
-func (s *SubmissionService) GetOrCreateSubmission(ctx context.Context, assignmentID, studentUUID, studentName string) (*model.Submission, error) <span class="cov0" title="0">{
+func (s *SubmissionService) GetOrCreateSubmission(ctx context.Context, assignmentID, studentUUID, studentName string) (*model.Submission, error) <span class="cov8" title="1">{
         submission, err := s.submissionRepo.GetByAssignmentAndStudent(ctx, assignmentID, studentUUID)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">if submission != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if submission != nil </span><span class="cov8" title="1">{
                 return submission, nil
         }</span>
 
         // Create new submission
-        <span class="cov0" title="0">newSubmission := &amp;model.Submission{
+        <span class="cov8" title="1">newSubmission := &amp;model.Submission{
                 AssignmentID: assignmentID,
                 StudentUUID:  studentUUID,
                 StudentName:  studentName,
@@ -4501,11 +6208,69 @@ func (s *SubmissionService) GetOrCreateSubmission(ctx context.Context, assignmen
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">return newSubmission, nil</span>
+        <span class="cov8" title="1">return newSubmission, nil</span>
+}
+
+// GradeSubmission updates the score and feedback of a submission
+func (s *SubmissionService) GradeSubmission(ctx context.Context, submissionID string, score *float64, feedback string) (*model.Submission, error) <span class="cov8" title="1">{
+        submission, err := s.submissionRepo.GetByID(ctx, submissionID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">if submission == nil </span><span class="cov8" title="1">{
+                return nil, ErrSubmissionNotFound
+        }</span>
+
+        // Update submission with grading information
+        <span class="cov8" title="1">submission.Score = score
+        submission.Feedback = feedback
+        submission.UpdatedAt = time.Now()
+
+        err = s.submissionRepo.Update(ctx, submission)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return submission, nil</span>
+}
+
+// ValidateTeacherPermissions validates if a teacher can grade submissions for a given assignment
+func (s *SubmissionService) ValidateTeacherPermissions(ctx context.Context, assignmentID, teacherUUID string) error <span class="cov8" title="1">{
+        // Get assignment
+        assignment, err := s.assignmentRepo.GetByID(ctx, assignmentID)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if assignment == nil </span><span class="cov8" title="1">{
+                return ErrAssignmentNotFound
+        }</span>
+
+        // Get course
+        <span class="cov8" title="1">course, err := s.courseService.GetCourseById(assignment.CourseID)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if course == nil </span><span class="cov0" title="0">{
+                return errors.New("course not found")
+        }</span>
+
+        // Check if teacher is the main teacher
+        <span class="cov8" title="1">if course.TeacherUUID == teacherUUID </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+
+        // Check if teacher is an auxiliary teacher
+        <span class="cov8" title="1">for _, auxTeacher := range course.AuxTeachers </span><span class="cov8" title="1">{
+                if auxTeacher == teacherUUID </span><span class="cov8" title="1">{
+                        return nil
+                }</span>
+        }
+
+        <span class="cov8" title="1">return errors.New("teacher not authorized to grade this assignment")</span>
 }
 </pre>
 		
-		<pre class="file" id="file21" style="display: none">package testutil
+		<pre class="file" id="file23" style="display: none">package testutil
 
 import (
         "context"

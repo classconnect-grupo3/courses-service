@@ -32,6 +32,9 @@ func (s *CourseService) CreateCourse(c schemas.CreateCourseRequest) (*model.Cour
 		Description: c.Description,
 		TeacherUUID: c.TeacherID,
 		Capacity:    c.Capacity,
+		Modules:     []model.Module{},
+		AuxTeachers: []string{},
+		Feedback:    []model.CourseFeedback{},
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 		StartDate:   c.StartDate,
@@ -157,4 +160,77 @@ func (s *CourseService) RemoveAuxTeacherFromCourse(id string, titularTeacherId s
 		return nil, errors.New("the aux teacher is already enrolled in the course")
 	}
 	return s.courseRepository.RemoveAuxTeacherFromCourse(course, auxTeacherId)
+}
+
+func (s *CourseService) GetFavouriteCourses(studentId string) ([]*model.Course, error) {
+	if studentId == "" {
+		return nil, errors.New("studentId is required")
+	}
+
+	enrollments, err := s.enrollmentRepository.GetEnrollmentsByStudentId(studentId)
+	if err != nil {
+		return nil, err
+	}
+
+	courses, err := s.courseRepository.GetCoursesByStudentId(studentId)
+	if err != nil {
+		return nil, err
+	}
+
+	favouriteCourses := make([]*model.Course, 0)
+
+	for _, course := range courses {
+		for _, enrollment := range enrollments {
+			if enrollment.CourseID == course.ID.Hex() && enrollment.Favourite {
+				favouriteCourses = append(favouriteCourses, course)
+			}
+		}
+	}
+	return favouriteCourses, nil
+}
+
+func (s *CourseService) CreateCourseFeedback(courseId string, feedbackRequest schemas.CreateCourseFeedbackRequest) (*model.CourseFeedback, error) {
+	course, err := s.courseRepository.GetCourseById(courseId)
+	if err != nil {
+		return nil, err
+	}
+
+	if feedbackRequest.Score < 1 || feedbackRequest.Score > 5 {
+		return nil, errors.New("score must be between 1 and 5")
+	}
+
+	// Check if the student is the teacher or an aux teacher (should not be allowed to give feedback)
+	if course.TeacherUUID == feedbackRequest.StudentUUID || slices.Contains(course.AuxTeachers, feedbackRequest.StudentUUID) {
+		return nil, errors.New("the teacher cannot give feedback to his own course")
+	}
+
+	if enrolled, err := s.enrollmentRepository.IsEnrolled(feedbackRequest.StudentUUID, courseId); err != nil {
+		return nil, err
+	} else if !enrolled {
+		return nil, errors.New("the student is not enrolled in the course")
+	}
+
+	feedback := model.CourseFeedback{
+		StudentUUID:  feedbackRequest.StudentUUID,
+		FeedbackType: feedbackRequest.FeedbackType,
+		Score:        feedbackRequest.Score,
+		Feedback:     feedbackRequest.Feedback,
+		CreatedAt:    time.Now(),
+	}
+
+	return s.courseRepository.CreateCourseFeedback(courseId, feedback)
+}
+
+func (s *CourseService) GetCourseFeedback(courseId string, getCourseFeedbackRequest schemas.GetCourseFeedbackRequest) ([]*model.CourseFeedback, error) {
+	_, err := s.courseRepository.GetCourseById(courseId)
+	if err != nil {
+		return nil, errors.New("course not found: " + err.Error())
+	}
+
+	feedback, err := s.courseRepository.GetCourseFeedback(courseId, getCourseFeedbackRequest)
+	if err != nil {
+		return nil, errors.New("error getting course feedback: " + err.Error())
+	}
+
+	return feedback, nil
 }

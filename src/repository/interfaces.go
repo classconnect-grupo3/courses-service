@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"courses-service/src/model"
+	"courses-service/src/schemas"
 )
 
 type CourseRepositoryInterface interface {
@@ -17,6 +18,8 @@ type CourseRepositoryInterface interface {
 	AddAuxTeacherToCourse(course *model.Course, auxTeacherId string) (*model.Course, error)
 	RemoveAuxTeacherFromCourse(course *model.Course, auxTeacherId string) (*model.Course, error)
 	UpdateStudentsAmount(courseID string, newStudentsAmount int) error
+	CreateCourseFeedback(courseID string, feedback model.CourseFeedback) (*model.CourseFeedback, error)
+	GetCourseFeedback(courseID string, getCourseFeedbackRequest schemas.GetCourseFeedbackRequest) ([]*model.CourseFeedback, error)
 }
 
 type AssignmentRepositoryInterface interface {
@@ -33,6 +36,12 @@ type EnrollmentRepositoryInterface interface {
 	IsEnrolled(studentID, courseID string) (bool, error)
 	DeleteEnrollment(studentID string, course *model.Course) error
 	GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error)
+	SetFavouriteCourse(studentID, courseID string) error
+	UnsetFavouriteCourse(studentID, courseID string) error
+	GetEnrollmentsByStudentId(studentID string) ([]*model.Enrollment, error)
+	GetEnrollmentByStudentIdAndCourseId(studentID, courseID string) (*model.Enrollment, error)
+	CreateStudentFeedback(feedbackRequest model.StudentFeedback, enrollmentID string) error
+	GetFeedbackByStudentId(studentID string, getFeedbackByStudentIdRequest schemas.GetFeedbackByStudentIdRequest) ([]*model.StudentFeedback, error)
 }
 
 type ModuleRepositoryInterface interface {
