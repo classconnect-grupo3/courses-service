@@ -270,6 +270,14 @@ func (c *EnrollmentController) GetFeedbackByStudentId(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, feedback)
 }
 
+// @Summary Get student feedback summary
+// @Description Get student feedback summary by student ID
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param id path string true "Student ID"
+// @Success 200 {string} string "Student feedback summary"
+// @Router /feedback/student/{id}/summary [get]
 func (c *EnrollmentController) GetStudentFeedbackSummary(ctx *gin.Context) {
 	slog.Debug("Getting student feedback summary", "studentId", ctx.Param("id"))
 	studentID := ctx.Param("id")

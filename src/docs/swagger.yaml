@@ -1081,6 +1081,27 @@ paths:
       summary: Create course feedback
       tags:
       - courses
+  /courses/{id}/feedback/summary:
+    get:
+      consumes:
+      - application/json
+      description: Get course feedback summary by course ID
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Course feedback summary
+          schema:
+            type: string
+      summary: Get course feedback summary
+      tags:
+      - courses
   /courses/{id}/remove-aux-teacher:
     delete:
       consumes:
@@ -1304,6 +1325,27 @@ paths:
               $ref: '#/definitions/model.StudentFeedback'
             type: array
       summary: Get feedback by student ID
+      tags:
+      - enrollments
+  /feedback/student/{id}/summary:
+    get:
+      consumes:
+      - application/json
+      description: Get student feedback summary by student ID
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Student feedback summary
+          schema:
+            type: string
+      summary: Get student feedback summary
       tags:
       - enrollments
   /modules:

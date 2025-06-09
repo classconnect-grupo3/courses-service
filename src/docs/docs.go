@@ -1025,6 +1025,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/courses/{id}/feedback/summary": {
+            "get": {
+                "description": "Get course feedback summary by course ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Get course feedback summary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Course feedback summary",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/courses/{id}/remove-aux-teacher": {
             "delete": {
                 "description": "Remove an aux teacher from a course by ID",
@@ -1187,6 +1219,38 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/model.StudentFeedback"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/feedback/student/{id}/summary": {
+            "get": {
+                "description": "Get student feedback summary by student ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Get student feedback summary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Student ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Student feedback summary",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
