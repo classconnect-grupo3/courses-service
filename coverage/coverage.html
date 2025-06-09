@@ -59,7 +59,7 @@
 				
 				<option value="file1">courses-service/src/config/config.go (100.0%)</option>
 				
-				<option value="file2">courses-service/src/controller/assignments_controller.go (100.0%)</option>
+				<option value="file2">courses-service/src/controller/assignments_controller.go (77.8%)</option>
 				
 				<option value="file3">courses-service/src/controller/courses_controller.go (89.3%)</option>
 				
@@ -219,13 +219,13 @@ func debugString[T any](r *T) string <span class="cov0" title="0">{
 import "os"
 
 type Config struct {
-        DBUsername  string
-        DBPassword  string
-        DBName      string
-        DBURI       string
-        Host        string
-        Port        string
-        Environment string
+        DBUsername   string
+        DBPassword   string
+        DBName       string
+        DBURI        string
+        Host         string
+        Port         string
+        Environment  string
         GeminiApiKey string
 }
 
@@ -246,13 +246,18 @@ func NewConfig() *Config <span class="cov8" title="1">{
 		<pre class="file" id="file2" style="display: none">package controller
 
 import (
+        "encoding/json"
+        "log"
         "log/slog"
         "net/http"
+        "os"
+        "time"
 
         "courses-service/src/schemas"
         "courses-service/src/service"
 
         "github.com/gin-gonic/gin"
+        "github.com/rabbitmq/amqp091-go"
 )
 
 type AssignmentsController struct {
@@ -293,23 +298,84 @@ func (c *AssignmentsController) GetAssignments(ctx *gin.Context) <span class="co
 // @Success 201 {object} model.Assignment
 // @Router /assignments [post]
 func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) <span class="cov8" title="1">{
-        slog.Debug("Creating assignment")
+        log.Println("Creating assignment")
 
         var assignment schemas.CreateAssignmentRequest
         if err := ctx.ShouldBindJSON(&amp;assignment); err != nil </span><span class="cov8" title="1">{
-                slog.Error("Error binding JSON", "error", err)
+                log.Println("Error binding JSON:", err)
                 ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
                 return
         }</span>
 
         <span class="cov8" title="1">createdAssignment, err := c.service.CreateAssignment(assignment)
         if err != nil </span><span class="cov8" title="1">{
-                slog.Error("Error creating assignment", "error", err)
+                log.Println("Error creating assignment:", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov8" title="1">slog.Debug("Assignment created", "assignment", createdAssignment)
+        // 🟡 Publicar evento en RabbitMQ con amqp091-go
+        <span class="cov8" title="1">go func() </span><span class="cov8" title="1">{
+                conn, err := amqp091.Dial(os.Getenv("RABBITMQ_URL"))
+                if err != nil </span><span class="cov8" title="1">{
+                        log.Println("RabbitMQ connection error:", err)
+                        return
+                }</span>
+                <span class="cov0" title="0">defer conn.Close()
+
+                ch, err := conn.Channel()
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Println("RabbitMQ channel error:", err)
+                        return
+                }</span>
+                <span class="cov0" title="0">defer ch.Close()
+
+                _, err = ch.QueueDeclare(
+                        os.Getenv("NOTIFICATIONS_QUEUE_NAME"),
+                        false,
+                        false,
+                        false,
+                        false,
+                        nil,
+                )
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Println("Queue declare error:", err)
+                        return
+                }</span>
+
+                <span class="cov0" title="0">event := map[string]interface{}{
+                        "event_type":          "assignment.created",
+                        "course_id":           createdAssignment.CourseID,
+                        "assignment_id":       createdAssignment.ID,
+                        "assignment_title":    createdAssignment.Title,
+                        "assignment_due_date": createdAssignment.DueDate.Format(time.RFC3339),
+                }
+
+                body, err := json.Marshal(event)
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Println("Error marshaling event:", err)
+                        return
+                }</span>
+
+                <span class="cov0" title="0">err = ch.Publish(
+                        "",
+                        os.Getenv("NOTIFICATIONS_QUEUE_NAME"),
+                        false,
+                        false,
+                        amqp091.Publishing{
+                                ContentType: "application/json",
+                                Body:        body,
+                        },
+                )
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Println("Error publishing message:", err)
+                        return
+                }</span>
+
+                <span class="cov0" title="0">log.Println("📤 Event published: assignment.created")</span>
+        }()
+
+        <span class="cov8" title="1">log.Println("Assignment created:", createdAssignment.ID)
         ctx.JSON(http.StatusCreated, createdAssignment)</span>
 }
 
@@ -5480,6 +5546,9 @@ func (s *CourseService) CreateCourse(c schemas.CreateCourseRequest) (*model.Cour
                 Description: c.Description,
                 TeacherUUID: c.TeacherID,
                 Capacity:    c.Capacity,
+                Modules:     []model.Module{},
+                AuxTeachers: []string{},
+                Feedback:    []model.CourseFeedback{},
                 CreatedAt:   time.Now(),
                 UpdatedAt:   time.Now(),
                 StartDate:   c.StartDate,
