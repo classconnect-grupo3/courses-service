@@ -3,13 +3,13 @@ package config
 import "os"
 
 type Config struct {
-	DBUsername  string
-	DBPassword  string
-	DBName      string
-	DBURI       string
-	Host        string
-	Port        string
-	Environment string
+	DBUsername   string
+	DBPassword   string
+	DBName       string
+	DBURI        string
+	Host         string
+	Port         string
+	Environment  string
 	GeminiApiKey string
 }
 
