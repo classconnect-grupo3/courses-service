@@ -1204,6 +1204,14 @@ func (c *EnrollmentController) GetFeedbackByStudentId(ctx *gin.Context) <span cl
         ctx.JSON(http.StatusOK, feedback)</span>
 }
 
+// @Summary Get student feedback summary
+// @Description Get student feedback summary by student ID
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param id path string true "Student ID"
+// @Success 200 {string} string "Student feedback summary"
+// @Router /feedback/student/{id}/summary [get]
 func (c *EnrollmentController) GetStudentFeedbackSummary(ctx *gin.Context) <span class="cov0" title="0">{
         slog.Debug("Getting student feedback summary", "studentId", ctx.Param("id"))
         studentID := ctx.Param("id")
@@ -2741,6 +2749,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/courses/{id}/feedback/summary": {
+            "get": {
+                "description": "Get course feedback summary by course ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Get course feedback summary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Course feedback summary",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/courses/{id}/remove-aux-teacher": {
             "delete": {
                 "description": "Remove an aux teacher from a course by ID",
@@ -2903,6 +2943,38 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/model.StudentFeedback"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/feedback/student/{id}/summary": {
+            "get": {
+                "description": "Get student feedback summary by student ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Get student feedback summary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Student ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Student feedback summary",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -4929,8 +5001,9 @@ func (r *ModuleRepository) updateModuleFields(modules []model.Module, targetModu
                         <span class="cov8" title="1">if updatedModule.Description != "" </span><span class="cov8" title="1">{
                                 modules[i].Description = updatedModule.Description
                         }</span>
-                        <span class="cov8" title="1">if updatedModule.Content != "" </span><span class="cov8" title="1">{
-                                modules[i].Content = updatedModule.Content
+                        // Update Data field - explicit handling for slice
+                        <span class="cov8" title="1">if updatedModule.Data != nil </span><span class="cov8" title="1">{
+                                modules[i].Data = updatedModule.Data
                         }</span>
                         <span class="cov8" title="1">break</span>
                 }
@@ -5001,8 +5074,9 @@ func (r *ModuleRepository) UpdateModule(id string, module model.Module) (*model.
                 <span class="cov8" title="1">if module.Description != "" </span><span class="cov8" title="1">{
                         updateFields["modules.$.description"] = module.Description
                 }</span>
-                <span class="cov8" title="1">if module.Content != "" </span><span class="cov8" title="1">{
-                        updateFields["modules.$.content"] = module.Content
+                // Handle Data field update
+                <span class="cov8" title="1">if module.Data != nil </span><span class="cov8" title="1">{
+                        updateFields["modules.$.data"] = module.Data
                 }</span>
 
                 <span class="cov8" title="1">if len(updateFields) &gt; 0 </span><span class="cov8" title="1">{
@@ -6018,7 +6092,7 @@ func (s *ModuleService) CreateModule(module schemas.CreateModuleRequest) (*model
         <span class="cov8" title="1">moduleModel := model.Module{
                 Title:       module.Title,
                 Description: module.Description,
-                Content:     module.Content,
+                Data:        []model.ModuleData{},
         }
 
         order, err := s.moduleRepository.GetNextModuleOrder(module.CourseID)

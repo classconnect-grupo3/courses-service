@@ -30,7 +30,7 @@ func createTestCourseWithModules(t *testing.T, courseRepo *repository.CourseRepo
 				Title:       "Module 1",
 				Description: "First module",
 				Order:       1,
-				Content:     "Content 1",
+				Data:        []model.ModuleData{},
 				CreatedAt:   time.Now(),
 				UpdatedAt:   time.Now(),
 			},
@@ -39,9 +39,23 @@ func createTestCourseWithModules(t *testing.T, courseRepo *repository.CourseRepo
 				Title:       "Module 2",
 				Description: "Second module",
 				Order:       2,
-				Content:     "Content 2",
-				CreatedAt:   time.Now(),
-				UpdatedAt:   time.Now(),
+				Data: []model.ModuleData{
+					{
+						Id:          "data-1",
+						ModuleId:    "module-2-id",
+						Title:       "Test Data",
+						Description: "Test data description",
+						Resources: []model.ModuleDataResource{
+							{
+								Id:   1,
+								Name: "Test Resource",
+								Url:  "https://example.com/test",
+							},
+						},
+					},
+				},
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
 			},
 		},
 	}
@@ -122,12 +136,12 @@ func TestCreateModule(t *testing.T) {
 	// Create a test course
 	course := createEmptyTestCourse(t, courseRepo)
 
-	// Test creating a module
+	// Test creating a module with empty data
 	newModule := model.Module{
 		Title:       "New Module",
 		Description: "New module description",
 		Order:       1,
-		Content:     "New module content",
+		Data:        []model.ModuleData{},
 		CourseID:    course.ID.Hex(),
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
@@ -150,10 +164,80 @@ func TestCreateModule(t *testing.T) {
 		t.Error("Expected module to have an ID after creation")
 	}
 
+	// Verify Data field is properly handled
+	if createdModule.Data == nil {
+		t.Error("Expected Data field to be initialized")
+	}
+
+	if len(createdModule.Data) != 0 {
+		t.Errorf("Expected empty Data array, got %d elements", len(createdModule.Data))
+	}
+
 	// Test creating module with invalid course ID
 	_, err = moduleRepo.CreateModule("invalid-id", newModule)
 	if err == nil {
 		t.Error("Expected error for invalid course ID, got nil")
+	}
+}
+
+func TestCreateModuleWithData(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	moduleRepo := repository.NewModuleRepository(dbSetup.Client, dbSetup.DBName)
+	courseRepo := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	// Create a test course
+	course := createEmptyTestCourse(t, courseRepo)
+
+	// Test creating a module with data
+	testData := []model.ModuleData{
+		{
+			Id:          "test-data-1",
+			ModuleId:    "will-be-set-after-creation",
+			Title:       "Test Data Item",
+			Description: "Test data description",
+			Resources: []model.ModuleDataResource{
+				{
+					Id:   1,
+					Name: "Test Resource",
+					Url:  "https://example.com/resource",
+				},
+			},
+		},
+	}
+
+	newModule := model.Module{
+		Title:       "Module With Data",
+		Description: "Module with test data",
+		Order:       1,
+		Data:        testData,
+		CourseID:    course.ID.Hex(),
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+
+	createdModule, err := moduleRepo.CreateModule(course.ID.Hex(), newModule)
+	if err != nil {
+		t.Fatalf("Failed to create module with data: %v", err)
+	}
+
+	// Verify data was properly stored
+	if len(createdModule.Data) != 1 {
+		t.Errorf("Expected 1 data item, got %d", len(createdModule.Data))
+	}
+
+	if createdModule.Data[0].Title != "Test Data Item" {
+		t.Errorf("Expected data title 'Test Data Item', got %s", createdModule.Data[0].Title)
+	}
+
+	if len(createdModule.Data[0].Resources) != 1 {
+		t.Errorf("Expected 1 resource, got %d", len(createdModule.Data[0].Resources))
+	}
+
+	if createdModule.Data[0].Resources[0].Name != "Test Resource" {
+		t.Errorf("Expected resource name 'Test Resource', got %s", createdModule.Data[0].Resources[0].Name)
 	}
 }
 
@@ -177,6 +261,26 @@ func TestGetModuleById(t *testing.T) {
 
 	if foundModule.Title != course.Modules[0].Title {
 		t.Errorf("Expected module title %s, got %s", course.Modules[0].Title, foundModule.Title)
+	}
+
+	// Verify Data field is properly loaded
+	if foundModule.Data == nil {
+		t.Error("Expected Data field to be loaded")
+	}
+
+	// Test getting module with data
+	moduleWithDataID := course.Modules[1].ID.Hex()
+	foundModuleWithData, err := moduleRepo.GetModuleById(moduleWithDataID)
+	if err != nil {
+		t.Fatalf("Failed to get module with data by ID: %v", err)
+	}
+
+	if len(foundModuleWithData.Data) != 1 {
+		t.Errorf("Expected 1 data item, got %d", len(foundModuleWithData.Data))
+	}
+
+	if foundModuleWithData.Data[0].Title != "Test Data" {
+		t.Errorf("Expected data title 'Test Data', got %s", foundModuleWithData.Data[0].Title)
 	}
 
 	// Test getting module with invalid ID
@@ -212,6 +316,11 @@ func TestGetModuleByName(t *testing.T) {
 
 	if foundModule.Title != "Module 1" {
 		t.Errorf("Expected module title 'Module 1', got %s", foundModule.Title)
+	}
+
+	// Verify Data field is properly loaded
+	if foundModule.Data == nil {
+		t.Error("Expected Data field to be loaded")
 	}
 
 	// Test getting module with non-existent name
@@ -252,17 +361,31 @@ func TestGetModulesByCourseId(t *testing.T) {
 		if !expectedTitles[module.Title] {
 			t.Errorf("Unexpected module title: %s", module.Title)
 		}
+		// Verify Data field is properly loaded for all modules
+		if module.Data == nil {
+			t.Errorf("Expected Data field to be loaded for module %s", module.Title)
+		}
+	}
+
+	// Verify first module has empty data, second has data
+	for _, module := range modules {
+		if module.Title == "Module 1" && len(module.Data) != 0 {
+			t.Errorf("Expected Module 1 to have empty data, got %d items", len(module.Data))
+		}
+		if module.Title == "Module 2" && len(module.Data) != 1 {
+			t.Errorf("Expected Module 2 to have 1 data item, got %d items", len(module.Data))
+		}
 	}
 
 	// Test with empty course
 	emptyCourse := createEmptyTestCourse(t, courseRepo)
-	modules, err = moduleRepo.GetModulesByCourseId(emptyCourse.ID.Hex())
+	emptyModules, err := moduleRepo.GetModulesByCourseId(emptyCourse.ID.Hex())
 	if err != nil {
 		t.Fatalf("Failed to get modules for empty course: %v", err)
 	}
 
-	if len(modules) != 0 {
-		t.Errorf("Expected 0 modules for empty course, got %d", len(modules))
+	if len(emptyModules) != 0 {
+		t.Errorf("Expected 0 modules for empty course, got %d", len(emptyModules))
 	}
 
 	// Test with invalid course ID
@@ -405,7 +528,7 @@ func TestUpdateModuleReorderingFunctionality(t *testing.T) {
 				Title:       "Module 1",
 				Description: "First module",
 				Order:       1,
-				Content:     "Content 1",
+				Data:        []model.ModuleData{},
 				CreatedAt:   time.Now(),
 				UpdatedAt:   time.Now(),
 			},
@@ -414,7 +537,7 @@ func TestUpdateModuleReorderingFunctionality(t *testing.T) {
 				Title:       "Module 2",
 				Description: "Second module",
 				Order:       2,
-				Content:     "Content 2",
+				Data:        []model.ModuleData{},
 				CreatedAt:   time.Now(),
 				UpdatedAt:   time.Now(),
 			},
@@ -423,7 +546,7 @@ func TestUpdateModuleReorderingFunctionality(t *testing.T) {
 				Title:       "Module 3",
 				Description: "Third module",
 				Order:       3,
-				Content:     "Content 3",
+				Data:        []model.ModuleData{},
 				CreatedAt:   time.Now(),
 				UpdatedAt:   time.Now(),
 			},
@@ -432,7 +555,7 @@ func TestUpdateModuleReorderingFunctionality(t *testing.T) {
 				Title:       "Module 4",
 				Description: "Fourth module",
 				Order:       4,
-				Content:     "Content 4",
+				Data:        []model.ModuleData{},
 				CreatedAt:   time.Now(),
 				UpdatedAt:   time.Now(),
 			},
@@ -441,7 +564,7 @@ func TestUpdateModuleReorderingFunctionality(t *testing.T) {
 				Title:       "Module 5",
 				Description: "Fifth module",
 				Order:       5,
-				Content:     "Content 5",
+				Data:        []model.ModuleData{},
 				CreatedAt:   time.Now(),
 				UpdatedAt:   time.Now(),
 			},
@@ -617,5 +740,108 @@ func TestUpdateModuleReorderingFunctionality(t *testing.T) {
 		if updatedTitleModule.Order != originalOrder {
 			t.Errorf("Expected order to remain %d, got %d", originalOrder, updatedTitleModule.Order)
 		}
+	}
+}
+
+func TestUpdateModuleWithEmptyData(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	moduleRepo := repository.NewModuleRepository(dbSetup.Client, dbSetup.DBName)
+	courseRepo := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	// Create a test course with modules
+	course := createTestCourseWithModules(t, courseRepo)
+	moduleToUpdate := course.Modules[1] // Module 2 has data
+
+	// Update with empty data
+	moduleToUpdate.Title = "Updated Module Title"
+	moduleToUpdate.Description = "Updated description"
+	moduleToUpdate.Data = []model.ModuleData{} // Explicitly set to empty
+
+	updatedModule, err := moduleRepo.UpdateModule(moduleToUpdate.ID.Hex(), moduleToUpdate)
+	if err != nil {
+		t.Fatalf("Failed to update module with empty data: %v", err)
+	}
+
+	if updatedModule.Title != "Updated Module Title" {
+		t.Errorf("Expected updated title 'Updated Module Title', got %s", updatedModule.Title)
+	}
+
+	// Verify data was cleared
+	if len(updatedModule.Data) != 0 {
+		t.Errorf("Expected empty data array, got %d items", len(updatedModule.Data))
+	}
+}
+
+func TestUpdateModuleWithData(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	moduleRepo := repository.NewModuleRepository(dbSetup.Client, dbSetup.DBName)
+	courseRepo := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	// Create a test course with modules
+	course := createTestCourseWithModules(t, courseRepo)
+	moduleToUpdate := course.Modules[0] // Module 1 has empty data
+
+	// Update with new data
+	newData := []model.ModuleData{
+		{
+			Id:          "new-data-1",
+			ModuleId:    moduleToUpdate.ID.Hex(),
+			Title:       "New Data Item",
+			Description: "New data description",
+			Resources: []model.ModuleDataResource{
+				{
+					Id:   2,
+					Name: "New Resource",
+					Url:  "https://example.com/newresource",
+				},
+			},
+		},
+		{
+			Id:          "new-data-2",
+			ModuleId:    moduleToUpdate.ID.Hex(),
+			Title:       "Second Data Item",
+			Description: "Second data description",
+			Resources:   []model.ModuleDataResource{},
+		},
+	}
+
+	moduleToUpdate.Title = "Updated Module With Data"
+	moduleToUpdate.Data = newData
+
+	updatedModule, err := moduleRepo.UpdateModule(moduleToUpdate.ID.Hex(), moduleToUpdate)
+	if err != nil {
+		t.Fatalf("Failed to update module with data: %v", err)
+	}
+
+	if updatedModule.Title != "Updated Module With Data" {
+		t.Errorf("Expected updated title 'Updated Module With Data', got %s", updatedModule.Title)
+	}
+
+	// Verify data was updated
+	if len(updatedModule.Data) != 2 {
+		t.Errorf("Expected 2 data items, got %d", len(updatedModule.Data))
+	}
+
+	if updatedModule.Data[0].Title != "New Data Item" {
+		t.Errorf("Expected first data title 'New Data Item', got %s", updatedModule.Data[0].Title)
+	}
+
+	if updatedModule.Data[1].Title != "Second Data Item" {
+		t.Errorf("Expected second data title 'Second Data Item', got %s", updatedModule.Data[1].Title)
+	}
+
+	// Test first item has resources, second doesn't
+	if len(updatedModule.Data[0].Resources) != 1 {
+		t.Errorf("Expected 1 resource in first data item, got %d", len(updatedModule.Data[0].Resources))
+	}
+
+	if len(updatedModule.Data[1].Resources) != 0 {
+		t.Errorf("Expected 0 resources in second data item, got %d", len(updatedModule.Data[1].Resources))
 	}
 }
