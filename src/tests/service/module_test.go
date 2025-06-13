@@ -45,6 +45,10 @@ func (m *MockModuleRepository) CreateModule(courseID string, module model.Module
 	module.CourseID = courseID
 	module.CreatedAt = time.Now()
 	module.UpdatedAt = time.Now()
+	// Initialize Data if not provided
+	if module.Data == nil {
+		module.Data = []model.ModuleData{}
+	}
 
 	return &module, nil
 }
@@ -57,10 +61,36 @@ func (m *MockModuleRepository) GetModuleById(id string) (*model.Module, error) {
 			Title:       "Test Module",
 			Description: "Test Description",
 			Order:       1,
-			Content:     "Test Content",
+			Data:        []model.ModuleData{},
 			CourseID:    "valid-course-id",
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
+		}, nil
+	}
+	if id == "module-with-data" {
+		return &model.Module{
+			ID:          mustParseModuleObjectID(id),
+			Title:       "Module With Data",
+			Description: "Module with test data",
+			Order:       1,
+			Data: []model.ModuleData{
+				{
+					Id:          "data-1",
+					ModuleId:    id,
+					Title:       "Test Data Item",
+					Description: "Test data description",
+					Resources: []model.ModuleDataResource{
+						{
+							Id:   1,
+							Name: "Test Resource",
+							Url:  "https://example.com/resource1",
+						},
+					},
+				},
+			},
+			CourseID:  "valid-course-id",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		}, nil
 	}
 	if id == "error-module-id" {
@@ -77,6 +107,33 @@ func (m *MockModuleRepository) UpdateModule(id string, module model.Module) (*mo
 	if id == "valid-module-id" {
 		module.ID = mustParseModuleObjectID(id)
 		module.UpdatedAt = time.Now()
+		// Preserve Data field if not provided
+		if module.Data == nil {
+			module.Data = []model.ModuleData{}
+		}
+		return &module, nil
+	}
+	if id == "module-with-data" {
+		module.ID = mustParseModuleObjectID(id)
+		module.UpdatedAt = time.Now()
+		// Keep existing data if not updated
+		if module.Data == nil {
+			module.Data = []model.ModuleData{
+				{
+					Id:          "data-1",
+					ModuleId:    id,
+					Title:       "Test Data Item",
+					Description: "Test data description",
+					Resources: []model.ModuleDataResource{
+						{
+							Id:   1,
+							Name: "Test Resource",
+							Url:  "https://example.com/resource1",
+						},
+					},
+				},
+			}
+		}
 		return &module, nil
 	}
 	if id == "error-updating-module" {
@@ -111,7 +168,7 @@ func (m *MockModuleRepository) GetModulesByCourseId(courseId string) ([]model.Mo
 				Title:       "Module 1",
 				Description: "First module",
 				Order:       1,
-				Content:     "Content 1",
+				Data:        []model.ModuleData{},
 				CourseID:    courseId,
 				CreatedAt:   time.Now(),
 				UpdatedAt:   time.Now(),
@@ -121,10 +178,24 @@ func (m *MockModuleRepository) GetModulesByCourseId(courseId string) ([]model.Mo
 				Title:       "Module 2",
 				Description: "Second module",
 				Order:       2,
-				Content:     "Content 2",
-				CourseID:    courseId,
-				CreatedAt:   time.Now(),
-				UpdatedAt:   time.Now(),
+				Data: []model.ModuleData{
+					{
+						Id:          "data-2",
+						ModuleId:    "module-2-id",
+						Title:       "Second Module Data",
+						Description: "Data for second module",
+						Resources: []model.ModuleDataResource{
+							{
+								Id:   2,
+								Name: "Second Resource",
+								Url:  "https://example.com/resource2",
+							},
+						},
+					},
+				},
+				CourseID:  courseId,
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
 			},
 		}, nil
 	}
@@ -148,7 +219,7 @@ func (m *MockModuleRepository) GetModuleByName(courseID string, moduleName strin
 			Title:       moduleName,
 			Description: "Existing module",
 			Order:       1,
-			Content:     "Existing content",
+			Data:        []model.ModuleData{},
 			CourseID:    courseID,
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
@@ -160,7 +231,7 @@ func (m *MockModuleRepository) GetModuleByName(courseID string, moduleName strin
 			Title:       moduleName,
 			Description: "Different module",
 			Order:       2,
-			Content:     "Different content",
+			Data:        []model.ModuleData{},
 			CourseID:    courseID,
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
@@ -173,10 +244,37 @@ func (m *MockModuleRepository) GetModuleByName(courseID string, moduleName strin
 			Title:       moduleName,
 			Description: "Original description",
 			Order:       1,
-			Content:     "Original content",
+			Data:        []model.ModuleData{},
 			CourseID:    courseID,
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
+		}, nil
+	}
+	if courseID == "valid-course-id" && moduleName == "Updated Module With Data" {
+		// Return a module with the same ID that we're trying to update, to simulate updating the same module
+		return &model.Module{
+			ID:          mustParseModuleObjectID("module-with-data"),
+			Title:       moduleName,
+			Description: "Original description",
+			Order:       1,
+			Data: []model.ModuleData{
+				{
+					Id:          "data-1",
+					ModuleId:    "module-with-data",
+					Title:       "Test Data Item",
+					Description: "Test data description",
+					Resources: []model.ModuleDataResource{
+						{
+							Id:   1,
+							Name: "Test Resource",
+							Url:  "https://example.com/resource1",
+						},
+					},
+				},
+			},
+			CourseID:  courseID,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		}, nil
 	}
 	if courseID == "error-course" {
@@ -193,7 +291,7 @@ func (m *MockModuleRepository) GetModuleByOrder(courseID string, order int) (*mo
 			Title:       "First Module",
 			Description: "First module description",
 			Order:       order,
-			Content:     "First module content",
+			Data:        []model.ModuleData{},
 			CourseID:    courseID,
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
@@ -214,6 +312,9 @@ func mustParseModuleObjectID(id string) primitive.ObjectID {
 	case "different-module-id":
 		objectID, _ := primitive.ObjectIDFromHex("123456789012345678901235")
 		return objectID
+	case "module-with-data":
+		objectID, _ := primitive.ObjectIDFromHex("123456789012345678901236")
+		return objectID
 	default:
 		return primitive.NewObjectID()
 	}
@@ -226,7 +327,6 @@ func TestCreateModule(t *testing.T) {
 	request := schemas.CreateModuleRequest{
 		Title:       "New Module",
 		Description: "New module description",
-		Content:     "New module content",
 		CourseID:    "empty-course",
 	}
 
@@ -235,10 +335,12 @@ func TestCreateModule(t *testing.T) {
 	assert.NotNil(t, module)
 	assert.Equal(t, request.Title, module.Title)
 	assert.Equal(t, request.Description, module.Description)
-	assert.Equal(t, request.Content, module.Content)
 	assert.Equal(t, request.CourseID, module.CourseID)
 	assert.Equal(t, 1, module.Order) // First module in empty course
 	assert.False(t, module.ID.IsZero())
+	// Verify Data field is initialized as empty array
+	assert.NotNil(t, module.Data)
+	assert.Equal(t, 0, len(module.Data))
 }
 
 func TestCreateModuleWithExistingTitle(t *testing.T) {
@@ -247,7 +349,6 @@ func TestCreateModuleWithExistingTitle(t *testing.T) {
 	request := schemas.CreateModuleRequest{
 		Title:       "Existing Module",
 		Description: "New module description",
-		Content:     "New module content",
 		CourseID:    "valid-course-id",
 	}
 
@@ -263,7 +364,6 @@ func TestCreateModuleWithErrorGettingOrder(t *testing.T) {
 	request := schemas.CreateModuleRequest{
 		Title:       "New Module",
 		Description: "New module description",
-		Content:     "New module content",
 		CourseID:    "error-course",
 	}
 
@@ -279,7 +379,6 @@ func TestCreateModuleWithErrorCreating(t *testing.T) {
 	request := schemas.CreateModuleRequest{
 		Title:       "New Module",
 		Description: "New module description",
-		Content:     "New module content",
 		CourseID:    "error-creating-course",
 	}
 
@@ -404,8 +503,8 @@ func TestUpdateModule(t *testing.T) {
 		ID:          mustParseModuleObjectID("valid-module-id"),
 		Title:       "Updated Module Title",
 		Description: "Updated description",
-		Content:     "Updated content",
 		Order:       2,
+		Data:        []model.ModuleData{},
 		CourseID:    "valid-course-id",
 	}
 
@@ -414,7 +513,8 @@ func TestUpdateModule(t *testing.T) {
 	assert.NotNil(t, module)
 	assert.Equal(t, updateModule.Title, module.Title)
 	assert.Equal(t, updateModule.Description, module.Description)
-	assert.Equal(t, updateModule.Content, module.Content)
+	assert.NotNil(t, module.Data)
+	assert.Equal(t, 0, len(module.Data))
 }
 
 func TestUpdateModuleWithEmptyId(t *testing.T) {
@@ -423,7 +523,6 @@ func TestUpdateModuleWithEmptyId(t *testing.T) {
 	updateModule := model.Module{
 		Title:       "Updated Module",
 		Description: "Updated description",
-		Content:     "Updated content",
 		Order:       1,
 		CourseID:    "valid-course-id",
 	}
@@ -441,7 +540,6 @@ func TestUpdateModuleWithExistingTitleConflict(t *testing.T) {
 		ID:          mustParseModuleObjectID("valid-module-id"),
 		Title:       "Different Module", // This title exists but belongs to different module
 		Description: "Updated description",
-		Content:     "Updated content",
 		Order:       1,
 		CourseID:    "valid-course-id",
 	}
@@ -458,7 +556,6 @@ func TestUpdateModuleWithErrorGettingByName(t *testing.T) {
 	updateModule := model.Module{
 		Title:       "Some Module",
 		Description: "Updated description",
-		Content:     "Updated content",
 		Order:       1,
 		CourseID:    "error-course",
 	}
@@ -475,7 +572,6 @@ func TestUpdateModuleWithErrorUpdating(t *testing.T) {
 	updateModule := model.Module{
 		Title:       "Non-existing Module",
 		Description: "Updated description",
-		Content:     "Updated content",
 		Order:       1,
 		CourseID:    "valid-course-id",
 	}
@@ -484,6 +580,118 @@ func TestUpdateModuleWithErrorUpdating(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, module)
 	assert.Contains(t, err.Error(), "module not found")
+}
+
+func TestUpdateModuleWithEmptyData(t *testing.T) {
+	moduleService := service.NewModuleService(&MockModuleRepository{})
+
+	updateModule := model.Module{
+		ID:          mustParseModuleObjectID("valid-module-id"),
+		Title:       "Updated Module Title",
+		Description: "Updated description",
+		Order:       2,
+		Data:        []model.ModuleData{}, // Explicitly empty array
+		CourseID:    "valid-course-id",
+	}
+
+	module, err := moduleService.UpdateModule("valid-module-id", updateModule)
+	assert.NoError(t, err)
+	assert.NotNil(t, module)
+	assert.NotNil(t, module.Data)
+	assert.Equal(t, 0, len(module.Data))
+}
+
+func TestUpdateModuleWithData(t *testing.T) {
+	moduleService := service.NewModuleService(&MockModuleRepository{})
+
+	testData := []model.ModuleData{
+		{
+			Id:          "new-data-1",
+			ModuleId:    "valid-module-id",
+			Title:       "New Data Item",
+			Description: "New data description",
+			Resources: []model.ModuleDataResource{
+				{
+					Id:   3,
+					Name: "New Resource",
+					Url:  "https://example.com/newresource",
+				},
+			},
+		},
+	}
+
+	updateModule := model.Module{
+		ID:          mustParseModuleObjectID("valid-module-id"),
+		Title:       "Updated Module Title",
+		Description: "Updated description",
+		Order:       2,
+		Data:        testData,
+		CourseID:    "valid-course-id",
+	}
+
+	module, err := moduleService.UpdateModule("valid-module-id", updateModule)
+	assert.NoError(t, err)
+	assert.NotNil(t, module)
+	assert.NotNil(t, module.Data)
+	assert.Equal(t, 1, len(module.Data))
+	assert.Equal(t, "New Data Item", module.Data[0].Title)
+	assert.Equal(t, "New data description", module.Data[0].Description)
+	assert.Equal(t, 1, len(module.Data[0].Resources))
+	assert.Equal(t, "New Resource", module.Data[0].Resources[0].Name)
+}
+
+func TestUpdateModulePreservingExistingData(t *testing.T) {
+	moduleService := service.NewModuleService(&MockModuleRepository{})
+
+	// Update module without providing Data field (should preserve existing data)
+	updateModule := model.Module{
+		ID:          mustParseModuleObjectID("module-with-data"),
+		Title:       "Updated Module With Data",
+		Description: "Updated description",
+		Order:       2,
+		Data:        nil, // Not providing data should preserve existing
+		CourseID:    "valid-course-id",
+	}
+
+	module, err := moduleService.UpdateModule("module-with-data", updateModule)
+	assert.NoError(t, err)
+	assert.NotNil(t, module)
+	assert.NotNil(t, module.Data)
+	assert.Equal(t, 1, len(module.Data))
+	assert.Equal(t, "Test Data Item", module.Data[0].Title)
+}
+
+func TestGetModuleByIdWithData(t *testing.T) {
+	moduleService := service.NewModuleService(&MockModuleRepository{})
+
+	module, err := moduleService.GetModuleById("module-with-data")
+	assert.NoError(t, err)
+	assert.NotNil(t, module)
+	assert.Equal(t, "Module With Data", module.Title)
+	assert.NotNil(t, module.Data)
+	assert.Equal(t, 1, len(module.Data))
+	assert.Equal(t, "Test Data Item", module.Data[0].Title)
+	assert.Equal(t, 1, len(module.Data[0].Resources))
+	assert.Equal(t, "Test Resource", module.Data[0].Resources[0].Name)
+	assert.Equal(t, "https://example.com/resource1", module.Data[0].Resources[0].Url)
+}
+
+func TestGetModulesByCourseIdWithMixedData(t *testing.T) {
+	moduleService := service.NewModuleService(&MockModuleRepository{})
+
+	modules, err := moduleService.GetModulesByCourseId("course-with-modules")
+	assert.NoError(t, err)
+	assert.NotNil(t, modules)
+	assert.Equal(t, 2, len(modules))
+
+	// First module should have empty data
+	assert.NotNil(t, modules[0].Data)
+	assert.Equal(t, 0, len(modules[0].Data))
+
+	// Second module should have data
+	assert.NotNil(t, modules[1].Data)
+	assert.Equal(t, 1, len(modules[1].Data))
+	assert.Equal(t, "Second Module Data", modules[1].Data[0].Title)
 }
 
 // Tests for DeleteModule

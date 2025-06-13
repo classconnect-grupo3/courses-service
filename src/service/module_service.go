@@ -26,7 +26,7 @@ func (s *ModuleService) CreateModule(module schemas.CreateModuleRequest) (*model
 	moduleModel := model.Module{
 		Title:       module.Title,
 		Description: module.Description,
-		Content:     module.Content,
+		Data:        []model.ModuleData{},
 	}
 
 	order, err := s.moduleRepository.GetNextModuleOrder(module.CourseID)
