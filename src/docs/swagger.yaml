@@ -330,6 +330,19 @@ definitions:
       vote_count:
         type: integer
     type: object
+  schemas.CourseMembersResponse:
+    properties:
+      aux_teachers_ids:
+        items:
+          type: string
+        type: array
+      students_ids:
+        items:
+          type: string
+        type: array
+      teacher_id:
+        type: string
+    type: object
   schemas.CreateAnswerRequest:
     properties:
       author_id:
@@ -1315,6 +1328,39 @@ paths:
       summary: Get course feedback summary
       tags:
       - courses
+  /courses/{id}/members:
+    get:
+      consumes:
+      - application/json
+      description: Get all members of a course (teacher, aux teachers, and students)
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.CourseMembersResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Get course members
+      tags:
+      - courses
   /courses/{id}/remove-aux-teacher:
     delete:
       consumes:
@@ -1666,7 +1712,7 @@ paths:
       summary: Create a new question
       tags:
       - forum
-  /forum/questions/{id}:
+  /forum/questions/{questionId}:
     delete:
       consumes:
       - application/json
@@ -1674,7 +1720,7 @@ paths:
       parameters:
       - description: Question ID
         in: path
-        name: id
+        name: questionId
         required: true
         type: string
       - description: Author ID
@@ -1711,7 +1757,7 @@ paths:
       parameters:
       - description: Question ID
         in: path
-        name: id
+        name: questionId
         required: true
         type: string
       produces:
@@ -1739,7 +1785,7 @@ paths:
       parameters:
       - description: Question ID
         in: path
-        name: id
+        name: questionId
         required: true
         type: string
       - description: Question update data
