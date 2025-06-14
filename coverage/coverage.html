@@ -3,7 +3,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-		<title>ai: Go Coverage Report</title>
+		<title>config: Go Coverage Report</title>
 		<style>
 			body {
 				background: black;
@@ -55,57 +55,49 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">courses-service/src/ai/ai_client.go (5.3%)</option>
+				<option value="file0">courses-service/src/config/config.go (100.0%)</option>
 				
-				<option value="file1">courses-service/src/config/config.go (100.0%)</option>
+				<option value="file1">courses-service/src/controller/assignments_controller.go (77.8%)</option>
 				
-				<option value="file2">courses-service/src/controller/assignments_controller.go (77.8%)</option>
+				<option value="file2">courses-service/src/controller/courses_controller.go (88.9%)</option>
 				
-				<option value="file3">courses-service/src/controller/courses_controller.go (88.9%)</option>
+				<option value="file3">courses-service/src/controller/enrollment_controller.go (82.5%)</option>
 				
-				<option value="file4">courses-service/src/controller/enrollment_controller.go (82.5%)</option>
+				<option value="file4">courses-service/src/controller/forum_controller.go (98.6%)</option>
 				
-				<option value="file5">courses-service/src/controller/forum_controller.go (85.6%)</option>
+				<option value="file5">courses-service/src/controller/module_controller.go (100.0%)</option>
 				
-				<option value="file6">courses-service/src/controller/module_controller.go (100.0%)</option>
+				<option value="file6">courses-service/src/controller/submission_controller.go (91.2%)</option>
 				
-				<option value="file7">courses-service/src/controller/submission_controller.go (91.2%)</option>
+				<option value="file7">courses-service/src/database/connection.go (71.4%)</option>
 				
-				<option value="file8">courses-service/src/database/connection.go (71.4%)</option>
+				<option value="file8">courses-service/src/repository/assignment_repository.go (87.0%)</option>
 				
-				<option value="file9">courses-service/src/main.go (0.0%)</option>
+				<option value="file9">courses-service/src/repository/course_repository.go (82.4%)</option>
 				
-				<option value="file10">courses-service/src/middleware/student_auth.go (10.0%)</option>
+				<option value="file10">courses-service/src/repository/enrollment_repository.go (81.4%)</option>
 				
-				<option value="file11">courses-service/src/middleware/teacher_auth.go (10.0%)</option>
+				<option value="file11">courses-service/src/repository/forum_repository.go (87.1%)</option>
 				
-				<option value="file12">courses-service/src/repository/assignment_repository.go (87.0%)</option>
+				<option value="file12">courses-service/src/repository/module_repository.go (89.9%)</option>
 				
-				<option value="file13">courses-service/src/repository/course_repository.go (82.4%)</option>
+				<option value="file13">courses-service/src/repository/submission_repository.go (83.3%)</option>
 				
-				<option value="file14">courses-service/src/repository/enrollment_repository.go (81.4%)</option>
+				<option value="file14">courses-service/src/router/router.go (97.1%)</option>
 				
-				<option value="file15">courses-service/src/repository/forum_repository.go (87.1%)</option>
+				<option value="file15">courses-service/src/service/assignment_service.go (100.0%)</option>
 				
-				<option value="file16">courses-service/src/repository/module_repository.go (89.9%)</option>
+				<option value="file16">courses-service/src/service/course_service.go (95.6%)</option>
 				
-				<option value="file17">courses-service/src/repository/submission_repository.go (83.3%)</option>
+				<option value="file17">courses-service/src/service/enrollment_service.go (96.2%)</option>
 				
-				<option value="file18">courses-service/src/router/router.go (97.1%)</option>
+				<option value="file18">courses-service/src/service/forum_service.go (87.4%)</option>
 				
-				<option value="file19">courses-service/src/service/assignment_service.go (100.0%)</option>
+				<option value="file19">courses-service/src/service/module_service.go (100.0%)</option>
 				
-				<option value="file20">courses-service/src/service/course_service.go (84.2%)</option>
+				<option value="file20">courses-service/src/service/submission_service.go (84.4%)</option>
 				
-				<option value="file21">courses-service/src/service/enrollment_service.go (96.2%)</option>
-				
-				<option value="file22">courses-service/src/service/forum_service.go (69.7%)</option>
-				
-				<option value="file23">courses-service/src/service/module_service.go (100.0%)</option>
-				
-				<option value="file24">courses-service/src/service/submission_service.go (53.2%)</option>
-				
-				<option value="file25">courses-service/src/tests/testutil/db_setup.go (72.2%)</option>
+				<option value="file21">courses-service/src/tests/testutil/db_setup.go (72.2%)</option>
 				
 				</select>
 			</div>
@@ -119,106 +111,7 @@
 		</div>
 		<div id="content">
 		
-		<pre class="file" id="file0" style="display: none">package ai
-
-import (
-        "context"
-        "encoding/json"
-        "fmt"
-        "log"
-
-        "courses-service/src/config"
-        "courses-service/src/model"
-
-        "google.golang.org/genai"
-)
-
-type AiClient struct {
-        context      context.Context
-        GeminiApiKey string
-        Client       *genai.Client
-}
-
-const aiModel = "gemini-2.0-flash"
-
-func generateStudentFeedbacksPrompt(feedbacks []*model.StudentFeedback) string <span class="cov0" title="0">{
-        prompt := SummarizeStudentFeedbacksPrompt
-        for _, feedback := range feedbacks </span><span class="cov0" title="0">{
-                prompt += fmt.Sprintf("Puntuacion: %d\n", feedback.Score)
-                prompt += fmt.Sprintf("Tipo: %s\n", feedback.FeedbackType)
-                prompt += fmt.Sprintf("Feedback: %s\n", feedback.Feedback)
-        }</span>
-        <span class="cov0" title="0">return prompt</span>
-}
-
-func generateCourseFeedbacksPrompt(feedbacks []*model.CourseFeedback) string <span class="cov0" title="0">{
-        prompt := SummarizeCourseFeedbacksPrompt
-        for _, feedback := range feedbacks </span><span class="cov0" title="0">{
-                prompt += fmt.Sprintf("Puntuacion: %d\n", feedback.Score)
-                prompt += fmt.Sprintf("Tipo: %s\n", feedback.FeedbackType)
-                prompt += fmt.Sprintf("Feedback: %s\n", feedback.Feedback)
-        }</span>
-        <span class="cov0" title="0">return prompt</span>
-}
-
-func NewAiClient(config *config.Config) *AiClient <span class="cov8" title="1">{
-
-        if config.Environment == "test" </span><span class="cov8" title="1">{
-                return &amp;AiClient{
-                        context:      context.Background(),
-                        GeminiApiKey: "",
-                        Client:       nil,
-                }
-        }</span>
-        <span class="cov0" title="0">geminiApiKey := config.GeminiApiKey
-        ctx := context.Background()
-        client, err := genai.NewClient(ctx, &amp;genai.ClientConfig{
-                APIKey: geminiApiKey,
-        })
-        if err != nil </span><span class="cov0" title="0">{
-                log.Fatal("Failed to create Gemini client", err)
-                return nil
-        }</span>
-        <span class="cov0" title="0">log.Println("Gemini client created")
-        return &amp;AiClient{
-                context:      ctx,
-                GeminiApiKey: geminiApiKey,
-                Client:       client,
-        }</span>
-}
-
-func (c *AiClient) SummarizeCourseFeedbacks(feedbacks []*model.CourseFeedback) (string, error) <span class="cov0" title="0">{
-        prompt := generateCourseFeedbacksPrompt(feedbacks)
-        response, err := c.Client.Models.GenerateContent(c.context, aiModel, genai.Text(prompt), nil)
-        if err != nil </span><span class="cov0" title="0">{
-                log.Fatal("Failed to generate content", err)
-                return "", err
-        }</span>
-        <span class="cov0" title="0">return debugString(response), nil</span>
-}
-
-func (c *AiClient) SummarizeStudentFeedbacks(feedbacks []*model.StudentFeedback) (string, error) <span class="cov0" title="0">{
-        prompt := generateStudentFeedbacksPrompt(feedbacks)
-        response, err := c.Client.Models.GenerateContent(c.context, aiModel, genai.Text(prompt), nil)
-        if err != nil </span><span class="cov0" title="0">{
-                log.Fatal("Failed to generate content", err)
-                return "", err
-        }</span>
-        <span class="cov0" title="0">return debugString(response), nil</span>
-}
-
-func debugString[T any](r *T) string <span class="cov0" title="0">{
-
-        response, err := json.MarshalIndent(*r, "", "  ")
-        if err != nil </span><span class="cov0" title="0">{
-                log.Fatal(err)
-        }</span>
-
-        <span class="cov0" title="0">return string(response)</span>
-}
-</pre>
-		
-		<pre class="file" id="file1" style="display: none">package config
+		<pre class="file" id="file0" style="display: none">package config
 
 import "os"
 
@@ -247,7 +140,7 @@ func NewConfig() *Config <span class="cov8" title="1">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file2" style="display: none">package controller
+		<pre class="file" id="file1" style="display: none">package controller
 
 import (
         "encoding/json"
@@ -488,7 +381,7 @@ func (c *AssignmentsController) DeleteAssignment(ctx *gin.Context) <span class="
 }
 </pre>
 		
-		<pre class="file" id="file3" style="display: none">package controller
+		<pre class="file" id="file2" style="display: none">package controller
 
 import (
         "log/slog"
@@ -967,7 +860,7 @@ func (c *CourseController) GetCourseMembers(ctx *gin.Context) <span class="cov8"
 }
 </pre>
 		
-		<pre class="file" id="file4" style="display: none">package controller
+		<pre class="file" id="file3" style="display: none">package controller
 
 import (
         "courses-service/src/ai"
@@ -1282,7 +1175,7 @@ func (c *EnrollmentController) GetStudentFeedbackSummary(ctx *gin.Context) <span
 }
 </pre>
 		
-		<pre class="file" id="file5" style="display: none">package controller
+		<pre class="file" id="file4" style="display: none">package controller
 
 import (
         "log/slog"
@@ -1528,13 +1421,13 @@ func (c *ForumController) UpdateAnswer(ctx *gin.Context) <span class="cov8" titl
         answerID := ctx.Param("answerId")
         authorID := ctx.Query("authorId")
 
-        if authorID == "" </span><span class="cov0" title="0">{
+        if authorID == "" </span><span class="cov8" title="1">{
                 ctx.JSON(http.StatusBadRequest, schemas.ErrorResponse{Error: "authorId query parameter is required"})
                 return
         }</span>
 
         <span class="cov8" title="1">var request schemas.UpdateAnswerRequest
-        if err := ctx.ShouldBindJSON(&amp;request); err != nil </span><span class="cov0" title="0">{
+        if err := ctx.ShouldBindJSON(&amp;request); err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error binding JSON", "error", err)
                 ctx.JSON(http.StatusBadRequest, schemas.ErrorResponse{Error: err.Error()})
                 return
@@ -1578,7 +1471,7 @@ func (c *ForumController) DeleteAnswer(ctx *gin.Context) <span class="cov8" titl
         }</span>
 
         <span class="cov8" title="1">err := c.service.DeleteAnswer(questionID, answerID, authorID)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error deleting answer", "error", err)
                 ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
                 return
@@ -1608,7 +1501,7 @@ func (c *ForumController) AcceptAnswer(ctx *gin.Context) <span class="cov8" titl
         answerID := ctx.Param("answerId")
         authorID := ctx.Query("authorId")
 
-        if authorID == "" </span><span class="cov0" title="0">{
+        if authorID == "" </span><span class="cov8" title="1">{
                 ctx.JSON(http.StatusBadRequest, schemas.ErrorResponse{Error: "authorId query parameter is required"})
                 return
         }</span>
@@ -1644,7 +1537,7 @@ func (c *ForumController) VoteQuestion(ctx *gin.Context) <span class="cov8" titl
 
         questionID := ctx.Param("questionId")
         var request schemas.VoteRequest
-        if err := ctx.ShouldBindJSON(&amp;request); err != nil </span><span class="cov0" title="0">{
+        if err := ctx.ShouldBindJSON(&amp;request); err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error binding JSON", "error", err)
                 ctx.JSON(http.StatusBadRequest, schemas.ErrorResponse{Error: err.Error()})
                 return
@@ -1658,7 +1551,7 @@ func (c *ForumController) VoteQuestion(ctx *gin.Context) <span class="cov8" titl
         }</span>
 
         <span class="cov8" title="1">voteTypeStr := "up"
-        if request.VoteType == model.VoteTypeDown </span><span class="cov0" title="0">{
+        if request.VoteType == model.VoteTypeDown </span><span class="cov8" title="1">{
                 voteTypeStr = "down"
         }</span>
 
@@ -1686,21 +1579,21 @@ func (c *ForumController) VoteAnswer(ctx *gin.Context) <span class="cov8" title=
         questionID := ctx.Param("questionId")
         answerID := ctx.Param("answerId")
         var request schemas.VoteRequest
-        if err := ctx.ShouldBindJSON(&amp;request); err != nil </span><span class="cov0" title="0">{
+        if err := ctx.ShouldBindJSON(&amp;request); err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error binding JSON", "error", err)
                 ctx.JSON(http.StatusBadRequest, schemas.ErrorResponse{Error: err.Error()})
                 return
         }</span>
 
         <span class="cov8" title="1">err := c.service.VoteAnswer(questionID, answerID, request.UserID, request.VoteType)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error voting on answer", "error", err)
                 ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
                 return
         }</span>
 
         <span class="cov8" title="1">voteTypeStr := "up"
-        if request.VoteType == model.VoteTypeDown </span><span class="cov0" title="0">{
+        if request.VoteType == model.VoteTypeDown </span><span class="cov8" title="1">{
                 voteTypeStr = "down"
         }</span>
 
@@ -1731,7 +1624,7 @@ func (c *ForumController) RemoveVoteFromQuestion(ctx *gin.Context) <span class="
         }</span>
 
         <span class="cov8" title="1">err := c.service.RemoveVoteFromQuestion(questionID, userID)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error removing vote from question", "error", err)
                 ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
                 return
@@ -1760,13 +1653,13 @@ func (c *ForumController) RemoveVoteFromAnswer(ctx *gin.Context) <span class="co
         answerID := ctx.Param("answerId")
         userID := ctx.Query("userId")
 
-        if userID == "" </span><span class="cov0" title="0">{
+        if userID == "" </span><span class="cov8" title="1">{
                 ctx.JSON(http.StatusBadRequest, schemas.ErrorResponse{Error: "userId query parameter is required"})
                 return
         }</span>
 
         <span class="cov8" title="1">err := c.service.RemoveVoteFromAnswer(questionID, answerID, userID)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error removing vote from answer", "error", err)
                 ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
                 return
@@ -1893,7 +1786,7 @@ func (c *ForumController) calculateVoteCount(votes []model.Vote) int <span class
 }
 </pre>
 		
-		<pre class="file" id="file6" style="display: none">package controller
+		<pre class="file" id="file5" style="display: none">package controller
 
 import (
         "courses-service/src/model"
@@ -2047,7 +1940,7 @@ func (c *ModuleController) DeleteModule(ctx *gin.Context) <span class="cov8" tit
 }
 </pre>
 		
-		<pre class="file" id="file7" style="display: none">package controller
+		<pre class="file" id="file6" style="display: none">package controller
 
 import (
         "fmt"
@@ -2338,7 +2231,7 @@ func (c *SubmissionController) GradeSubmission(ctx *gin.Context) <span class="co
 }
 </pre>
 		
-		<pre class="file" id="file8" style="display: none">package database
+		<pre class="file" id="file7" style="display: none">package database
 
 import (
         "courses-service/src/config"
@@ -2368,96 +2261,7 @@ func NewMongoDBClient(config *config.Config) (*mongo.Client, error) <span class=
 }
 </pre>
 		
-		<pre class="file" id="file9" style="display: none">package main
-
-import (
-        "courses-service/src/config"
-        "courses-service/src/router"
-        "fmt"
-        "log"
-
-        _ "courses-service/src/docs"
-
-        _ "github.com/swaggo/files"
-        _ "github.com/swaggo/gin-swagger"
-)
-
-// @title Courses Service API
-// @version 1.0
-// @description API for managing courses and related resources
-
-// @contact.name   El mejor grupo de todos ndea deau
-// @contact.url    https://github.com/classconnect-grupo3
-// @contact.email  classconnectingsoft2@gmail.com
-
-func main() <span class="cov0" title="0">{
-        config := config.NewConfig()
-        r := router.NewRouter(config)
-        if err := r.Run(fmt.Sprintf("%s:%s", config.Host, config.Port)); err != nil </span><span class="cov0" title="0">{
-                log.Fatalf("Failed to start server: %v", err)
-        }</span>
-}
-</pre>
-		
-		<pre class="file" id="file10" style="display: none">package middleware
-
-import (
-        "github.com/gin-gonic/gin"
-        "net/http"
-)
-
-// StudentAuth is a middleware that extracts student information from the X-Student-UUID and X-Student-Name
-// headers and sets them in the context for handlers to use.
-func StudentAuth() gin.HandlerFunc <span class="cov8" title="1">{
-        return func(c *gin.Context) </span><span class="cov0" title="0">{
-                studentUUID := c.GetHeader("X-Student-UUID")
-                studentName := c.GetHeader("X-Student-Name")
-
-                if studentUUID == "" </span><span class="cov0" title="0">{
-                        c.JSON(http.StatusUnauthorized, gin.H{"error": "X-Student-UUID header is required"})
-                        c.Abort()
-                        return
-                }</span>
-
-                // Set values in context for downstream handlers
-                <span class="cov0" title="0">c.Set("student_uuid", studentUUID)
-                c.Set("student_name", studentName)
-
-                c.Next()</span>
-        }
-}
-</pre>
-		
-		<pre class="file" id="file11" style="display: none">package middleware
-
-import (
-        "github.com/gin-gonic/gin"
-        "net/http"
-)
-
-// TeacherAuth is a middleware that extracts teacher information from the X-Teacher-UUID and X-Teacher-Name
-// headers and sets them in the context for handlers to use.
-func TeacherAuth() gin.HandlerFunc <span class="cov8" title="1">{
-        return func(c *gin.Context) </span><span class="cov0" title="0">{
-                teacherUUID := c.GetHeader("X-Teacher-UUID")
-                teacherName := c.GetHeader("X-Teacher-Name")
-
-                if teacherUUID == "" </span><span class="cov0" title="0">{
-                        c.JSON(http.StatusUnauthorized, gin.H{"error": "X-Teacher-UUID header is required"})
-                        c.Abort()
-                        return
-                }</span>
-
-                // Set values in context for downstream handlers
-                <span class="cov0" title="0">c.Set("teacher_uuid", teacherUUID)
-                c.Set("teacher_name", teacherName)
-
-                c.Next()</span>
-        }
-}
-</pre>
-		
-		<pre class="file" id="file12" style="display: none">package repository
+		<pre class="file" id="file8" style="display: none">package repository
 
 import (
         "context"
@@ -2627,7 +2431,7 @@ func (r *AssignmentRepository) DeleteAssignment(id string) error <span class="co
 }
 </pre>
 		
-		<pre class="file" id="file13" style="display: none">package repository
+		<pre class="file" id="file9" style="display: none">package repository
 
 import (
         "context"
@@ -2998,7 +2802,7 @@ func (r *CourseRepository) GetCourseFeedback(courseID string, getCourseFeedbackR
 }
 </pre>
 		
-		<pre class="file" id="file14" style="display: none">package repository
+		<pre class="file" id="file10" style="display: none">package repository
 
 import (
         "context"
@@ -3289,7 +3093,7 @@ func (r *EnrollmentRepository) GetFeedbackByStudentId(studentID string, getFeedb
 }
 </pre>
 		
-		<pre class="file" id="file15" style="display: none">package repository
+		<pre class="file" id="file11" style="display: none">package repository
 
 import (
         "context"
@@ -3746,7 +3550,7 @@ func (r *ForumRepository) SearchQuestions(courseID string, query string, tags []
 }
 </pre>
 		
-		<pre class="file" id="file16" style="display: none">package repository
+		<pre class="file" id="file12" style="display: none">package repository
 
 import (
         "context"
@@ -4061,7 +3865,7 @@ func (r *ModuleRepository) GetModuleByOrder(courseID string, order int) (*model.
 }
 </pre>
 		
-		<pre class="file" id="file17" style="display: none">package repository
+		<pre class="file" id="file13" style="display: none">package repository
 
 import (
         "context"
@@ -4159,7 +3963,7 @@ func (r *MongoSubmissionRepository) GetByStudent(ctx context.Context, studentUUI
 }
 </pre>
 		
-		<pre class="file" id="file18" style="display: none">package router
+		<pre class="file" id="file14" style="display: none">package router
 
 import (
         "courses-service/src/ai"
@@ -4354,7 +4158,7 @@ func InitializeRoutes(
 }</span>
 </pre>
 		
-		<pre class="file" id="file19" style="display: none">package service
+		<pre class="file" id="file15" style="display: none">package service
 
 import (
         "context"
@@ -4461,7 +4265,7 @@ func (s *AssignmentService) GetAssignmentsByCourseId(courseId string) ([]*model.
 }
 </pre>
 		
-		<pre class="file" id="file20" style="display: none">package service
+		<pre class="file" id="file16" style="display: none">package service
 
 import (
         "courses-service/src/model"
@@ -4698,31 +4502,31 @@ func (s *CourseService) GetCourseFeedback(courseId string, getCourseFeedbackRequ
         <span class="cov8" title="1">return feedback, nil</span>
 }
 
-func (s *CourseService) GetCourseMembers(courseId string) (*schemas.CourseMembersResponse, error) <span class="cov0" title="0">{
-        if courseId == "" </span><span class="cov0" title="0">{
+func (s *CourseService) GetCourseMembers(courseId string) (*schemas.CourseMembersResponse, error) <span class="cov8" title="1">{
+        if courseId == "" </span><span class="cov8" title="1">{
                 return nil, errors.New("courseId is required")
         }</span>
 
         // Get course to get teacher and aux teachers
-        <span class="cov0" title="0">course, err := s.courseRepository.GetCourseById(courseId)
-        if err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">course, err := s.courseRepository.GetCourseById(courseId)
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
 
         // Get enrolled students
-        <span class="cov0" title="0">enrollments, err := s.enrollmentRepository.GetEnrollmentsByCourseId(courseId)
-        if err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">enrollments, err := s.enrollmentRepository.GetEnrollmentsByCourseId(courseId)
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
 
         // Extract student IDs from enrollments
-        <span class="cov0" title="0">var studentIDs []string
-        for _, enrollment := range enrollments </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">var studentIDs []string
+        for _, enrollment := range enrollments </span><span class="cov8" title="1">{
                 studentIDs = append(studentIDs, enrollment.StudentID)
         }</span>
 
         // Build response
-        <span class="cov0" title="0">response := &amp;schemas.CourseMembersResponse{
+        <span class="cov8" title="1">response := &amp;schemas.CourseMembersResponse{
                 TeacherID:      course.TeacherUUID,
                 AuxTeachersIDs: course.AuxTeachers,
                 StudentsIDs:    studentIDs,
@@ -4732,7 +4536,7 @@ func (s *CourseService) GetCourseMembers(courseId string) (*schemas.CourseMember
 }
 </pre>
 		
-		<pre class="file" id="file21" style="display: none">package service
+		<pre class="file" id="file17" style="display: none">package service
 
 import (
         "courses-service/src/model"
@@ -4972,7 +4776,7 @@ func (s *EnrollmentService) GetFeedbackByStudentId(studentID string, getFeedback
 }
 </pre>
 		
-		<pre class="file" id="file22" style="display: none">package service
+		<pre class="file" id="file18" style="display: none">package service
 
 import (
         "courses-service/src/model"
@@ -5071,7 +4875,7 @@ func (s *ForumService) UpdateQuestion(id, title, description string, tags []mode
 
         // Validate tags if provided
         <span class="cov8" title="1">if len(tags) &gt; 0 </span><span class="cov8" title="1">{
-                if err := s.validateTags(tags); err != nil </span><span class="cov0" title="0">{
+                if err := s.validateTags(tags); err != nil </span><span class="cov8" title="1">{
                         return nil, err
                 }</span>
         }
@@ -5176,7 +4980,7 @@ func (s *ForumService) UpdateAnswer(questionID, answerID, authorID, content stri
                 }
         }
 
-        <span class="cov8" title="1">if !answerFound </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if !answerFound </span><span class="cov8" title="1">{
                 return nil, errors.New("answer not found")
         }</span>
 
@@ -5212,7 +5016,7 @@ func (s *ForumService) DeleteAnswer(questionID, answerID, authorID string) error
                 }
         }
 
-        <span class="cov8" title="1">if !answerFound </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if !answerFound </span><span class="cov8" title="1">{
                 return errors.New("answer not found")
         }</span>
 
@@ -5249,7 +5053,7 @@ func (s *ForumService) AcceptAnswer(questionID, answerID, authorID string) error
                 }
         }
 
-        <span class="cov8" title="1">if !answerFound </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if !answerFound </span><span class="cov8" title="1">{
                 return errors.New("answer not found")
         }</span>
 
@@ -5265,7 +5069,7 @@ func (s *ForumService) VoteQuestion(questionID, userID string, voteType int) err
         <span class="cov8" title="1">if userID == "" </span><span class="cov0" title="0">{
                 return errors.New("user ID is required")
         }</span>
-        <span class="cov8" title="1">if voteType != model.VoteTypeUp &amp;&amp; voteType != model.VoteTypeDown </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if voteType != model.VoteTypeUp &amp;&amp; voteType != model.VoteTypeDown </span><span class="cov8" title="1">{
                 return errors.New("invalid vote type")
         }</span>
 
@@ -5293,7 +5097,7 @@ func (s *ForumService) VoteAnswer(questionID, answerID, userID string, voteType 
         <span class="cov8" title="1">if userID == "" </span><span class="cov0" title="0">{
                 return errors.New("user ID is required")
         }</span>
-        <span class="cov8" title="1">if voteType != model.VoteTypeUp &amp;&amp; voteType != model.VoteTypeDown </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if voteType != model.VoteTypeUp &amp;&amp; voteType != model.VoteTypeDown </span><span class="cov8" title="1">{
                 return errors.New("invalid vote type")
         }</span>
 
@@ -5315,61 +5119,61 @@ func (s *ForumService) VoteAnswer(questionID, answerID, userID string, voteType 
                 }
         }
 
-        <span class="cov8" title="1">if !answerFound </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if !answerFound </span><span class="cov8" title="1">{
                 return errors.New("answer not found")
         }</span>
 
         <span class="cov8" title="1">return s.forumRepository.AddVoteToAnswer(questionID, answerID, userID, voteType)</span>
 }
 
-func (s *ForumService) RemoveVoteFromQuestion(questionID, userID string) error <span class="cov0" title="0">{
-        if questionID == "" </span><span class="cov0" title="0">{
+func (s *ForumService) RemoveVoteFromQuestion(questionID, userID string) error <span class="cov8" title="1">{
+        if questionID == "" </span><span class="cov8" title="1">{
                 return errors.New("question ID is required")
         }</span>
-        <span class="cov0" title="0">if userID == "" </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if userID == "" </span><span class="cov8" title="1">{
                 return errors.New("user ID is required")
         }</span>
 
         // Validate question exists
-        <span class="cov0" title="0">_, err := s.forumRepository.GetQuestionById(questionID)
-        if err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">_, err := s.forumRepository.GetQuestionById(questionID)
+        if err != nil </span><span class="cov8" title="1">{
                 return err
         }</span>
 
-        <span class="cov0" title="0">return s.forumRepository.RemoveVoteFromQuestion(questionID, userID)</span>
+        <span class="cov8" title="1">return s.forumRepository.RemoveVoteFromQuestion(questionID, userID)</span>
 }
 
-func (s *ForumService) RemoveVoteFromAnswer(questionID, answerID, userID string) error <span class="cov0" title="0">{
-        if questionID == "" </span><span class="cov0" title="0">{
+func (s *ForumService) RemoveVoteFromAnswer(questionID, answerID, userID string) error <span class="cov8" title="1">{
+        if questionID == "" </span><span class="cov8" title="1">{
                 return errors.New("question ID is required")
         }</span>
-        <span class="cov0" title="0">if answerID == "" </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if answerID == "" </span><span class="cov8" title="1">{
                 return errors.New("answer ID is required")
         }</span>
-        <span class="cov0" title="0">if userID == "" </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if userID == "" </span><span class="cov8" title="1">{
                 return errors.New("user ID is required")
         }</span>
 
         // Validate question and answer exist
-        <span class="cov0" title="0">question, err := s.forumRepository.GetQuestionById(questionID)
-        if err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">question, err := s.forumRepository.GetQuestionById(questionID)
+        if err != nil </span><span class="cov8" title="1">{
                 return err
         }</span>
 
         // Find the answer
-        <span class="cov0" title="0">var answerFound bool
-        for _, answer := range question.Answers </span><span class="cov0" title="0">{
-                if answer.ID == answerID </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">var answerFound bool
+        for _, answer := range question.Answers </span><span class="cov8" title="1">{
+                if answer.ID == answerID </span><span class="cov8" title="1">{
                         answerFound = true
                         break</span>
                 }
         }
 
-        <span class="cov0" title="0">if !answerFound </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if !answerFound </span><span class="cov8" title="1">{
                 return errors.New("answer not found")
         }</span>
 
-        <span class="cov0" title="0">return s.forumRepository.RemoveVoteFromAnswer(questionID, answerID, userID)</span>
+        <span class="cov8" title="1">return s.forumRepository.RemoveVoteFromAnswer(questionID, answerID, userID)</span>
 }
 
 // Search and filter operations
@@ -5387,13 +5191,13 @@ func (s *ForumService) SearchQuestions(courseID, query string, tags []model.Ques
 
         // Validate tags if provided
         <span class="cov8" title="1">if len(tags) &gt; 0 </span><span class="cov8" title="1">{
-                if err := s.validateTags(tags); err != nil </span><span class="cov0" title="0">{
+                if err := s.validateTags(tags); err != nil </span><span class="cov8" title="1">{
                         return nil, err
                 }</span>
         }
 
         // Validate status if provided
-        <span class="cov8" title="1">if status != "" &amp;&amp; !s.isValidStatus(status) </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if status != "" &amp;&amp; !s.isValidStatus(status) </span><span class="cov8" title="1">{
                 return nil, errors.New("invalid question status")
         }</span>
 
@@ -5403,7 +5207,7 @@ func (s *ForumService) SearchQuestions(courseID, query string, tags []model.Ques
 // Helper methods
 
 func (s *ForumService) validateTags(tags []model.QuestionTag) error <span class="cov8" title="1">{
-        if len(tags) == 0 </span><span class="cov0" title="0">{
+        if len(tags) == 0 </span><span class="cov8" title="1">{
                 return nil
         }</span>
 
@@ -5420,7 +5224,7 @@ func (s *ForumService) isValidStatus(status model.QuestionStatus) bool <span cla
 }</span>
 </pre>
 		
-		<pre class="file" id="file23" style="display: none">package service
+		<pre class="file" id="file19" style="display: none">package service
 
 import (
         "courses-service/src/model"
@@ -5511,7 +5315,7 @@ func (s *ModuleService) DeleteModule(id string) error <span class="cov8" title="
 }
 </pre>
 		
-		<pre class="file" id="file24" style="display: none">package service
+		<pre class="file" id="file20" style="display: none">package service
 
 import (
         "context"
@@ -5554,37 +5358,37 @@ func (s *SubmissionService) CreateSubmission(ctx context.Context, submission *mo
         return s.submissionRepo.Create(ctx, submission)</span>
 }
 
-func (s *SubmissionService) UpdateSubmission(ctx context.Context, submission *model.Submission) error <span class="cov0" title="0">{
+func (s *SubmissionService) UpdateSubmission(ctx context.Context, submission *model.Submission) error <span class="cov8" title="1">{
         existing, err := s.submissionRepo.GetByID(ctx, submission.ID.Hex())
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return err
         }</span>
-        <span class="cov0" title="0">if existing == nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if existing == nil </span><span class="cov8" title="1">{
                 return ErrSubmissionNotFound
         }</span>
 
-        <span class="cov0" title="0">submission.UpdatedAt = time.Now()
+        <span class="cov8" title="1">submission.UpdatedAt = time.Now()
         return s.submissionRepo.Update(ctx, submission)</span>
 }
 
-func (s *SubmissionService) SubmitSubmission(ctx context.Context, submissionID string) error <span class="cov0" title="0">{
+func (s *SubmissionService) SubmitSubmission(ctx context.Context, submissionID string) error <span class="cov8" title="1">{
         submission, err := s.submissionRepo.GetByID(ctx, submissionID)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return err
         }</span>
-        <span class="cov0" title="0">if submission == nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if submission == nil </span><span class="cov8" title="1">{
                 return ErrSubmissionNotFound
         }</span>
 
-        <span class="cov0" title="0">assignment, err := s.assignmentRepo.GetByID(ctx, submission.AssignmentID)
+        <span class="cov8" title="1">assignment, err := s.assignmentRepo.GetByID(ctx, submission.AssignmentID)
         if err != nil </span><span class="cov0" title="0">{
                 return err
         }</span>
-        <span class="cov0" title="0">if assignment == nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if assignment == nil </span><span class="cov8" title="1">{
                 return ErrAssignmentNotFound
         }</span>
 
-        <span class="cov0" title="0">now := time.Now()
+        <span class="cov8" title="1">now := time.Now()
         submission.SubmittedAt = &amp;now
         submission.UpdatedAt = now
 
@@ -5594,22 +5398,22 @@ func (s *SubmissionService) SubmitSubmission(ctx context.Context, submissionID s
                 if now.After(gracePeriodEnd) </span><span class="cov0" title="0">{
                         submission.Status = model.SubmissionStatusLate
                 }</span>
-        } else<span class="cov0" title="0"> {
+        } else<span class="cov8" title="1"> {
                 submission.Status = model.SubmissionStatusSubmitted
         }</span>
 
-        <span class="cov0" title="0">return s.submissionRepo.Update(ctx, submission)</span>
+        <span class="cov8" title="1">return s.submissionRepo.Update(ctx, submission)</span>
 }
 
 func (s *SubmissionService) GetSubmission(ctx context.Context, id string) (*model.Submission, error) <span class="cov8" title="1">{
         return s.submissionRepo.GetByID(ctx, id)
 }</span>
 
-func (s *SubmissionService) GetSubmissionsByAssignment(ctx context.Context, assignmentID string) ([]model.Submission, error) <span class="cov0" title="0">{
+func (s *SubmissionService) GetSubmissionsByAssignment(ctx context.Context, assignmentID string) ([]model.Submission, error) <span class="cov8" title="1">{
         return s.submissionRepo.GetByAssignment(ctx, assignmentID)
 }</span>
 
-func (s *SubmissionService) GetSubmissionsByStudent(ctx context.Context, studentUUID string) ([]model.Submission, error) <span class="cov0" title="0">{
+func (s *SubmissionService) GetSubmissionsByStudent(ctx context.Context, studentUUID string) ([]model.Submission, error) <span class="cov8" title="1">{
         return s.submissionRepo.GetByStudent(ctx, studentUUID)
 }</span>
 
@@ -5700,7 +5504,7 @@ func (s *SubmissionService) ValidateTeacherPermissions(ctx context.Context, assi
 }
 </pre>
 		
-		<pre class="file" id="file25" style="display: none">package testutil
+		<pre class="file" id="file21" style="display: none">package testutil
 
 import (
         "context"
