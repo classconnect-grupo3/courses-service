@@ -444,3 +444,34 @@ func (c *CourseController) GetCourseFeedbackSummary(ctx *gin.Context) {
 	slog.Debug("Course feedback summary retrieved", "summary", summary)
 	ctx.JSON(http.StatusOK, summary)
 }
+
+// @Summary Get course members
+// @Description Get all members of a course (teacher, aux teachers, and students)
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Success 200 {object} schemas.CourseMembersResponse
+// @Failure 400 {object} schemas.ErrorResponse
+// @Failure 404 {object} schemas.ErrorResponse
+// @Failure 500 {object} schemas.ErrorResponse
+// @Router /courses/{id}/members [get]
+func (c *CourseController) GetCourseMembers(ctx *gin.Context) {
+	slog.Debug("Getting course members")
+
+	courseId := ctx.Param("id")
+	if courseId == "" {
+		ctx.JSON(http.StatusBadRequest, schemas.ErrorResponse{Error: "Course ID is required"})
+		return
+	}
+
+	members, err := c.service.GetCourseMembers(courseId)
+	if err != nil {
+		slog.Error("Error getting course members", "error", err)
+		ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	slog.Debug("Course members retrieved", "course_id", courseId)
+	ctx.JSON(http.StatusOK, members)
+}

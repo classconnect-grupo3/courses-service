@@ -172,6 +172,11 @@ func (m *AssignmentMockRepository) DeleteAssignment(id string) error {
 
 type CourseMockService struct{}
 
+// GetCourseMembers implements service.CourseServiceInterface.
+func (m *CourseMockService) GetCourseMembers(courseId string) (*schemas.CourseMembersResponse, error) {
+	panic("unimplemented")
+}
+
 // GetCourseFeedback implements service.CourseServiceInterface.
 func (m *CourseMockService) GetCourseFeedback(courseId string, getCourseFeedbackRequest schemas.GetCourseFeedbackRequest) ([]*model.CourseFeedback, error) {
 	panic("unimplemented")

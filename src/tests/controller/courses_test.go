@@ -5,6 +5,7 @@ import (
 	"courses-service/src/model"
 	"courses-service/src/router"
 	"courses-service/src/schemas"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -159,6 +160,24 @@ func (m *MockCourseService) GetCourseFeedback(courseId string, getCourseFeedback
 	return []*model.CourseFeedback{}, nil
 }
 
+func (m *MockCourseService) GetCourseMembers(courseId string) (*schemas.CourseMembersResponse, error) {
+	if courseId == "course-123" {
+		return &schemas.CourseMembersResponse{
+			TeacherID:      "teacher-123",
+			AuxTeachersIDs: []string{"aux-teacher-1", "aux-teacher-2"},
+			StudentsIDs:    []string{"student-1", "student-2", "student-3"},
+		}, nil
+	}
+	if courseId == "empty-course" {
+		return &schemas.CourseMembersResponse{
+			TeacherID:      "teacher-456",
+			AuxTeachersIDs: []string{},
+			StudentsIDs:    []string{},
+		}, nil
+	}
+	return &schemas.CourseMembersResponse{}, nil
+}
+
 type MockCourseServiceWithError struct{}
 
 // GetFavouriteCourses implements service.CourseServiceInterface.
@@ -222,6 +241,10 @@ func (m *MockCourseServiceWithError) CreateCourseFeedback(courseId string, feedb
 // GetCourseFeedback implements service.CourseServiceInterface.
 func (m *MockCourseServiceWithError) GetCourseFeedback(courseId string, getCourseFeedbackRequest schemas.GetCourseFeedbackRequest) ([]*model.CourseFeedback, error) {
 	return nil, errors.New("Error getting course feedback")
+}
+
+func (m *MockCourseServiceWithError) GetCourseMembers(courseId string) (*schemas.CourseMembersResponse, error) {
+	return nil, errors.New("Error getting course members")
 }
 
 func TestGetCourses(t *testing.T) {
@@ -843,4 +866,52 @@ func TestGetCourseFeedbackWithDateRangeFilter(t *testing.T) {
 	responseBody := w.Body.String()
 	assert.Contains(t, responseBody, "student-1")
 	assert.Contains(t, responseBody, "student-2")
+}
+
+func TestGetCourseMembers(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/courses/course-123/members", nil)
+	w := httptest.NewRecorder()
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response schemas.CourseMembersResponse
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "teacher-123", response.TeacherID)
+	assert.Len(t, response.AuxTeachersIDs, 2)
+	assert.Equal(t, "aux-teacher-1", response.AuxTeachersIDs[0])
+	assert.Equal(t, "aux-teacher-2", response.AuxTeachersIDs[1])
+	assert.Len(t, response.StudentsIDs, 3)
+	assert.Equal(t, "student-1", response.StudentsIDs[0])
+	assert.Equal(t, "student-2", response.StudentsIDs[1])
+	assert.Equal(t, "student-3", response.StudentsIDs[2])
+}
+
+func TestGetCourseMembersEmptyCourse(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/courses/empty-course/members", nil)
+	w := httptest.NewRecorder()
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response schemas.CourseMembersResponse
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "teacher-456", response.TeacherID)
+	assert.Len(t, response.AuxTeachersIDs, 0)
+	assert.Len(t, response.StudentsIDs, 0)
+}
+
+func TestGetCourseMembersWithError(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/courses/course-123/members", nil)
+	w := httptest.NewRecorder()
+	errorRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+	var response schemas.ErrorResponse
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "Error getting course members", response.Error)
 }

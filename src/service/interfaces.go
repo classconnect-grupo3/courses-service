@@ -22,6 +22,7 @@ type CourseServiceInterface interface {
 	GetFavouriteCourses(studentId string) ([]*model.Course, error)
 	CreateCourseFeedback(courseId string, feedbackRequest schemas.CreateCourseFeedbackRequest) (*model.CourseFeedback, error)
 	GetCourseFeedback(courseId string, getCourseFeedbackRequest schemas.GetCourseFeedbackRequest) ([]*model.CourseFeedback, error)
+	GetCourseMembers(courseId string) (*schemas.CourseMembersResponse, error)
 }
 
 type ModuleServiceInterface interface {

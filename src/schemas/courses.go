@@ -66,3 +66,9 @@ type RemoveAuxTeacherFromCourseRequest struct {
 type DeleteCourseResponse struct {
 	Message string `json:"message"`
 }
+
+type CourseMembersResponse struct {
+	TeacherID      string   `json:"teacher_id"`
+	AuxTeachersIDs []string `json:"aux_teachers_ids"`
+	StudentsIDs    []string `json:"students_ids"`
+}

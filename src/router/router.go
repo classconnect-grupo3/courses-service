@@ -52,6 +52,7 @@ func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseControl
 	r.GET("/courses/user/:userId", controller.GetCoursesByUserId)
 	r.GET("/courses/title/:title", controller.GetCourseByTitle)
 	r.GET("/courses/:id", controller.GetCourseById)
+	r.GET("/courses/:id/members", controller.GetCourseMembers)
 	r.DELETE("/courses/:id", controller.DeleteCourse)
 	r.PUT("/courses/:id", controller.UpdateCourse)
 	r.POST("/courses/:id/aux-teacher/add", controller.AddAuxTeacherToCourse)
