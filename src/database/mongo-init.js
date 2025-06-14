@@ -16,5 +16,6 @@ db.createCollection('courses');
 db.createCollection('enrollments');
 db.createCollection('submissions');
 db.createCollection('assignments');
+db.createCollection('forum');
 
 print("MongoDB initialization completed successfully!");
