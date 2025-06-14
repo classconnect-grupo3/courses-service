@@ -112,10 +112,10 @@ func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.Enrollmen
 func InitializeForumRoutes(r *gin.Engine, controller *controller.ForumController) {
 	// Question endpoints
 	r.POST("/forum/questions", controller.CreateQuestion)
-	r.GET("/forum/questions/:id", controller.GetQuestionById)
+	r.GET("/forum/questions/:questionId", controller.GetQuestionById)
 	r.GET("/forum/courses/:courseId/questions", controller.GetQuestionsByCourseId)
-	r.PUT("/forum/questions/:id", controller.UpdateQuestion)
-	r.DELETE("/forum/questions/:id", controller.DeleteQuestion)
+	r.PUT("/forum/questions/:questionId", controller.UpdateQuestion)
+	r.DELETE("/forum/questions/:questionId", controller.DeleteQuestion)
 
 	// Answer endpoints
 	r.POST("/forum/questions/:questionId/answers", controller.AddAnswer)

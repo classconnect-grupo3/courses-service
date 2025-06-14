@@ -65,43 +65,49 @@
 				
 				<option value="file4">courses-service/src/controller/enrollment_controller.go (82.5%)</option>
 				
-				<option value="file5">courses-service/src/controller/module_controller.go (100.0%)</option>
+				<option value="file5">courses-service/src/controller/forum_controller.go (85.6%)</option>
 				
-				<option value="file6">courses-service/src/controller/submission_controller.go (91.2%)</option>
+				<option value="file6">courses-service/src/controller/module_controller.go (100.0%)</option>
 				
-				<option value="file7">courses-service/src/database/connection.go (71.4%)</option>
+				<option value="file7">courses-service/src/controller/submission_controller.go (91.2%)</option>
 				
-				<option value="file8">courses-service/src/docs/docs.go (0.0%)</option>
+				<option value="file8">courses-service/src/database/connection.go (71.4%)</option>
 				
-				<option value="file9">courses-service/src/main.go (0.0%)</option>
+				<option value="file9">courses-service/src/docs/docs.go (0.0%)</option>
 				
-				<option value="file10">courses-service/src/middleware/student_auth.go (10.0%)</option>
+				<option value="file10">courses-service/src/main.go (0.0%)</option>
 				
-				<option value="file11">courses-service/src/middleware/teacher_auth.go (10.0%)</option>
+				<option value="file11">courses-service/src/middleware/student_auth.go (10.0%)</option>
 				
-				<option value="file12">courses-service/src/repository/assignment_repository.go (87.0%)</option>
+				<option value="file12">courses-service/src/middleware/teacher_auth.go (10.0%)</option>
 				
-				<option value="file13">courses-service/src/repository/course_repository.go (82.4%)</option>
+				<option value="file13">courses-service/src/repository/assignment_repository.go (87.0%)</option>
 				
-				<option value="file14">courses-service/src/repository/enrollment_repository.go (81.4%)</option>
+				<option value="file14">courses-service/src/repository/course_repository.go (82.4%)</option>
 				
-				<option value="file15">courses-service/src/repository/module_repository.go (89.9%)</option>
+				<option value="file15">courses-service/src/repository/enrollment_repository.go (81.4%)</option>
 				
-				<option value="file16">courses-service/src/repository/submission_repository.go (83.3%)</option>
+				<option value="file16">courses-service/src/repository/forum_repository.go (87.1%)</option>
 				
-				<option value="file17">courses-service/src/router/router.go (96.5%)</option>
+				<option value="file17">courses-service/src/repository/module_repository.go (89.9%)</option>
 				
-				<option value="file18">courses-service/src/service/assignment_service.go (100.0%)</option>
+				<option value="file18">courses-service/src/repository/submission_repository.go (83.3%)</option>
 				
-				<option value="file19">courses-service/src/service/course_service.go (95.0%)</option>
+				<option value="file19">courses-service/src/router/router.go (97.1%)</option>
 				
-				<option value="file20">courses-service/src/service/enrollment_service.go (96.2%)</option>
+				<option value="file20">courses-service/src/service/assignment_service.go (100.0%)</option>
 				
-				<option value="file21">courses-service/src/service/module_service.go (100.0%)</option>
+				<option value="file21">courses-service/src/service/course_service.go (95.0%)</option>
 				
-				<option value="file22">courses-service/src/service/submission_service.go (53.2%)</option>
+				<option value="file22">courses-service/src/service/enrollment_service.go (96.2%)</option>
 				
-				<option value="file23">courses-service/src/tests/testutil/db_setup.go (72.2%)</option>
+				<option value="file23">courses-service/src/service/forum_service.go (69.7%)</option>
+				
+				<option value="file24">courses-service/src/service/module_service.go (100.0%)</option>
+				
+				<option value="file25">courses-service/src/service/submission_service.go (53.2%)</option>
+				
+				<option value="file26">courses-service/src/tests/testutil/db_setup.go (72.2%)</option>
 				
 				</select>
 			</div>
@@ -1250,6 +1256,617 @@ func (c *EnrollmentController) GetStudentFeedbackSummary(ctx *gin.Context) <span
 		<pre class="file" id="file5" style="display: none">package controller
 
 import (
+        "log/slog"
+        "net/http"
+
+        "courses-service/src/model"
+        "courses-service/src/schemas"
+        "courses-service/src/service"
+
+        "github.com/gin-gonic/gin"
+)
+
+type ForumController struct {
+        service service.ForumServiceInterface
+}
+
+func NewForumController(service service.ForumServiceInterface) *ForumController <span class="cov8" title="1">{
+        return &amp;ForumController{service: service}
+}</span>
+
+// Question endpoints
+
+// @Summary Create a new question
+// @Description Create a new question in the forum for a specific course
+// @Tags forum
+// @Accept json
+// @Produce json
+// @Param question body schemas.CreateQuestionRequest true "Question to create"
+// @Success 201 {object} schemas.QuestionDetailResponse
+// @Failure 400 {object} schemas.ErrorResponse
+// @Failure 500 {object} schemas.ErrorResponse
+// @Router /forum/questions [post]
+func (c *ForumController) CreateQuestion(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Creating forum question")
+
+        var request schemas.CreateQuestionRequest
+        if err := ctx.ShouldBindJSON(&amp;request); err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error binding JSON", "error", err)
+                ctx.JSON(http.StatusBadRequest, schemas.ErrorResponse{Error: err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">question, err := c.service.CreateQuestion(
+                request.CourseID,
+                request.AuthorID,
+                request.Title,
+                request.Description,
+                request.Tags,
+        )
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error creating question", "error", err)
+                ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">response := c.mapQuestionToDetailResponse(question)
+        slog.Debug("Question created", "question_id", question.ID.Hex())
+        ctx.JSON(http.StatusCreated, response)</span>
+}
+
+// @Summary Get question by ID
+// @Description Get a specific question by its ID with all answers
+// @Tags forum
+// @Accept json
+// @Produce json
+// @Param questionId path string true "Question ID"
+// @Success 200 {object} schemas.QuestionDetailResponse
+// @Failure 404 {object} schemas.ErrorResponse
+// @Failure 500 {object} schemas.ErrorResponse
+// @Router /forum/questions/{questionId} [get]
+func (c *ForumController) GetQuestionById(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Getting question by ID")
+
+        id := ctx.Param("questionId")
+        question, err := c.service.GetQuestionById(id)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error getting question by ID", "error", err)
+                ctx.JSON(http.StatusNotFound, schemas.ErrorResponse{Error: err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">response := c.mapQuestionToDetailResponse(question)
+        slog.Debug("Question retrieved", "question_id", id)
+        ctx.JSON(http.StatusOK, response)</span>
+}
+
+// @Summary Get questions by course ID
+// @Description Get all questions for a specific course
+// @Tags forum
+// @Accept json
+// @Produce json
+// @Param courseId path string true "Course ID"
+// @Success 200 {array} schemas.QuestionResponse
+// @Failure 404 {object} schemas.ErrorResponse
+// @Failure 500 {object} schemas.ErrorResponse
+// @Router /forum/courses/{courseId}/questions [get]
+func (c *ForumController) GetQuestionsByCourseId(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Getting questions by course ID")
+
+        courseID := ctx.Param("courseId")
+        questions, err := c.service.GetQuestionsByCourseId(courseID)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error getting questions by course ID", "error", err)
+                ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">var responses []schemas.QuestionResponse
+        for _, question := range questions </span><span class="cov8" title="1">{
+                responses = append(responses, c.mapQuestionToResponse(&amp;question))
+        }</span>
+
+        <span class="cov8" title="1">slog.Debug("Questions retrieved", "course_id", courseID, "count", len(responses))
+        ctx.JSON(http.StatusOK, responses)</span>
+}
+
+// @Summary Update a question
+// @Description Update a question's title, description, or tags
+// @Tags forum
+// @Accept json
+// @Produce json
+// @Param questionId path string true "Question ID"
+// @Param question body schemas.UpdateQuestionRequest true "Question update data"
+// @Success 200 {object} schemas.QuestionDetailResponse
+// @Failure 400 {object} schemas.ErrorResponse
+// @Failure 403 {object} schemas.ErrorResponse
+// @Failure 404 {object} schemas.ErrorResponse
+// @Failure 500 {object} schemas.ErrorResponse
+// @Router /forum/questions/{questionId} [put]
+func (c *ForumController) UpdateQuestion(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Updating question")
+
+        id := ctx.Param("questionId")
+        var request schemas.UpdateQuestionRequest
+        if err := ctx.ShouldBindJSON(&amp;request); err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error binding JSON", "error", err)
+                ctx.JSON(http.StatusBadRequest, schemas.ErrorResponse{Error: err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">question, err := c.service.UpdateQuestion(id, request.Title, request.Description, request.Tags)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error updating question", "error", err)
+                ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">response := c.mapQuestionToDetailResponse(question)
+        slog.Debug("Question updated", "question_id", id)
+        ctx.JSON(http.StatusOK, response)</span>
+}
+
+// @Summary Delete a question
+// @Description Delete a question (only by the author)
+// @Tags forum
+// @Accept json
+// @Produce json
+// @Param questionId path string true "Question ID"
+// @Param authorId query string true "Author ID"
+// @Success 200 {object} schemas.MessageResponse
+// @Failure 403 {object} schemas.ErrorResponse
+// @Failure 404 {object} schemas.ErrorResponse
+// @Failure 500 {object} schemas.ErrorResponse
+// @Router /forum/questions/{questionId} [delete]
+func (c *ForumController) DeleteQuestion(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Deleting question")
+
+        id := ctx.Param("questionId")
+        authorID := ctx.Query("authorId")
+
+        if authorID == "" </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusBadRequest, schemas.ErrorResponse{Error: "authorId query parameter is required"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">err := c.service.DeleteQuestion(id, authorID)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error deleting question", "error", err)
+                ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">slog.Debug("Question deleted", "question_id", id)
+        ctx.JSON(http.StatusOK, schemas.MessageResponse{Message: "Question deleted successfully"})</span>
+}
+
+// Answer endpoints
+
+// @Summary Add an answer to a question
+// @Description Add a new answer to a specific question
+// @Tags forum
+// @Accept json
+// @Produce json
+// @Param questionId path string true "Question ID"
+// @Param answer body schemas.CreateAnswerRequest true "Answer to create"
+// @Success 201 {object} schemas.AnswerResponse
+// @Failure 400 {object} schemas.ErrorResponse
+// @Failure 404 {object} schemas.ErrorResponse
+// @Failure 500 {object} schemas.ErrorResponse
+// @Router /forum/questions/{questionId}/answers [post]
+func (c *ForumController) AddAnswer(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Adding answer to question")
+
+        questionID := ctx.Param("questionId")
+        var request schemas.CreateAnswerRequest
+        if err := ctx.ShouldBindJSON(&amp;request); err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error binding JSON", "error", err)
+                ctx.JSON(http.StatusBadRequest, schemas.ErrorResponse{Error: err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">answer, err := c.service.AddAnswer(questionID, request.AuthorID, request.Content)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error adding answer", "error", err)
+                ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">response := c.mapAnswerToResponse(answer)
+        slog.Debug("Answer added", "question_id", questionID, "answer_id", answer.ID)
+        ctx.JSON(http.StatusCreated, response)</span>
+}
+
+// @Summary Update an answer
+// @Description Update an answer's content (only by the author)
+// @Tags forum
+// @Accept json
+// @Produce json
+// @Param questionId path string true "Question ID"
+// @Param answerId path string true "Answer ID"
+// @Param answer body schemas.UpdateAnswerRequest true "Answer update data"
+// @Param authorId query string true "Author ID"
+// @Success 200 {object} schemas.AnswerResponse
+// @Failure 400 {object} schemas.ErrorResponse
+// @Failure 403 {object} schemas.ErrorResponse
+// @Failure 404 {object} schemas.ErrorResponse
+// @Failure 500 {object} schemas.ErrorResponse
+// @Router /forum/questions/{questionId}/answers/{answerId} [put]
+func (c *ForumController) UpdateAnswer(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Updating answer")
+
+        questionID := ctx.Param("questionId")
+        answerID := ctx.Param("answerId")
+        authorID := ctx.Query("authorId")
+
+        if authorID == "" </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusBadRequest, schemas.ErrorResponse{Error: "authorId query parameter is required"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">var request schemas.UpdateAnswerRequest
+        if err := ctx.ShouldBindJSON(&amp;request); err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error binding JSON", "error", err)
+                ctx.JSON(http.StatusBadRequest, schemas.ErrorResponse{Error: err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">answer, err := c.service.UpdateAnswer(questionID, answerID, authorID, request.Content)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error updating answer", "error", err)
+                ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">response := c.mapAnswerToResponse(answer)
+        slog.Debug("Answer updated", "question_id", questionID, "answer_id", answerID)
+        ctx.JSON(http.StatusOK, response)</span>
+}
+
+// @Summary Delete an answer
+// @Description Delete an answer (only by the author)
+// @Tags forum
+// @Accept json
+// @Produce json
+// @Param questionId path string true "Question ID"
+// @Param answerId path string true "Answer ID"
+// @Param authorId query string true "Author ID"
+// @Success 200 {object} schemas.MessageResponse
+// @Failure 403 {object} schemas.ErrorResponse
+// @Failure 404 {object} schemas.ErrorResponse
+// @Failure 500 {object} schemas.ErrorResponse
+// @Router /forum/questions/{questionId}/answers/{answerId} [delete]
+func (c *ForumController) DeleteAnswer(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Deleting answer")
+
+        questionID := ctx.Param("questionId")
+        answerID := ctx.Param("answerId")
+        authorID := ctx.Query("authorId")
+
+        if authorID == "" </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusBadRequest, schemas.ErrorResponse{Error: "authorId query parameter is required"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">err := c.service.DeleteAnswer(questionID, answerID, authorID)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error deleting answer", "error", err)
+                ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">slog.Debug("Answer deleted", "question_id", questionID, "answer_id", answerID)
+        ctx.JSON(http.StatusOK, schemas.MessageResponse{Message: "Answer deleted successfully"})</span>
+}
+
+// @Summary Accept an answer
+// @Description Accept an answer as the solution (only by the question author)
+// @Tags forum
+// @Accept json
+// @Produce json
+// @Param questionId path string true "Question ID"
+// @Param answerId path string true "Answer ID"
+// @Param authorId query string true "Question Author ID"
+// @Success 200 {object} schemas.MessageResponse
+// @Failure 403 {object} schemas.ErrorResponse
+// @Failure 404 {object} schemas.ErrorResponse
+// @Failure 500 {object} schemas.ErrorResponse
+// @Router /forum/questions/{questionId}/answers/{answerId}/accept [post]
+func (c *ForumController) AcceptAnswer(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Accepting answer")
+
+        questionID := ctx.Param("questionId")
+        answerID := ctx.Param("answerId")
+        authorID := ctx.Query("authorId")
+
+        if authorID == "" </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusBadRequest, schemas.ErrorResponse{Error: "authorId query parameter is required"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">err := c.service.AcceptAnswer(questionID, answerID, authorID)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error accepting answer", "error", err)
+                ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">slog.Debug("Answer accepted", "question_id", questionID, "answer_id", answerID)
+        ctx.JSON(http.StatusOK, schemas.MessageResponse{Message: "Answer accepted successfully"})</span>
+}
+
+// Vote endpoints
+
+// @Summary Vote on a question
+// @Description Vote up or down on a question
+// @Tags forum
+// @Accept json
+// @Produce json
+// @Param questionId path string true "Question ID"
+// @Param vote body schemas.VoteRequest true "Vote data"
+// @Success 200 {object} schemas.VoteResponse
+// @Failure 400 {object} schemas.ErrorResponse
+// @Failure 403 {object} schemas.ErrorResponse
+// @Failure 404 {object} schemas.ErrorResponse
+// @Failure 500 {object} schemas.ErrorResponse
+// @Router /forum/questions/{questionId}/vote [post]
+func (c *ForumController) VoteQuestion(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Voting on question")
+
+        questionID := ctx.Param("questionId")
+        var request schemas.VoteRequest
+        if err := ctx.ShouldBindJSON(&amp;request); err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error binding JSON", "error", err)
+                ctx.JSON(http.StatusBadRequest, schemas.ErrorResponse{Error: err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">err := c.service.VoteQuestion(questionID, request.UserID, request.VoteType)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error voting on question", "error", err)
+                ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">voteTypeStr := "up"
+        if request.VoteType == model.VoteTypeDown </span><span class="cov0" title="0">{
+                voteTypeStr = "down"
+        }</span>
+
+        <span class="cov8" title="1">slog.Debug("Vote registered", "question_id", questionID, "vote_type", voteTypeStr)
+        ctx.JSON(http.StatusOK, schemas.VoteResponse{Message: "Vote registered successfully"})</span>
+}
+
+// @Summary Vote on an answer
+// @Description Vote up or down on an answer
+// @Tags forum
+// @Accept json
+// @Produce json
+// @Param questionId path string true "Question ID"
+// @Param answerId path string true "Answer ID"
+// @Param vote body schemas.VoteRequest true "Vote data"
+// @Success 200 {object} schemas.VoteResponse
+// @Failure 400 {object} schemas.ErrorResponse
+// @Failure 403 {object} schemas.ErrorResponse
+// @Failure 404 {object} schemas.ErrorResponse
+// @Failure 500 {object} schemas.ErrorResponse
+// @Router /forum/questions/{questionId}/answers/{answerId}/vote [post]
+func (c *ForumController) VoteAnswer(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Voting on answer")
+
+        questionID := ctx.Param("questionId")
+        answerID := ctx.Param("answerId")
+        var request schemas.VoteRequest
+        if err := ctx.ShouldBindJSON(&amp;request); err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error binding JSON", "error", err)
+                ctx.JSON(http.StatusBadRequest, schemas.ErrorResponse{Error: err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">err := c.service.VoteAnswer(questionID, answerID, request.UserID, request.VoteType)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error voting on answer", "error", err)
+                ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">voteTypeStr := "up"
+        if request.VoteType == model.VoteTypeDown </span><span class="cov0" title="0">{
+                voteTypeStr = "down"
+        }</span>
+
+        <span class="cov8" title="1">slog.Debug("Vote registered", "question_id", questionID, "answer_id", answerID, "vote_type", voteTypeStr)
+        ctx.JSON(http.StatusOK, schemas.VoteResponse{Message: "Vote registered successfully"})</span>
+}
+
+// @Summary Remove vote from question
+// @Description Remove a user's vote from a question
+// @Tags forum
+// @Accept json
+// @Produce json
+// @Param questionId path string true "Question ID"
+// @Param userId query string true "User ID"
+// @Success 200 {object} schemas.MessageResponse
+// @Failure 404 {object} schemas.ErrorResponse
+// @Failure 500 {object} schemas.ErrorResponse
+// @Router /forum/questions/{questionId}/vote [delete]
+func (c *ForumController) RemoveVoteFromQuestion(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Removing vote from question")
+
+        questionID := ctx.Param("questionId")
+        userID := ctx.Query("userId")
+
+        if userID == "" </span><span class="cov8" title="1">{
+                ctx.JSON(http.StatusBadRequest, schemas.ErrorResponse{Error: "userId query parameter is required"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">err := c.service.RemoveVoteFromQuestion(questionID, userID)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error removing vote from question", "error", err)
+                ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">slog.Debug("Vote removed", "question_id", questionID, "user_id", userID)
+        ctx.JSON(http.StatusOK, schemas.MessageResponse{Message: "Vote removed successfully"})</span>
+}
+
+// @Summary Remove vote from answer
+// @Description Remove a user's vote from an answer
+// @Tags forum
+// @Accept json
+// @Produce json
+// @Param questionId path string true "Question ID"
+// @Param answerId path string true "Answer ID"
+// @Param userId query string true "User ID"
+// @Success 200 {object} schemas.MessageResponse
+// @Failure 404 {object} schemas.ErrorResponse
+// @Failure 500 {object} schemas.ErrorResponse
+// @Router /forum/questions/{questionId}/answers/{answerId}/vote [delete]
+func (c *ForumController) RemoveVoteFromAnswer(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Removing vote from answer")
+
+        questionID := ctx.Param("questionId")
+        answerID := ctx.Param("answerId")
+        userID := ctx.Query("userId")
+
+        if userID == "" </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusBadRequest, schemas.ErrorResponse{Error: "userId query parameter is required"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">err := c.service.RemoveVoteFromAnswer(questionID, answerID, userID)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error removing vote from answer", "error", err)
+                ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">slog.Debug("Vote removed", "question_id", questionID, "answer_id", answerID, "user_id", userID)
+        ctx.JSON(http.StatusOK, schemas.MessageResponse{Message: "Vote removed successfully"})</span>
+}
+
+// Search endpoints
+
+// @Summary Search questions
+// @Description Search questions in a course with optional filters
+// @Tags forum
+// @Accept json
+// @Produce json
+// @Param courseId path string true "Course ID"
+// @Param query query string false "Search query"
+// @Param tags query []string false "Filter by tags"
+// @Param status query string false "Filter by status"
+// @Success 200 {object} schemas.SearchQuestionsResponse
+// @Failure 400 {object} schemas.ErrorResponse
+// @Failure 500 {object} schemas.ErrorResponse
+// @Router /forum/courses/{courseId}/search [get]
+func (c *ForumController) SearchQuestions(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Searching questions")
+
+        courseID := ctx.Param("courseId")
+
+        var request schemas.SearchQuestionsRequest
+        if err := ctx.ShouldBindQuery(&amp;request); err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error binding query parameters", "error", err)
+                ctx.JSON(http.StatusBadRequest, schemas.ErrorResponse{Error: err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">questions, err := c.service.SearchQuestions(courseID, request.Query, request.Tags, request.Status)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error searching questions", "error", err)
+                ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">var questionResponses []schemas.QuestionResponse
+        for _, question := range questions </span><span class="cov8" title="1">{
+                questionResponses = append(questionResponses, c.mapQuestionToResponse(&amp;question))
+        }</span>
+
+        <span class="cov8" title="1">response := schemas.SearchQuestionsResponse{
+                Questions: questionResponses,
+                Total:     len(questionResponses),
+        }
+
+        slog.Debug("Questions searched", "course_id", courseID, "total", response.Total)
+        ctx.JSON(http.StatusOK, response)</span>
+}
+
+// Helper methods for mapping models to responses
+
+func (c *ForumController) mapQuestionToResponse(question *model.ForumQuestion) schemas.QuestionResponse <span class="cov8" title="1">{
+        voteCount := c.calculateVoteCount(question.Votes)
+        answerCount := len(question.Answers)
+
+        return schemas.QuestionResponse{
+                ID:               question.ID.Hex(),
+                CourseID:         question.CourseID,
+                AuthorID:         question.AuthorID,
+                Title:            question.Title,
+                Description:      question.Description,
+                Tags:             question.Tags,
+                VoteCount:        voteCount,
+                AnswerCount:      answerCount,
+                Status:           question.Status,
+                AcceptedAnswerID: question.AcceptedAnswerID,
+                CreatedAt:        question.CreatedAt,
+                UpdatedAt:        question.UpdatedAt,
+        }
+}</span>
+
+func (c *ForumController) mapQuestionToDetailResponse(question *model.ForumQuestion) schemas.QuestionDetailResponse <span class="cov8" title="1">{
+        voteCount := c.calculateVoteCount(question.Votes)
+
+        var answers []schemas.AnswerResponse
+        for _, answer := range question.Answers </span><span class="cov8" title="1">{
+                answers = append(answers, c.mapAnswerToResponse(&amp;answer))
+        }</span>
+
+        <span class="cov8" title="1">return schemas.QuestionDetailResponse{
+                ID:               question.ID.Hex(),
+                CourseID:         question.CourseID,
+                AuthorID:         question.AuthorID,
+                Title:            question.Title,
+                Description:      question.Description,
+                Tags:             question.Tags,
+                VoteCount:        voteCount,
+                Answers:          answers,
+                Status:           question.Status,
+                AcceptedAnswerID: question.AcceptedAnswerID,
+                CreatedAt:        question.CreatedAt,
+                UpdatedAt:        question.UpdatedAt,
+        }</span>
+}
+
+func (c *ForumController) mapAnswerToResponse(answer *model.ForumAnswer) schemas.AnswerResponse <span class="cov8" title="1">{
+        voteCount := c.calculateVoteCount(answer.Votes)
+
+        return schemas.AnswerResponse{
+                ID:         answer.ID,
+                AuthorID:   answer.AuthorID,
+                Content:    answer.Content,
+                VoteCount:  voteCount,
+                IsAccepted: answer.IsAccepted,
+                CreatedAt:  answer.CreatedAt,
+                UpdatedAt:  answer.UpdatedAt,
+        }
+}</span>
+
+func (c *ForumController) calculateVoteCount(votes []model.Vote) int <span class="cov8" title="1">{
+        count := 0
+        for _, vote := range votes </span><span class="cov8" title="1">{
+                count += vote.VoteType
+        }</span>
+        <span class="cov8" title="1">return count</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package controller
+
+import (
         "courses-service/src/model"
         "courses-service/src/schemas"
         "courses-service/src/service"
@@ -1401,7 +2018,7 @@ func (c *ModuleController) DeleteModule(ctx *gin.Context) <span class="cov8" tit
 }
 </pre>
 		
-		<pre class="file" id="file6" style="display: none">package controller
+		<pre class="file" id="file7" style="display: none">package controller
 
 import (
         "fmt"
@@ -1692,7 +2309,7 @@ func (c *SubmissionController) GradeSubmission(ctx *gin.Context) <span class="co
 }
 </pre>
 		
-		<pre class="file" id="file7" style="display: none">package database
+		<pre class="file" id="file8" style="display: none">package database
 
 import (
         "courses-service/src/config"
@@ -1722,7 +2339,7 @@ func NewMongoDBClient(config *config.Config) (*mongo.Client, error) <span class=
 }
 </pre>
 		
-		<pre class="file" id="file8" style="display: none">// Package docs Code generated by swaggo/swag. DO NOT EDIT
+		<pre class="file" id="file9" style="display: none">// Package docs Code generated by swaggo/swag. DO NOT EDIT
 package docs
 
 import "github.com/swaggo/swag"
@@ -2980,6 +3597,833 @@ const docTemplate = `{
                 }
             }
         },
+        "/forum/courses/{courseId}/questions": {
+            "get": {
+                "description": "Get all questions for a specific course",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "summary": "Get questions by course ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "courseId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/schemas.QuestionResponse"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/forum/courses/{courseId}/search": {
+            "get": {
+                "description": "Search questions in a course with optional filters",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "summary": "Search questions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "courseId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "query",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Filter by tags",
+                        "name": "tags",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by status",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.SearchQuestionsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/forum/questions": {
+            "post": {
+                "description": "Create a new question in the forum for a specific course",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "summary": "Create a new question",
+                "parameters": [
+                    {
+                        "description": "Question to create",
+                        "name": "question",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.CreateQuestionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.QuestionDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/forum/questions/{id}": {
+            "get": {
+                "description": "Get a specific question by its ID with all answers",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "summary": "Get question by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Question ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.QuestionDetailResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a question's title, description, or tags",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "summary": "Update a question",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Question ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Question update data",
+                        "name": "question",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.UpdateQuestionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.QuestionDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a question (only by the author)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "summary": "Delete a question",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Question ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Author ID",
+                        "name": "authorId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.MessageResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/forum/questions/{questionId}/answers": {
+            "post": {
+                "description": "Add a new answer to a specific question",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "summary": "Add an answer to a question",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Question ID",
+                        "name": "questionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Answer to create",
+                        "name": "answer",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.CreateAnswerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.AnswerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/forum/questions/{questionId}/answers/{answerId}": {
+            "put": {
+                "description": "Update an answer's content (only by the author)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "summary": "Update an answer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Question ID",
+                        "name": "questionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Answer ID",
+                        "name": "answerId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Answer update data",
+                        "name": "answer",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.UpdateAnswerRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Author ID",
+                        "name": "authorId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.AnswerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete an answer (only by the author)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "summary": "Delete an answer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Question ID",
+                        "name": "questionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Answer ID",
+                        "name": "answerId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Author ID",
+                        "name": "authorId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.MessageResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/forum/questions/{questionId}/answers/{answerId}/accept": {
+            "post": {
+                "description": "Accept an answer as the solution (only by the question author)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "summary": "Accept an answer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Question ID",
+                        "name": "questionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Answer ID",
+                        "name": "answerId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Question Author ID",
+                        "name": "authorId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.MessageResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/forum/questions/{questionId}/answers/{answerId}/vote": {
+            "post": {
+                "description": "Vote up or down on an answer",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "summary": "Vote on an answer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Question ID",
+                        "name": "questionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Answer ID",
+                        "name": "answerId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Vote data",
+                        "name": "vote",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.VoteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.VoteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Remove a user's vote from an answer",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "summary": "Remove vote from answer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Question ID",
+                        "name": "questionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Answer ID",
+                        "name": "answerId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.MessageResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/forum/questions/{questionId}/vote": {
+            "post": {
+                "description": "Vote up or down on a question",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "summary": "Vote on a question",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Question ID",
+                        "name": "questionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Vote data",
+                        "name": "vote",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.VoteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.VoteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Remove a user's vote from a question",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "summary": "Remove vote from question",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Question ID",
+                        "name": "questionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.MessageResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/modules": {
             "post": {
                 "description": "Create a new module",
@@ -3417,15 +4861,17 @@ const docTemplate = `{
         "model.Module": {
             "type": "object",
             "properties": {
-                "content": {
-                    "description": "TODO change this with media in the future",
-                    "type": "string"
-                },
                 "course_id": {
                     "type": "string"
                 },
                 "created_at": {
                     "type": "string"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ModuleData"
+                    }
                 },
                 "description": {
                     "type": "string"
@@ -3440,6 +4886,44 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ModuleData": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "module_id": {
+                    "type": "string"
+                },
+                "resources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ModuleDataResource"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ModuleDataResource": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "this comes from the frontend so it's a number",
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "url": {
                     "type": "string"
                 }
             }
@@ -3476,6 +4960,40 @@ const docTemplate = `{
                     "$ref": "#/definitions/model.QuestionType"
                 }
             }
+        },
+        "model.QuestionStatus": {
+            "type": "string",
+            "enum": [
+                "open",
+                "resolved",
+                "closed"
+            ],
+            "x-enum-varnames": [
+                "QuestionStatusOpen",
+                "QuestionStatusResolved",
+                "QuestionStatusClosed"
+            ]
+        },
+        "model.QuestionTag": {
+            "type": "string",
+            "enum": [
+                "general",
+                "teoria",
+                "practica",
+                "necesito-ayuda",
+                "informacion",
+                "ejercitacion",
+                "otro"
+            ],
+            "x-enum-varnames": [
+                "QuestionTagGeneral",
+                "QuestionTagTeoria",
+                "QuestionTagPractica",
+                "QuestionTagNecesitoAyuda",
+                "QuestionTagInformacion",
+                "QuestionTagEjercitacion",
+                "QuestionTagOtro"
+            ]
         },
         "model.QuestionType": {
             "type": "string",
@@ -3569,6 +5087,47 @@ const docTemplate = `{
                 "SubmissionStatusSubmitted",
                 "SubmissionStatusLate"
             ]
+        },
+        "schemas.AnswerResponse": {
+            "type": "object",
+            "properties": {
+                "author_id": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_accepted": {
+                    "type": "boolean"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "vote_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "schemas.CreateAnswerRequest": {
+            "type": "object",
+            "required": [
+                "author_id",
+                "content"
+            ],
+            "properties": {
+                "author_id": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                }
+            }
         },
         "schemas.CreateAssignmentRequest": {
             "type": "object",
@@ -3690,7 +5249,27 @@ const docTemplate = `{
                 "title"
             ],
             "properties": {
-                "content": {
+                "course_id": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.CreateQuestionRequest": {
+            "type": "object",
+            "required": [
+                "author_id",
+                "course_id",
+                "description",
+                "title"
+            ],
+            "properties": {
+                "author_id": {
                     "type": "string"
                 },
                 "course_id": {
@@ -3698,6 +5277,12 @@ const docTemplate = `{
                 },
                 "description": {
                     "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.QuestionTag"
+                    }
                 },
                 "title": {
                     "type": "string"
@@ -3750,6 +5335,14 @@ const docTemplate = `{
             ],
             "properties": {
                 "student_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
                     "type": "string"
                 }
             }
@@ -3808,6 +5401,105 @@ const docTemplate = `{
                 }
             }
         },
+        "schemas.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.QuestionDetailResponse": {
+            "type": "object",
+            "properties": {
+                "accepted_answer_id": {
+                    "type": "string"
+                },
+                "answers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schemas.AnswerResponse"
+                    }
+                },
+                "author_id": {
+                    "type": "string"
+                },
+                "course_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/model.QuestionStatus"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.QuestionTag"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "vote_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "schemas.QuestionResponse": {
+            "type": "object",
+            "properties": {
+                "accepted_answer_id": {
+                    "type": "string"
+                },
+                "answer_count": {
+                    "type": "integer"
+                },
+                "author_id": {
+                    "type": "string"
+                },
+                "course_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/model.QuestionStatus"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.QuestionTag"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "vote_count": {
+                    "type": "integer"
+                }
+            }
+        },
         "schemas.RemoveAuxTeacherFromCourseRequest": {
             "type": "object",
             "required": [
@@ -3820,6 +5512,20 @@ const docTemplate = `{
                 },
                 "teacher_id": {
                     "type": "string"
+                }
+            }
+        },
+        "schemas.SearchQuestionsResponse": {
+            "type": "object",
+            "properties": {
+                "questions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schemas.QuestionResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         },
@@ -3876,6 +5582,17 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.UpdateAnswerRequest": {
+            "type": "object",
+            "required": [
+                "content"
+            ],
+            "properties": {
+                "content": {
                     "type": "string"
                 }
             }
@@ -3944,8 +5661,11 @@ const docTemplate = `{
         "schemas.UpdateModuleRequest": {
             "type": "object",
             "properties": {
-                "content": {
-                    "type": "string"
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ModuleData"
+                    }
                 },
                 "description": {
                     "type": "string"
@@ -3954,6 +5674,46 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.UpdateQuestionRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.QuestionTag"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.VoteRequest": {
+            "type": "object",
+            "required": [
+                "user_id",
+                "vote_type"
+            ],
+            "properties": {
+                "user_id": {
+                    "type": "string"
+                },
+                "vote_type": {
+                    "type": "integer"
+                }
+            }
+        },
+        "schemas.VoteResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
                     "type": "string"
                 }
             }
@@ -3980,7 +5740,7 @@ func init() <span class="cov0" title="0">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file9" style="display: none">package main
+		<pre class="file" id="file10" style="display: none">package main
 
 import (
         "courses-service/src/config"
@@ -4011,7 +5771,7 @@ func main() <span class="cov0" title="0">{
 }
 </pre>
 		
-		<pre class="file" id="file10" style="display: none">package middleware
+		<pre class="file" id="file11" style="display: none">package middleware
 
 import (
         "github.com/gin-gonic/gin"
@@ -4040,7 +5800,7 @@ func StudentAuth() gin.HandlerFunc <span class="cov8" title="1">{
 }
 </pre>
 		
-		<pre class="file" id="file11" style="display: none">package middleware
+		<pre class="file" id="file12" style="display: none">package middleware
 
 import (
         "github.com/gin-gonic/gin"
@@ -4069,7 +5829,7 @@ func TeacherAuth() gin.HandlerFunc <span class="cov8" title="1">{
 }
 </pre>
 		
-		<pre class="file" id="file12" style="display: none">package repository
+		<pre class="file" id="file13" style="display: none">package repository
 
 import (
         "context"
@@ -4239,7 +5999,7 @@ func (r *AssignmentRepository) DeleteAssignment(id string) error <span class="co
 }
 </pre>
 		
-		<pre class="file" id="file13" style="display: none">package repository
+		<pre class="file" id="file14" style="display: none">package repository
 
 import (
         "context"
@@ -4610,7 +6370,7 @@ func (r *CourseRepository) GetCourseFeedback(courseID string, getCourseFeedbackR
 }
 </pre>
 		
-		<pre class="file" id="file14" style="display: none">package repository
+		<pre class="file" id="file15" style="display: none">package repository
 
 import (
         "context"
@@ -4901,7 +6661,464 @@ func (r *EnrollmentRepository) GetFeedbackByStudentId(studentID string, getFeedb
 }
 </pre>
 		
-		<pre class="file" id="file15" style="display: none">package repository
+		<pre class="file" id="file16" style="display: none">package repository
+
+import (
+        "context"
+        "courses-service/src/model"
+        "fmt"
+        "time"
+
+        "go.mongodb.org/mongo-driver/bson"
+        "go.mongodb.org/mongo-driver/bson/primitive"
+        "go.mongodb.org/mongo-driver/mongo"
+        "go.mongodb.org/mongo-driver/mongo/options"
+)
+
+type ForumRepository struct {
+        db                 *mongo.Client
+        dbName             string
+        questionCollection *mongo.Collection
+}
+
+func NewForumRepository(db *mongo.Client, dbName string) *ForumRepository <span class="cov8" title="1">{
+        return &amp;ForumRepository{
+                db:                 db,
+                dbName:             dbName,
+                questionCollection: db.Database(dbName).Collection("forum_questions"),
+        }
+}</span>
+
+// Question operations
+
+func (r *ForumRepository) CreateQuestion(question model.ForumQuestion) (*model.ForumQuestion, error) <span class="cov8" title="1">{
+        question.ID = primitive.NewObjectID()
+        question.CreatedAt = time.Now()
+        question.UpdatedAt = time.Now()
+        question.Status = model.QuestionStatusOpen
+        question.Votes = []model.Vote{}
+        question.Answers = []model.ForumAnswer{}
+
+        _, err := r.questionCollection.InsertOne(context.TODO(), question)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to create question: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">return &amp;question, nil</span>
+}
+
+func (r *ForumRepository) GetQuestionById(id string) (*model.ForumQuestion, error) <span class="cov8" title="1">{
+        questionUUID, err := primitive.ObjectIDFromHex(id)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("invalid question ID: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">filter := bson.M{"_id": questionUUID}
+        var question model.ForumQuestion
+        err = r.questionCollection.FindOne(context.TODO(), filter).Decode(&amp;question)
+        if err != nil </span><span class="cov8" title="1">{
+                if err == mongo.ErrNoDocuments </span><span class="cov8" title="1">{
+                        return nil, fmt.Errorf("question with id %s not found", id)
+                }</span>
+                <span class="cov0" title="0">return nil, fmt.Errorf("failed to find question: %v", err)</span>
+        }
+
+        <span class="cov8" title="1">return &amp;question, nil</span>
+}
+
+func (r *ForumRepository) GetQuestionsByCourseId(courseID string) ([]model.ForumQuestion, error) <span class="cov8" title="1">{
+        filter := bson.M{"course_id": courseID}
+
+        // Sort by created_at descending (newest first)
+        opts := options.Find().SetSort(bson.D{{Key: "created_at", Value: -1}})
+
+        cursor, err := r.questionCollection.Find(context.TODO(), filter, opts)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to find questions: %v", err)
+        }</span>
+        <span class="cov8" title="1">defer cursor.Close(context.TODO())
+
+        var questions []model.ForumQuestion
+        if err = cursor.All(context.TODO(), &amp;questions); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to decode questions: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">return questions, nil</span>
+}
+
+func (r *ForumRepository) UpdateQuestion(id string, question model.ForumQuestion) (*model.ForumQuestion, error) <span class="cov8" title="1">{
+        questionUUID, err := primitive.ObjectIDFromHex(id)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("invalid question ID: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">filter := bson.M{"_id": questionUUID}
+        updateFields := bson.M{}
+
+        if question.Title != "" </span><span class="cov8" title="1">{
+                updateFields["title"] = question.Title
+        }</span>
+        <span class="cov8" title="1">if question.Description != "" </span><span class="cov8" title="1">{
+                updateFields["description"] = question.Description
+        }</span>
+        <span class="cov8" title="1">if len(question.Tags) &gt; 0 </span><span class="cov8" title="1">{
+                updateFields["tags"] = question.Tags
+        }</span>
+        <span class="cov8" title="1">if question.Status != "" </span><span class="cov8" title="1">{
+                updateFields["status"] = question.Status
+        }</span>
+
+        <span class="cov8" title="1">updateFields["updated_at"] = time.Now()
+
+        update := bson.M{"$set": updateFields}
+
+        var updatedQuestion model.ForumQuestion
+        err = r.questionCollection.FindOneAndUpdate(
+                context.TODO(),
+                filter,
+                update,
+                options.FindOneAndUpdate().SetReturnDocument(options.After),
+        ).Decode(&amp;updatedQuestion)
+
+        if err != nil </span><span class="cov0" title="0">{
+                if err == mongo.ErrNoDocuments </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("question not found")
+                }</span>
+                <span class="cov0" title="0">return nil, fmt.Errorf("failed to update question: %v", err)</span>
+        }
+
+        <span class="cov8" title="1">return &amp;updatedQuestion, nil</span>
+}
+
+func (r *ForumRepository) DeleteQuestion(id string) error <span class="cov8" title="1">{
+        questionUUID, err := primitive.ObjectIDFromHex(id)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("invalid question ID: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">filter := bson.M{"_id": questionUUID}
+        result, err := r.questionCollection.DeleteOne(context.TODO(), filter)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to delete question: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">if result.DeletedCount == 0 </span><span class="cov8" title="1">{
+                return fmt.Errorf("question not found")
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// Answer operations
+
+func (r *ForumRepository) AddAnswer(questionID string, answer model.ForumAnswer) (*model.ForumAnswer, error) <span class="cov8" title="1">{
+        questionUUID, err := primitive.ObjectIDFromHex(questionID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("invalid question ID: %v", err)
+        }</span>
+
+        // Generate a unique answer ID
+        <span class="cov8" title="1">answer.ID = primitive.NewObjectID().Hex()
+        answer.CreatedAt = time.Now()
+        answer.UpdatedAt = time.Now()
+        answer.Votes = []model.Vote{}
+        answer.IsAccepted = false
+
+        filter := bson.M{"_id": questionUUID}
+        update := bson.M{
+                "$push": bson.M{"answers": answer},
+                "$set":  bson.M{"updated_at": time.Now()},
+        }
+
+        result, err := r.questionCollection.UpdateOne(context.TODO(), filter, update)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to add answer: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">if result.MatchedCount == 0 </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("question not found")
+        }</span>
+
+        <span class="cov8" title="1">return &amp;answer, nil</span>
+}
+
+func (r *ForumRepository) UpdateAnswer(questionID string, answerID string, content string) (*model.ForumAnswer, error) <span class="cov8" title="1">{
+        questionUUID, err := primitive.ObjectIDFromHex(questionID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("invalid question ID: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">filter := bson.M{
+                "_id":        questionUUID,
+                "answers.id": answerID,
+        }
+        update := bson.M{
+                "$set": bson.M{
+                        "answers.$.content":    content,
+                        "answers.$.updated_at": time.Now(),
+                        "updated_at":           time.Now(),
+                },
+        }
+
+        result, err := r.questionCollection.UpdateOne(context.TODO(), filter, update)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to update answer: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">if result.MatchedCount == 0 </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("question or answer not found")
+        }</span>
+
+        // Get the updated question to return the answer
+        <span class="cov8" title="1">question, err := r.GetQuestionById(questionID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Find and return the updated answer
+        <span class="cov8" title="1">for _, ans := range question.Answers </span><span class="cov8" title="1">{
+                if ans.ID == answerID </span><span class="cov8" title="1">{
+                        return &amp;ans, nil
+                }</span>
+        }
+
+        <span class="cov0" title="0">return nil, fmt.Errorf("answer not found after update")</span>
+}
+
+func (r *ForumRepository) DeleteAnswer(questionID string, answerID string) error <span class="cov8" title="1">{
+        questionUUID, err := primitive.ObjectIDFromHex(questionID)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("invalid question ID: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">filter := bson.M{"_id": questionUUID}
+        update := bson.M{
+                "$pull": bson.M{"answers": bson.M{"id": answerID}},
+                "$set":  bson.M{"updated_at": time.Now()},
+        }
+
+        result, err := r.questionCollection.UpdateOne(context.TODO(), filter, update)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to delete answer: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">if result.MatchedCount == 0 </span><span class="cov0" title="0">{
+                return fmt.Errorf("question not found")
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (r *ForumRepository) AcceptAnswer(questionID string, answerID string) error <span class="cov8" title="1">{
+        questionUUID, err := primitive.ObjectIDFromHex(questionID)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("invalid question ID: %v", err)
+        }</span>
+
+        // First, unmark any previously accepted answer
+        <span class="cov8" title="1">filter := bson.M{"_id": questionUUID}
+        update := bson.M{
+                "$set": bson.M{
+                        "answers.$[].is_accepted": false,
+                        "updated_at":              time.Now(),
+                },
+        }
+
+        _, err = r.questionCollection.UpdateOne(context.TODO(), filter, update)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to unmark previous accepted answers: %v", err)
+        }</span>
+
+        // Now mark the specific answer as accepted and update question status
+        <span class="cov8" title="1">filter = bson.M{
+                "_id":        questionUUID,
+                "answers.id": answerID,
+        }
+        update = bson.M{
+                "$set": bson.M{
+                        "answers.$.is_accepted": true,
+                        "accepted_answer_id":    answerID,
+                        "status":                model.QuestionStatusResolved,
+                        "updated_at":            time.Now(),
+                },
+        }
+
+        result, err := r.questionCollection.UpdateOne(context.TODO(), filter, update)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to accept answer: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">if result.MatchedCount == 0 </span><span class="cov8" title="1">{
+                return fmt.Errorf("question or answer not found")
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// Vote operations
+
+func (r *ForumRepository) AddVoteToQuestion(questionID string, userID string, voteType int) error <span class="cov8" title="1">{
+        questionUUID, err := primitive.ObjectIDFromHex(questionID)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("invalid question ID: %v", err)
+        }</span>
+
+        // First, remove any existing vote from this user
+        <span class="cov8" title="1">err = r.RemoveVoteFromQuestion(questionID, userID)
+        if err != nil </span>{<span class="cov0" title="0">
+                // Ignore error if no vote exists
+        }</span>
+
+        // Add the new vote
+        <span class="cov8" title="1">vote := model.Vote{
+                UserID:    userID,
+                VoteType:  voteType,
+                CreatedAt: time.Now(),
+        }
+
+        filter := bson.M{"_id": questionUUID}
+        update := bson.M{
+                "$push": bson.M{"votes": vote},
+                "$set":  bson.M{"updated_at": time.Now()},
+        }
+
+        result, err := r.questionCollection.UpdateOne(context.TODO(), filter, update)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to add vote: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">if result.MatchedCount == 0 </span><span class="cov0" title="0">{
+                return fmt.Errorf("question not found")
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (r *ForumRepository) AddVoteToAnswer(questionID string, answerID string, userID string, voteType int) error <span class="cov8" title="1">{
+        questionUUID, err := primitive.ObjectIDFromHex(questionID)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("invalid question ID: %v", err)
+        }</span>
+
+        // First, remove any existing vote from this user on this answer
+        <span class="cov8" title="1">err = r.RemoveVoteFromAnswer(questionID, answerID, userID)
+        if err != nil </span>{<span class="cov0" title="0">
+                // Ignore error if no vote exists
+        }</span>
+
+        // Add the new vote
+        <span class="cov8" title="1">vote := model.Vote{
+                UserID:    userID,
+                VoteType:  voteType,
+                CreatedAt: time.Now(),
+        }
+
+        filter := bson.M{
+                "_id":        questionUUID,
+                "answers.id": answerID,
+        }
+        update := bson.M{
+                "$push": bson.M{"answers.$.votes": vote},
+                "$set":  bson.M{"updated_at": time.Now()},
+        }
+
+        result, err := r.questionCollection.UpdateOne(context.TODO(), filter, update)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to add vote to answer: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">if result.MatchedCount == 0 </span><span class="cov8" title="1">{
+                return fmt.Errorf("question or answer not found")
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (r *ForumRepository) RemoveVoteFromQuestion(questionID string, userID string) error <span class="cov8" title="1">{
+        questionUUID, err := primitive.ObjectIDFromHex(questionID)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("invalid question ID: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">filter := bson.M{"_id": questionUUID}
+        update := bson.M{
+                "$pull": bson.M{"votes": bson.M{"user_id": userID}},
+                "$set":  bson.M{"updated_at": time.Now()},
+        }
+
+        _, err = r.questionCollection.UpdateOne(context.TODO(), filter, update)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to remove vote: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (r *ForumRepository) RemoveVoteFromAnswer(questionID string, answerID string, userID string) error <span class="cov8" title="1">{
+        questionUUID, err := primitive.ObjectIDFromHex(questionID)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("invalid question ID: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">filter := bson.M{
+                "_id":        questionUUID,
+                "answers.id": answerID,
+        }
+        update := bson.M{
+                "$pull": bson.M{"answers.$.votes": bson.M{"user_id": userID}},
+                "$set":  bson.M{"updated_at": time.Now()},
+        }
+
+        _, err = r.questionCollection.UpdateOne(context.TODO(), filter, update)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to remove vote from answer: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// Search and filter operations
+
+func (r *ForumRepository) SearchQuestions(courseID string, query string, tags []model.QuestionTag, status model.QuestionStatus) ([]model.ForumQuestion, error) <span class="cov8" title="1">{
+        filter := bson.M{"course_id": courseID}
+
+        // Add text search if query is provided
+        if query != "" </span><span class="cov8" title="1">{
+                filter["$or"] = []bson.M{
+                        {"title": bson.M{"$regex": query, "$options": "i"}},
+                        {"description": bson.M{"$regex": query, "$options": "i"}},
+                }
+        }</span>
+
+        // Add tags filter if provided
+        <span class="cov8" title="1">if len(tags) &gt; 0 </span><span class="cov8" title="1">{
+                filter["tags"] = bson.M{"$in": tags}
+        }</span>
+
+        // Add status filter if provided
+        <span class="cov8" title="1">if status != "" </span><span class="cov8" title="1">{
+                filter["status"] = status
+        }</span>
+
+        // Set up options - sort by newest first
+        <span class="cov8" title="1">opts := options.Find().SetSort(bson.D{{Key: "created_at", Value: -1}})
+
+        cursor, err := r.questionCollection.Find(context.TODO(), filter, opts)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to search questions: %v", err)
+        }</span>
+        <span class="cov8" title="1">defer cursor.Close(context.TODO())
+
+        var questions []model.ForumQuestion
+        if err = cursor.All(context.TODO(), &amp;questions); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to decode search results: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">return questions, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file17" style="display: none">package repository
 
 import (
         "context"
@@ -5216,7 +7433,7 @@ func (r *ModuleRepository) GetModuleByOrder(courseID string, order int) (*model.
 }
 </pre>
 		
-		<pre class="file" id="file16" style="display: none">package repository
+		<pre class="file" id="file18" style="display: none">package repository
 
 import (
         "context"
@@ -5314,7 +7531,7 @@ func (r *MongoSubmissionRepository) GetByStudent(ctx context.Context, studentUUI
 }
 </pre>
 		
-		<pre class="file" id="file17" style="display: none">package router
+		<pre class="file" id="file19" style="display: none">package router
 
 import (
         "courses-service/src/ai"
@@ -5425,6 +7642,30 @@ func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.Enrollmen
         r.GET("/feedback/student/:id/summary", controller.GetStudentFeedbackSummary)
 }</span>
 
+func InitializeForumRoutes(r *gin.Engine, controller *controller.ForumController) <span class="cov8" title="1">{
+        // Question endpoints
+        r.POST("/forum/questions", controller.CreateQuestion)
+        r.GET("/forum/questions/:questionId", controller.GetQuestionById)
+        r.GET("/forum/courses/:courseId/questions", controller.GetQuestionsByCourseId)
+        r.PUT("/forum/questions/:questionId", controller.UpdateQuestion)
+        r.DELETE("/forum/questions/:questionId", controller.DeleteQuestion)
+
+        // Answer endpoints
+        r.POST("/forum/questions/:questionId/answers", controller.AddAnswer)
+        r.PUT("/forum/questions/:questionId/answers/:answerId", controller.UpdateAnswer)
+        r.DELETE("/forum/questions/:questionId/answers/:answerId", controller.DeleteAnswer)
+        r.POST("/forum/questions/:questionId/answers/:answerId/accept", controller.AcceptAnswer)
+
+        // Vote endpoints
+        r.POST("/forum/questions/:questionId/vote", controller.VoteQuestion)
+        r.POST("/forum/questions/:questionId/answers/:answerId/vote", controller.VoteAnswer)
+        r.DELETE("/forum/questions/:questionId/vote", controller.RemoveVoteFromQuestion)
+        r.DELETE("/forum/questions/:questionId/answers/:answerId/vote", controller.RemoveVoteFromAnswer)
+
+        // Search endpoints
+        r.GET("/forum/courses/:courseId/search", controller.SearchQuestions)
+}</span>
+
 func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
         r := createRouterFromConfig(config)
         addNewRelicMiddleware(r)
@@ -5445,20 +7686,23 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
         assignmentRepository := repository.NewAssignmentRepository(dbClient, config.DBName)
         submissionRepository := repository.NewMongoSubmissionRepository(dbClient.Database(config.DBName))
         moduleRepository := repository.NewModuleRepository(dbClient, config.DBName)
+        forumRepository := repository.NewForumRepository(dbClient, config.DBName)
 
         courseService := service.NewCourseService(courseRepo, enrollmentRepo)
         enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
         assignmentService := service.NewAssignmentService(assignmentRepository, courseService)
         submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository, courseService)
         moduleService := service.NewModuleService(moduleRepository)
+        forumService := service.NewForumService(forumRepository, courseRepo)
 
         courseController := controller.NewCourseController(courseService, aiClient)
         enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient)
         assignmentsController := controller.NewAssignmentsController(assignmentService)
         submissionController := controller.NewSubmissionController(submissionService) // TODO change this when interface is added
         moduleController := controller.NewModuleController(moduleService)
+        forumController := controller.NewForumController(forumService)
 
-        InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController, moduleController)
+        InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController, moduleController, forumController)
         r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler)) // endpoint to consult the swagger documentation
         return r</span>
 }
@@ -5470,16 +7714,18 @@ func InitializeRoutes(
         submissionController *controller.SubmissionController,
         enrollmentController *controller.EnrollmentController,
         moduleController *controller.ModuleController,
+        forumController *controller.ForumController,
 ) <span class="cov8" title="1">{
         InitializeCoursesRoutes(r, courseController)
         InitializeSubmissionRoutes(r, submissionController)
         InitializeAssignmentsRoutes(r, assignmentsController)
         InitializeEnrollmentsRoutes(r, enrollmentController)
         InitializeModulesRoutes(r, moduleController)
+        InitializeForumRoutes(r, forumController)
 }</span>
 </pre>
 		
-		<pre class="file" id="file18" style="display: none">package service
+		<pre class="file" id="file20" style="display: none">package service
 
 import (
         "context"
@@ -5586,7 +7832,7 @@ func (s *AssignmentService) GetAssignmentsByCourseId(courseId string) ([]*model.
 }
 </pre>
 		
-		<pre class="file" id="file19" style="display: none">package service
+		<pre class="file" id="file21" style="display: none">package service
 
 import (
         "courses-service/src/model"
@@ -5824,7 +8070,7 @@ func (s *CourseService) GetCourseFeedback(courseId string, getCourseFeedbackRequ
 }
 </pre>
 		
-		<pre class="file" id="file20" style="display: none">package service
+		<pre class="file" id="file22" style="display: none">package service
 
 import (
         "courses-service/src/model"
@@ -6064,7 +8310,455 @@ func (s *EnrollmentService) GetFeedbackByStudentId(studentID string, getFeedback
 }
 </pre>
 		
-		<pre class="file" id="file21" style="display: none">package service
+		<pre class="file" id="file23" style="display: none">package service
+
+import (
+        "courses-service/src/model"
+        "courses-service/src/repository"
+        "errors"
+        "slices"
+)
+
+type ForumService struct {
+        forumRepository  repository.ForumRepositoryInterface
+        courseRepository repository.CourseRepositoryInterface
+}
+
+func NewForumService(forumRepository repository.ForumRepositoryInterface, courseRepository repository.CourseRepositoryInterface) *ForumService <span class="cov8" title="1">{
+        return &amp;ForumService{
+                forumRepository:  forumRepository,
+                courseRepository: courseRepository,
+        }
+}</span>
+
+// Question operations
+
+func (s *ForumService) CreateQuestion(courseID, authorID, title, description string, tags []model.QuestionTag) (*model.ForumQuestion, error) <span class="cov8" title="1">{
+        // Validate required fields
+        if courseID == "" </span><span class="cov8" title="1">{
+                return nil, errors.New("course ID is required")
+        }</span>
+        <span class="cov8" title="1">if authorID == "" </span><span class="cov8" title="1">{
+                return nil, errors.New("author ID is required")
+        }</span>
+        <span class="cov8" title="1">if title == "" </span><span class="cov8" title="1">{
+                return nil, errors.New("title is required")
+        }</span>
+        <span class="cov8" title="1">if description == "" </span><span class="cov8" title="1">{
+                return nil, errors.New("description is required")
+        }</span>
+
+        // Validate course exists
+        <span class="cov8" title="1">_, err := s.courseRepository.GetCourseById(courseID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.New("course not found")
+        }</span>
+
+        // Validate tags
+        <span class="cov8" title="1">if err := s.validateTags(tags); err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">question := model.ForumQuestion{
+                CourseID:    courseID,
+                AuthorID:    authorID,
+                Title:       title,
+                Description: description,
+                Tags:        tags,
+        }
+
+        return s.forumRepository.CreateQuestion(question)</span>
+}
+
+func (s *ForumService) GetQuestionById(id string) (*model.ForumQuestion, error) <span class="cov8" title="1">{
+        if id == "" </span><span class="cov8" title="1">{
+                return nil, errors.New("question ID is required")
+        }</span>
+
+        <span class="cov8" title="1">return s.forumRepository.GetQuestionById(id)</span>
+}
+
+func (s *ForumService) GetQuestionsByCourseId(courseID string) ([]model.ForumQuestion, error) <span class="cov8" title="1">{
+        if courseID == "" </span><span class="cov8" title="1">{
+                return nil, errors.New("course ID is required")
+        }</span>
+
+        // Validate course exists
+        <span class="cov8" title="1">if _, err := s.courseRepository.GetCourseById(courseID); err != nil </span><span class="cov8" title="1">{
+                return nil, errors.New("course not found")
+        }</span>
+
+        <span class="cov8" title="1">return s.forumRepository.GetQuestionsByCourseId(courseID)</span>
+}
+
+func (s *ForumService) UpdateQuestion(id, title, description string, tags []model.QuestionTag) (*model.ForumQuestion, error) <span class="cov8" title="1">{
+        if id == "" </span><span class="cov8" title="1">{
+                return nil, errors.New("question ID is required")
+        }</span>
+
+        // Get existing question to validate ownership later if needed
+        <span class="cov8" title="1">existingQuestion, err := s.forumRepository.GetQuestionById(id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Validate fields if provided
+        <span class="cov8" title="1">if title == "" &amp;&amp; description == "" &amp;&amp; len(tags) == 0 </span><span class="cov8" title="1">{
+                return nil, errors.New("at least one field must be provided for update")
+        }</span>
+
+        // Validate tags if provided
+        <span class="cov8" title="1">if len(tags) &gt; 0 </span><span class="cov8" title="1">{
+                if err := s.validateTags(tags); err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+        }
+
+        <span class="cov8" title="1">updateQuestion := model.ForumQuestion{
+                Title:       title,
+                Description: description,
+                Tags:        tags,
+        }
+
+        // If only tags are being updated, preserve existing title and description
+        if title == "" </span><span class="cov0" title="0">{
+                updateQuestion.Title = existingQuestion.Title
+        }</span>
+        <span class="cov8" title="1">if description == "" </span><span class="cov0" title="0">{
+                updateQuestion.Description = existingQuestion.Description
+        }</span>
+        <span class="cov8" title="1">if len(tags) == 0 </span><span class="cov0" title="0">{
+                updateQuestion.Tags = existingQuestion.Tags
+        }</span>
+
+        <span class="cov8" title="1">return s.forumRepository.UpdateQuestion(id, updateQuestion)</span>
+}
+
+func (s *ForumService) DeleteQuestion(id, authorID string) error <span class="cov8" title="1">{
+        if id == "" </span><span class="cov8" title="1">{
+                return errors.New("question ID is required")
+        }</span>
+        <span class="cov8" title="1">if authorID == "" </span><span class="cov8" title="1">{
+                return errors.New("author ID is required")
+        }</span>
+
+        // Validate question exists and check ownership
+        <span class="cov8" title="1">question, err := s.forumRepository.GetQuestionById(id)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">if question.AuthorID != authorID </span><span class="cov8" title="1">{
+                return errors.New("you can only delete your own questions")
+        }</span>
+
+        <span class="cov8" title="1">return s.forumRepository.DeleteQuestion(id)</span>
+}
+
+// Answer operations
+
+func (s *ForumService) AddAnswer(questionID, authorID, content string) (*model.ForumAnswer, error) <span class="cov8" title="1">{
+        if questionID == "" </span><span class="cov8" title="1">{
+                return nil, errors.New("question ID is required")
+        }</span>
+        <span class="cov8" title="1">if authorID == "" </span><span class="cov8" title="1">{
+                return nil, errors.New("author ID is required")
+        }</span>
+        <span class="cov8" title="1">if content == "" </span><span class="cov8" title="1">{
+                return nil, errors.New("content is required")
+        }</span>
+
+        // Validate question exists
+        <span class="cov8" title="1">_, err := s.forumRepository.GetQuestionById(questionID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">answer := model.ForumAnswer{
+                AuthorID: authorID,
+                Content:  content,
+        }
+
+        return s.forumRepository.AddAnswer(questionID, answer)</span>
+}
+
+func (s *ForumService) UpdateAnswer(questionID, answerID, authorID, content string) (*model.ForumAnswer, error) <span class="cov8" title="1">{
+        if questionID == "" </span><span class="cov0" title="0">{
+                return nil, errors.New("question ID is required")
+        }</span>
+        <span class="cov8" title="1">if answerID == "" </span><span class="cov0" title="0">{
+                return nil, errors.New("answer ID is required")
+        }</span>
+        <span class="cov8" title="1">if authorID == "" </span><span class="cov0" title="0">{
+                return nil, errors.New("author ID is required")
+        }</span>
+        <span class="cov8" title="1">if content == "" </span><span class="cov0" title="0">{
+                return nil, errors.New("content is required")
+        }</span>
+
+        // Validate question exists and check answer ownership
+        <span class="cov8" title="1">question, err := s.forumRepository.GetQuestionById(questionID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Find the answer and check ownership
+        <span class="cov8" title="1">var answerFound bool
+        for _, answer := range question.Answers </span><span class="cov8" title="1">{
+                if answer.ID == answerID </span><span class="cov8" title="1">{
+                        if answer.AuthorID != authorID </span><span class="cov8" title="1">{
+                                return nil, errors.New("you can only update your own answers")
+                        }</span>
+                        <span class="cov8" title="1">answerFound = true
+                        break</span>
+                }
+        }
+
+        <span class="cov8" title="1">if !answerFound </span><span class="cov0" title="0">{
+                return nil, errors.New("answer not found")
+        }</span>
+
+        <span class="cov8" title="1">return s.forumRepository.UpdateAnswer(questionID, answerID, content)</span>
+}
+
+func (s *ForumService) DeleteAnswer(questionID, answerID, authorID string) error <span class="cov8" title="1">{
+        if questionID == "" </span><span class="cov0" title="0">{
+                return errors.New("question ID is required")
+        }</span>
+        <span class="cov8" title="1">if answerID == "" </span><span class="cov0" title="0">{
+                return errors.New("answer ID is required")
+        }</span>
+        <span class="cov8" title="1">if authorID == "" </span><span class="cov0" title="0">{
+                return errors.New("author ID is required")
+        }</span>
+
+        // Validate question exists and check answer ownership
+        <span class="cov8" title="1">question, err := s.forumRepository.GetQuestionById(questionID)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        // Find the answer and check ownership
+        <span class="cov8" title="1">var answerFound bool
+        for _, answer := range question.Answers </span><span class="cov8" title="1">{
+                if answer.ID == answerID </span><span class="cov8" title="1">{
+                        if answer.AuthorID != authorID </span><span class="cov8" title="1">{
+                                return errors.New("you can only delete your own answers")
+                        }</span>
+                        <span class="cov8" title="1">answerFound = true
+                        break</span>
+                }
+        }
+
+        <span class="cov8" title="1">if !answerFound </span><span class="cov0" title="0">{
+                return errors.New("answer not found")
+        }</span>
+
+        <span class="cov8" title="1">return s.forumRepository.DeleteAnswer(questionID, answerID)</span>
+}
+
+func (s *ForumService) AcceptAnswer(questionID, answerID, authorID string) error <span class="cov8" title="1">{
+        if questionID == "" </span><span class="cov0" title="0">{
+                return errors.New("question ID is required")
+        }</span>
+        <span class="cov8" title="1">if answerID == "" </span><span class="cov0" title="0">{
+                return errors.New("answer ID is required")
+        }</span>
+        <span class="cov8" title="1">if authorID == "" </span><span class="cov0" title="0">{
+                return errors.New("author ID is required")
+        }</span>
+
+        // Validate question exists and check question ownership
+        <span class="cov8" title="1">question, err := s.forumRepository.GetQuestionById(questionID)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">if question.AuthorID != authorID </span><span class="cov8" title="1">{
+                return errors.New("only the question author can accept answers")
+        }</span>
+
+        // Validate answer exists
+        <span class="cov8" title="1">var answerFound bool
+        for _, answer := range question.Answers </span><span class="cov8" title="1">{
+                if answer.ID == answerID </span><span class="cov8" title="1">{
+                        answerFound = true
+                        break</span>
+                }
+        }
+
+        <span class="cov8" title="1">if !answerFound </span><span class="cov0" title="0">{
+                return errors.New("answer not found")
+        }</span>
+
+        <span class="cov8" title="1">return s.forumRepository.AcceptAnswer(questionID, answerID)</span>
+}
+
+// Vote operations
+
+func (s *ForumService) VoteQuestion(questionID, userID string, voteType int) error <span class="cov8" title="1">{
+        if questionID == "" </span><span class="cov0" title="0">{
+                return errors.New("question ID is required")
+        }</span>
+        <span class="cov8" title="1">if userID == "" </span><span class="cov0" title="0">{
+                return errors.New("user ID is required")
+        }</span>
+        <span class="cov8" title="1">if voteType != model.VoteTypeUp &amp;&amp; voteType != model.VoteTypeDown </span><span class="cov0" title="0">{
+                return errors.New("invalid vote type")
+        }</span>
+
+        // Validate question exists
+        <span class="cov8" title="1">question, err := s.forumRepository.GetQuestionById(questionID)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        // Check if user is voting on their own question
+        <span class="cov8" title="1">if question.AuthorID == userID </span><span class="cov8" title="1">{
+                return errors.New("you cannot vote on your own question")
+        }</span>
+
+        <span class="cov8" title="1">return s.forumRepository.AddVoteToQuestion(questionID, userID, voteType)</span>
+}
+
+func (s *ForumService) VoteAnswer(questionID, answerID, userID string, voteType int) error <span class="cov8" title="1">{
+        if questionID == "" </span><span class="cov0" title="0">{
+                return errors.New("question ID is required")
+        }</span>
+        <span class="cov8" title="1">if answerID == "" </span><span class="cov0" title="0">{
+                return errors.New("answer ID is required")
+        }</span>
+        <span class="cov8" title="1">if userID == "" </span><span class="cov0" title="0">{
+                return errors.New("user ID is required")
+        }</span>
+        <span class="cov8" title="1">if voteType != model.VoteTypeUp &amp;&amp; voteType != model.VoteTypeDown </span><span class="cov0" title="0">{
+                return errors.New("invalid vote type")
+        }</span>
+
+        // Validate question and answer exist
+        <span class="cov8" title="1">question, err := s.forumRepository.GetQuestionById(questionID)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        // Find the answer and check if user is voting on their own answer
+        <span class="cov8" title="1">var answerFound bool
+        for _, answer := range question.Answers </span><span class="cov8" title="1">{
+                if answer.ID == answerID </span><span class="cov8" title="1">{
+                        if answer.AuthorID == userID </span><span class="cov8" title="1">{
+                                return errors.New("you cannot vote on your own answer")
+                        }</span>
+                        <span class="cov8" title="1">answerFound = true
+                        break</span>
+                }
+        }
+
+        <span class="cov8" title="1">if !answerFound </span><span class="cov0" title="0">{
+                return errors.New("answer not found")
+        }</span>
+
+        <span class="cov8" title="1">return s.forumRepository.AddVoteToAnswer(questionID, answerID, userID, voteType)</span>
+}
+
+func (s *ForumService) RemoveVoteFromQuestion(questionID, userID string) error <span class="cov0" title="0">{
+        if questionID == "" </span><span class="cov0" title="0">{
+                return errors.New("question ID is required")
+        }</span>
+        <span class="cov0" title="0">if userID == "" </span><span class="cov0" title="0">{
+                return errors.New("user ID is required")
+        }</span>
+
+        // Validate question exists
+        <span class="cov0" title="0">_, err := s.forumRepository.GetQuestionById(questionID)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">return s.forumRepository.RemoveVoteFromQuestion(questionID, userID)</span>
+}
+
+func (s *ForumService) RemoveVoteFromAnswer(questionID, answerID, userID string) error <span class="cov0" title="0">{
+        if questionID == "" </span><span class="cov0" title="0">{
+                return errors.New("question ID is required")
+        }</span>
+        <span class="cov0" title="0">if answerID == "" </span><span class="cov0" title="0">{
+                return errors.New("answer ID is required")
+        }</span>
+        <span class="cov0" title="0">if userID == "" </span><span class="cov0" title="0">{
+                return errors.New("user ID is required")
+        }</span>
+
+        // Validate question and answer exist
+        <span class="cov0" title="0">question, err := s.forumRepository.GetQuestionById(questionID)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        // Find the answer
+        <span class="cov0" title="0">var answerFound bool
+        for _, answer := range question.Answers </span><span class="cov0" title="0">{
+                if answer.ID == answerID </span><span class="cov0" title="0">{
+                        answerFound = true
+                        break</span>
+                }
+        }
+
+        <span class="cov0" title="0">if !answerFound </span><span class="cov0" title="0">{
+                return errors.New("answer not found")
+        }</span>
+
+        <span class="cov0" title="0">return s.forumRepository.RemoveVoteFromAnswer(questionID, answerID, userID)</span>
+}
+
+// Search and filter operations
+
+func (s *ForumService) SearchQuestions(courseID, query string, tags []model.QuestionTag, status model.QuestionStatus) ([]model.ForumQuestion, error) <span class="cov8" title="1">{
+        if courseID == "" </span><span class="cov8" title="1">{
+                return nil, errors.New("course ID is required")
+        }</span>
+
+        // Validate course exists
+        <span class="cov8" title="1">_, err := s.courseRepository.GetCourseById(courseID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.New("course not found")
+        }</span>
+
+        // Validate tags if provided
+        <span class="cov8" title="1">if len(tags) &gt; 0 </span><span class="cov8" title="1">{
+                if err := s.validateTags(tags); err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+        }
+
+        // Validate status if provided
+        <span class="cov8" title="1">if status != "" &amp;&amp; !s.isValidStatus(status) </span><span class="cov0" title="0">{
+                return nil, errors.New("invalid question status")
+        }</span>
+
+        <span class="cov8" title="1">return s.forumRepository.SearchQuestions(courseID, query, tags, status)</span>
+}
+
+// Helper methods
+
+func (s *ForumService) validateTags(tags []model.QuestionTag) error <span class="cov8" title="1">{
+        if len(tags) == 0 </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">for _, tag := range tags </span><span class="cov8" title="1">{
+                if !slices.Contains(model.QuestionTagValues, tag) </span><span class="cov8" title="1">{
+                        return errors.New("invalid tag: " + string(tag))
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (s *ForumService) isValidStatus(status model.QuestionStatus) bool <span class="cov8" title="1">{
+        return slices.Contains(model.QuestionStatusValues, status)
+}</span>
+</pre>
+		
+		<pre class="file" id="file24" style="display: none">package service
 
 import (
         "courses-service/src/model"
@@ -6155,7 +8849,7 @@ func (s *ModuleService) DeleteModule(id string) error <span class="cov8" title="
 }
 </pre>
 		
-		<pre class="file" id="file22" style="display: none">package service
+		<pre class="file" id="file25" style="display: none">package service
 
 import (
         "context"
@@ -6344,7 +9038,7 @@ func (s *SubmissionService) ValidateTeacherPermissions(ctx context.Context, assi
 }
 </pre>
 		
-		<pre class="file" id="file23" style="display: none">package testutil
+		<pre class="file" id="file26" style="display: none">package testutil
 
 import (
         "context"

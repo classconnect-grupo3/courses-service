@@ -65,7 +65,7 @@ type ForumQuestion struct {
 
 // ForumAnswer represents a forum answer to a question
 type ForumAnswer struct {
-	ID         string    `json:"id" bson:"_id"`
+	ID         string    `json:"id" bson:"id"`
 	AuthorID   string    `json:"author_id" bson:"author_id"`
 	Content    string    `json:"content" bson:"content"`
 	Votes      []Vote    `json:"votes" bson:"votes"`

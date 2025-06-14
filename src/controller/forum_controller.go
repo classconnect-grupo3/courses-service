@@ -64,15 +64,15 @@ func (c *ForumController) CreateQuestion(ctx *gin.Context) {
 // @Tags forum
 // @Accept json
 // @Produce json
-// @Param id path string true "Question ID"
+// @Param questionId path string true "Question ID"
 // @Success 200 {object} schemas.QuestionDetailResponse
 // @Failure 404 {object} schemas.ErrorResponse
 // @Failure 500 {object} schemas.ErrorResponse
-// @Router /forum/questions/{id} [get]
+// @Router /forum/questions/{questionId} [get]
 func (c *ForumController) GetQuestionById(ctx *gin.Context) {
 	slog.Debug("Getting question by ID")
 
-	id := ctx.Param("id")
+	id := ctx.Param("questionId")
 	question, err := c.service.GetQuestionById(id)
 	if err != nil {
 		slog.Error("Error getting question by ID", "error", err)
@@ -120,18 +120,18 @@ func (c *ForumController) GetQuestionsByCourseId(ctx *gin.Context) {
 // @Tags forum
 // @Accept json
 // @Produce json
-// @Param id path string true "Question ID"
+// @Param questionId path string true "Question ID"
 // @Param question body schemas.UpdateQuestionRequest true "Question update data"
 // @Success 200 {object} schemas.QuestionDetailResponse
 // @Failure 400 {object} schemas.ErrorResponse
 // @Failure 403 {object} schemas.ErrorResponse
 // @Failure 404 {object} schemas.ErrorResponse
 // @Failure 500 {object} schemas.ErrorResponse
-// @Router /forum/questions/{id} [put]
+// @Router /forum/questions/{questionId} [put]
 func (c *ForumController) UpdateQuestion(ctx *gin.Context) {
 	slog.Debug("Updating question")
 
-	id := ctx.Param("id")
+	id := ctx.Param("questionId")
 	var request schemas.UpdateQuestionRequest
 	if err := ctx.ShouldBindJSON(&request); err != nil {
 		slog.Error("Error binding JSON", "error", err)
@@ -156,17 +156,17 @@ func (c *ForumController) UpdateQuestion(ctx *gin.Context) {
 // @Tags forum
 // @Accept json
 // @Produce json
-// @Param id path string true "Question ID"
+// @Param questionId path string true "Question ID"
 // @Param authorId query string true "Author ID"
 // @Success 200 {object} schemas.MessageResponse
 // @Failure 403 {object} schemas.ErrorResponse
 // @Failure 404 {object} schemas.ErrorResponse
 // @Failure 500 {object} schemas.ErrorResponse
-// @Router /forum/questions/{id} [delete]
+// @Router /forum/questions/{questionId} [delete]
 func (c *ForumController) DeleteQuestion(ctx *gin.Context) {
 	slog.Debug("Deleting question")
 
-	id := ctx.Param("id")
+	id := ctx.Param("questionId")
 	authorID := ctx.Query("authorId")
 
 	if authorID == "" {
