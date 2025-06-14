@@ -26,9 +26,9 @@ func (m *SubmissionMockRepository) Update(ctx context.Context, submission *model
 }
 
 func (m *SubmissionMockRepository) GetByID(ctx context.Context, id string) (*model.Submission, error) {
-	if id == "valid-submission-id" {
+	if id == "valid-submission-id" || id == "456789012345678901234567" {
 		return &model.Submission{
-			ID:           mustParseSubmissionObjectID(id),
+			ID:           mustParseSubmissionObjectID("valid-submission-id"),
 			AssignmentID: "assignment123",
 			StudentUUID:  "student123",
 			StudentName:  "Test Student",
@@ -44,7 +44,7 @@ func (m *SubmissionMockRepository) GetByID(ctx context.Context, id string) (*mod
 			UpdatedAt: time.Now(),
 		}, nil
 	}
-	if id == "nonexistent" {
+	if id == "nonexistent" || id == "000000000000000000000000" {
 		return nil, nil
 	}
 	return nil, errors.New("repository error")
@@ -260,6 +260,12 @@ func mustParseSubmissionObjectID(id string) primitive.ObjectID {
 	case "valid-submission-id":
 		objectID, _ := primitive.ObjectIDFromHex("456789012345678901234567")
 		return objectID
+	case "nonexistent":
+		objectID, _ := primitive.ObjectIDFromHex("000000000000000000000000")
+		return objectID
+	case "submission-with-bad-assignment":
+		objectID, _ := primitive.ObjectIDFromHex("111111111111111111111111")
+		return objectID
 	default:
 		return primitive.NewObjectID()
 	}
@@ -452,9 +458,232 @@ func TestValidateTeacherPermissionsWithNonexistentAssignment(t *testing.T) {
 	submissionRepo := &SubmissionMockRepository{}
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
+
 	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
 
-	err := submissionService.ValidateTeacherPermissions(context.TODO(), "nonexistent-assignment", "teacher123")
+	err := submissionService.ValidateTeacherPermissions(context.Background(), "nonexistent-assignment", "teacher123")
+	assert.Error(t, err)
+	assert.Equal(t, "assignment not found", err.Error())
+}
+
+// Tests for UpdateSubmission
+func TestUpdateSubmission(t *testing.T) {
+	submissionRepo := &SubmissionMockRepository{}
+	assignmentRepo := &AssignmentMockRepository{}
+	courseService := &CourseMockService{}
+
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+
+	submission := &model.Submission{
+		ID:           mustParseSubmissionObjectID("valid-submission-id"),
+		AssignmentID: "assignment123",
+		StudentUUID:  "student123",
+		StudentName:  "Test Student",
+		Status:       model.SubmissionStatusDraft,
+		Answers: []model.Answer{
+			{
+				QuestionID: "q1",
+				Content:    "Updated answer",
+				Type:       "text",
+			},
+		},
+	}
+
+	err := submissionService.UpdateSubmission(context.Background(), submission)
+	assert.NoError(t, err)
+	assert.NotNil(t, submission.UpdatedAt)
+}
+
+func TestUpdateSubmissionWithNonexistentSubmission(t *testing.T) {
+	submissionRepo := &SubmissionMockRepository{}
+	assignmentRepo := &AssignmentMockRepository{}
+	courseService := &CourseMockService{}
+
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+
+	submission := &model.Submission{
+		ID:           mustParseSubmissionObjectID("nonexistent"),
+		AssignmentID: "assignment123",
+		StudentUUID:  "student123",
+		StudentName:  "Test Student",
+		Status:       model.SubmissionStatusDraft,
+	}
+
+	err := submissionService.UpdateSubmission(context.Background(), submission)
+	assert.Error(t, err)
+	assert.Equal(t, service.ErrSubmissionNotFound, err)
+}
+
+func TestUpdateSubmissionWithRepositoryError(t *testing.T) {
+	submissionRepo := &SubmissionMockRepositoryWithError{}
+	assignmentRepo := &AssignmentMockRepository{}
+	courseService := &CourseMockService{}
+
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+
+	submission := &model.Submission{
+		ID:           mustParseSubmissionObjectID("valid-submission-id"),
+		AssignmentID: "assignment123",
+		StudentUUID:  "student123",
+		StudentName:  "Test Student",
+		Status:       model.SubmissionStatusDraft,
+	}
+
+	err := submissionService.UpdateSubmission(context.Background(), submission)
+	assert.Error(t, err)
+	assert.Equal(t, "repository get error", err.Error())
+}
+
+// Tests for SubmitSubmission
+func TestSubmitSubmission(t *testing.T) {
+	submissionRepo := &SubmissionMockRepository{}
+	assignmentRepo := &AssignmentMockRepository{}
+	courseService := &CourseMockService{}
+
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+
+	err := submissionService.SubmitSubmission(context.Background(), "valid-submission-id")
+	assert.NoError(t, err)
+}
+
+func TestSubmitSubmissionWithNonexistentSubmission(t *testing.T) {
+	submissionRepo := &SubmissionMockRepository{}
+	assignmentRepo := &AssignmentMockRepository{}
+	courseService := &CourseMockService{}
+
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+
+	err := submissionService.SubmitSubmission(context.Background(), "nonexistent")
+	assert.Error(t, err)
+	assert.Equal(t, service.ErrSubmissionNotFound, err)
+}
+
+func TestSubmitSubmissionWithNonexistentAssignment(t *testing.T) {
+	// Create a custom mock for this specific test case
+	submissionRepoCustom := &SubmissionMockRepositoryCustom{}
+	assignmentRepo := &AssignmentMockRepository{}
+	courseService := &CourseMockService{}
+
+	submissionService := service.NewSubmissionService(submissionRepoCustom, assignmentRepo, courseService)
+
+	err := submissionService.SubmitSubmission(context.Background(), "submission-with-bad-assignment")
 	assert.Error(t, err)
 	assert.Equal(t, service.ErrAssignmentNotFound, err)
+}
+
+// Custom mock repository for the specific test case
+type SubmissionMockRepositoryCustom struct {
+	*SubmissionMockRepository
+}
+
+func (m *SubmissionMockRepositoryCustom) GetByID(ctx context.Context, id string) (*model.Submission, error) {
+	if id == "submission-with-bad-assignment" {
+		return &model.Submission{
+			ID:           mustParseSubmissionObjectID("submission-with-bad-assignment"),
+			AssignmentID: "nonexistent-assignment",
+			StudentUUID:  "student123",
+			StudentName:  "Test Student",
+			Status:       model.SubmissionStatusDraft,
+			CreatedAt:    time.Now(),
+			UpdatedAt:    time.Now(),
+		}, nil
+	}
+	// Delegate to the original mock for other cases
+	originalMock := &SubmissionMockRepository{}
+	return originalMock.GetByID(ctx, id)
+}
+
+func (m *SubmissionMockRepositoryCustom) Create(ctx context.Context, submission *model.Submission) error {
+	originalMock := &SubmissionMockRepository{}
+	return originalMock.Create(ctx, submission)
+}
+
+func (m *SubmissionMockRepositoryCustom) Update(ctx context.Context, submission *model.Submission) error {
+	originalMock := &SubmissionMockRepository{}
+	return originalMock.Update(ctx, submission)
+}
+
+func (m *SubmissionMockRepositoryCustom) GetByAssignmentAndStudent(ctx context.Context, assignmentID, studentUUID string) (*model.Submission, error) {
+	originalMock := &SubmissionMockRepository{}
+	return originalMock.GetByAssignmentAndStudent(ctx, assignmentID, studentUUID)
+}
+
+func (m *SubmissionMockRepositoryCustom) GetByAssignment(ctx context.Context, assignmentID string) ([]model.Submission, error) {
+	originalMock := &SubmissionMockRepository{}
+	return originalMock.GetByAssignment(ctx, assignmentID)
+}
+
+func (m *SubmissionMockRepositoryCustom) GetByStudent(ctx context.Context, studentUUID string) ([]model.Submission, error) {
+	originalMock := &SubmissionMockRepository{}
+	return originalMock.GetByStudent(ctx, studentUUID)
+}
+
+func TestSubmitSubmissionWithRepositoryError(t *testing.T) {
+	submissionRepo := &SubmissionMockRepositoryWithError{}
+	assignmentRepo := &AssignmentMockRepository{}
+	courseService := &CourseMockService{}
+
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+
+	err := submissionService.SubmitSubmission(context.Background(), "valid-submission-id")
+	assert.Error(t, err)
+	assert.Equal(t, "repository get error", err.Error())
+}
+
+// Tests for GetSubmissionsByAssignment
+func TestGetSubmissionsByAssignment(t *testing.T) {
+	submissionRepo := &SubmissionMockRepository{}
+	assignmentRepo := &AssignmentMockRepository{}
+	courseService := &CourseMockService{}
+
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+
+	submissions, err := submissionService.GetSubmissionsByAssignment(context.Background(), "assignment123")
+	assert.NoError(t, err)
+	assert.NotNil(t, submissions)
+	assert.Len(t, submissions, 1)
+	assert.Equal(t, "assignment123", submissions[0].AssignmentID)
+	assert.Equal(t, "student1", submissions[0].StudentUUID)
+}
+
+func TestGetSubmissionsByAssignmentWithRepositoryError(t *testing.T) {
+	submissionRepo := &SubmissionMockRepositoryWithError{}
+	assignmentRepo := &AssignmentMockRepository{}
+	courseService := &CourseMockService{}
+
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+
+	submissions, err := submissionService.GetSubmissionsByAssignment(context.Background(), "assignment123")
+	assert.Error(t, err)
+	assert.Nil(t, submissions)
+	assert.Equal(t, "repository get error", err.Error())
+}
+
+// Tests for GetSubmissionsByStudent
+func TestGetSubmissionsByStudent(t *testing.T) {
+	submissionRepo := &SubmissionMockRepository{}
+	assignmentRepo := &AssignmentMockRepository{}
+	courseService := &CourseMockService{}
+
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+
+	submissions, err := submissionService.GetSubmissionsByStudent(context.Background(), "student123")
+	assert.NoError(t, err)
+	assert.NotNil(t, submissions)
+	assert.Len(t, submissions, 1)
+	assert.Equal(t, "student123", submissions[0].StudentUUID)
+	assert.Equal(t, "assignment1", submissions[0].AssignmentID)
+}
+
+func TestGetSubmissionsByStudentWithRepositoryError(t *testing.T) {
+	submissionRepo := &SubmissionMockRepositoryWithError{}
+	assignmentRepo := &AssignmentMockRepository{}
+	courseService := &CourseMockService{}
+
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+
+	submissions, err := submissionService.GetSubmissionsByStudent(context.Background(), "student123")
+	assert.Error(t, err)
+	assert.Nil(t, submissions)
+	assert.Equal(t, "repository get error", err.Error())
 }

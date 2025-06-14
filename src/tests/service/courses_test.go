@@ -242,6 +242,15 @@ func (m *MockCourseRepository) GetCourseById(id string) (*model.Course, error) {
 			AuxTeachers: []string{"existing-aux-teacher"},
 		}, nil
 	}
+	if id == "course-123" {
+		return &model.Course{
+			ID:          primitive.NewObjectID(),
+			Title:       "Course 123",
+			Description: "Test course for GetCourseMembers",
+			TeacherUUID: "teacher-123",
+			AuxTeachers: []string{"aux-teacher-1", "aux-teacher-2"},
+		}, nil
+	}
 	if id == "course-with-owner" {
 		return &model.Course{
 			ID:          primitive.NewObjectID(),
@@ -1100,4 +1109,175 @@ func TestGetCourseFeedbackWithRepositoryError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, feedback)
 	assert.Contains(t, err.Error(), "error getting course feedback")
+}
+
+// Tests for GetCourseMembers
+func TestGetCourseMembers(t *testing.T) {
+	courseRepo := &MockCourseRepository{}
+	enrollmentRepo := &MockEnrollmentRepository{}
+	courseService := service.NewCourseService(courseRepo, enrollmentRepo)
+
+	members, err := courseService.GetCourseMembers("course-123")
+
+	assert.NoError(t, err)
+	assert.NotNil(t, members)
+	assert.Equal(t, "teacher-123", members.TeacherID)
+	assert.Contains(t, members.AuxTeachersIDs, "aux-teacher-1")
+	assert.Contains(t, members.AuxTeachersIDs, "aux-teacher-2")
+	assert.Contains(t, members.StudentsIDs, "student-123")
+	assert.Len(t, members.StudentsIDs, 1)
+}
+
+func TestGetCourseMembersWithEmptyCourseId(t *testing.T) {
+	courseRepo := &MockCourseRepository{}
+	enrollmentRepo := &MockEnrollmentRepository{}
+	courseService := service.NewCourseService(courseRepo, enrollmentRepo)
+
+	members, err := courseService.GetCourseMembers("")
+
+	assert.Error(t, err)
+	assert.Nil(t, members)
+	assert.Equal(t, "courseId is required", err.Error())
+}
+
+func TestGetCourseMembersWithNonExistentCourse(t *testing.T) {
+	courseRepo := &MockCourseRepository{}
+	enrollmentRepo := &MockEnrollmentRepository{}
+	courseService := service.NewCourseService(courseRepo, enrollmentRepo)
+
+	members, err := courseService.GetCourseMembers("non-existent-course")
+
+	assert.Error(t, err)
+	assert.Nil(t, members)
+	assert.Contains(t, err.Error(), "course not found")
+}
+
+func TestGetCourseMembersWithEnrollmentRepositoryError(t *testing.T) {
+	courseRepo := &MockCourseRepository{}
+	enrollmentRepo := &MockEnrollmentRepositoryWithError{}
+	courseService := service.NewCourseService(courseRepo, enrollmentRepo)
+
+	members, err := courseService.GetCourseMembers("course-123")
+
+	assert.Error(t, err)
+	assert.Nil(t, members)
+	assert.Contains(t, err.Error(), "error getting enrollments")
+}
+
+func TestGetCourseMembersWithCourseRepositoryError(t *testing.T) {
+	courseRepo := &MockCourseRepositoryWithError{}
+	enrollmentRepo := &MockEnrollmentRepository{}
+	courseService := service.NewCourseService(courseRepo, enrollmentRepo)
+
+	members, err := courseService.GetCourseMembers("error-course")
+
+	assert.Error(t, err)
+	assert.Nil(t, members)
+	assert.Contains(t, err.Error(), "error getting course")
+}
+
+// Mock repository with errors for testing error scenarios
+type MockEnrollmentRepositoryWithError struct{}
+
+func (m *MockEnrollmentRepositoryWithError) CreateStudentFeedback(feedbackRequest model.StudentFeedback, enrollmentID string) error {
+	return errors.New("error creating feedback")
+}
+
+func (m *MockEnrollmentRepositoryWithError) GetFeedbackByStudentId(studentID string, getFeedbackByStudentIdRequest schemas.GetFeedbackByStudentIdRequest) ([]*model.StudentFeedback, error) {
+	return nil, errors.New("error getting feedback")
+}
+
+func (m *MockEnrollmentRepositoryWithError) GetEnrollmentByStudentIdAndCourseId(studentID string, courseID string) (*model.Enrollment, error) {
+	return nil, errors.New("error getting enrollment")
+}
+
+func (m *MockEnrollmentRepositoryWithError) GetEnrollmentsByStudentId(studentID string) ([]*model.Enrollment, error) {
+	return nil, errors.New("error getting enrollments")
+}
+
+func (m *MockEnrollmentRepositoryWithError) SetFavouriteCourse(studentID string, courseID string) error {
+	return errors.New("error setting favourite")
+}
+
+func (m *MockEnrollmentRepositoryWithError) UnsetFavouriteCourse(studentID string, courseID string) error {
+	return errors.New("error unsetting favourite")
+}
+
+func (m *MockEnrollmentRepositoryWithError) GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error) {
+	return nil, errors.New("error getting enrollments")
+}
+
+func (m *MockEnrollmentRepositoryWithError) IsEnrolled(studentID, courseID string) (bool, error) {
+	return false, errors.New("error checking enrollment")
+}
+
+func (m *MockEnrollmentRepositoryWithError) CreateEnrollment(enrollment model.Enrollment, course *model.Course) error {
+	return errors.New("error creating enrollment")
+}
+
+func (m *MockEnrollmentRepositoryWithError) DeleteEnrollment(studentID string, course *model.Course) error {
+	return errors.New("error deleting enrollment")
+}
+
+func (m *MockEnrollmentRepositoryWithError) GetEnrollmentsByCourseID(courseID string) ([]*model.Enrollment, error) {
+	return nil, errors.New("error getting enrollments")
+}
+
+func (m *MockEnrollmentRepositoryWithError) GetStudentFavouriteCourses(studentUUID string) ([]*model.Enrollment, error) {
+	return nil, errors.New("error getting favourite courses")
+}
+
+// Mock course repository with errors for testing error scenarios
+type MockCourseRepositoryWithError struct{}
+
+func (m *MockCourseRepositoryWithError) CreateCourse(c model.Course) (*model.Course, error) {
+	return nil, errors.New("error creating course")
+}
+
+func (m *MockCourseRepositoryWithError) GetCourses() ([]*model.Course, error) {
+	return nil, errors.New("error getting courses")
+}
+
+func (m *MockCourseRepositoryWithError) GetCourseById(id string) (*model.Course, error) {
+	return nil, errors.New("error getting course")
+}
+
+func (m *MockCourseRepositoryWithError) DeleteCourse(id string) error {
+	return errors.New("error deleting course")
+}
+
+func (m *MockCourseRepositoryWithError) GetCourseByTeacherId(teacherId string) ([]*model.Course, error) {
+	return nil, errors.New("error getting courses by teacher")
+}
+
+func (m *MockCourseRepositoryWithError) GetCourseByTitle(title string) ([]*model.Course, error) {
+	return nil, errors.New("error getting courses by title")
+}
+
+func (m *MockCourseRepositoryWithError) UpdateCourse(id string, updateCourseRequest model.Course) (*model.Course, error) {
+	return nil, errors.New("error updating course")
+}
+
+func (m *MockCourseRepositoryWithError) UpdateStudentsAmount(courseID string, newStudentsAmount int) error {
+	return errors.New("error updating students amount")
+}
+
+func (m *MockCourseRepositoryWithError) CreateCourseFeedback(courseID string, feedback model.CourseFeedback) (*model.CourseFeedback, error) {
+	return nil, errors.New("error creating feedback")
+}
+
+func (m *MockCourseRepositoryWithError) GetCourseFeedback(courseID string, request schemas.GetCourseFeedbackRequest) ([]*model.CourseFeedback, error) {
+	return nil, errors.New("error getting course feedback")
+}
+
+func (m *MockCourseRepositoryWithError) GetCoursesByStudentId(studentId string) ([]*model.Course, error) {
+	return nil, errors.New("error getting courses by student")
+}
+
+func (m *MockCourseRepositoryWithError) AddAuxTeacherToCourse(course *model.Course, auxTeacherId string) (*model.Course, error) {
+	return nil, errors.New("error adding aux teacher")
+}
+
+func (m *MockCourseRepositoryWithError) RemoveAuxTeacherFromCourse(course *model.Course, auxTeacherId string) (*model.Course, error) {
+	return nil, errors.New("error removing aux teacher")
 }

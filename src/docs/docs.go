@@ -1057,6 +1057,56 @@ const docTemplate = `{
                 }
             }
         },
+        "/courses/{id}/members": {
+            "get": {
+                "description": "Get all members of a course (teacher, aux teachers, and students)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Get course members",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.CourseMembersResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/courses/{id}/remove-aux-teacher": {
             "delete": {
                 "description": "Remove an aux teacher from a course by ID",
@@ -1415,7 +1465,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/forum/questions/{id}": {
+        "/forum/questions/{questionId}": {
             "get": {
                 "description": "Get a specific question by its ID with all answers",
                 "consumes": [
@@ -1432,7 +1482,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Question ID",
-                        "name": "id",
+                        "name": "questionId",
                         "in": "path",
                         "required": true
                     }
@@ -1474,7 +1524,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Question ID",
-                        "name": "id",
+                        "name": "questionId",
                         "in": "path",
                         "required": true
                     },
@@ -1537,7 +1587,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Question ID",
-                        "name": "id",
+                        "name": "questionId",
                         "in": "path",
                         "required": true
                     },
@@ -2770,6 +2820,26 @@ const docTemplate = `{
                 },
                 "vote_count": {
                     "type": "integer"
+                }
+            }
+        },
+        "schemas.CourseMembersResponse": {
+            "type": "object",
+            "properties": {
+                "aux_teachers_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "students_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "teacher_id": {
+                    "type": "string"
                 }
             }
         },

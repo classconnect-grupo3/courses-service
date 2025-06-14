@@ -842,3 +842,206 @@ func TestSearchQuestionsWithNonExistentCourse(t *testing.T) {
 	assert.Nil(t, questions)
 	assert.Equal(t, "course not found", err.Error())
 }
+
+// Tests for RemoveVoteFromQuestion
+func TestRemoveVoteFromQuestion(t *testing.T) {
+	mockForumRepo := &MockForumRepository{}
+	mockCourseRepo := &MockForumCourseRepository{}
+	forumService := service.NewForumService(mockForumRepo, mockCourseRepo)
+
+	err := forumService.RemoveVoteFromQuestion("valid-question", "user-123")
+	assert.NoError(t, err)
+}
+
+func TestRemoveVoteFromQuestionWithEmptyQuestionID(t *testing.T) {
+	mockForumRepo := &MockForumRepository{}
+	mockCourseRepo := &MockForumCourseRepository{}
+	forumService := service.NewForumService(mockForumRepo, mockCourseRepo)
+
+	err := forumService.RemoveVoteFromQuestion("", "user-123")
+	assert.Error(t, err)
+	assert.Equal(t, "question ID is required", err.Error())
+}
+
+func TestRemoveVoteFromQuestionWithEmptyUserID(t *testing.T) {
+	mockForumRepo := &MockForumRepository{}
+	mockCourseRepo := &MockForumCourseRepository{}
+	forumService := service.NewForumService(mockForumRepo, mockCourseRepo)
+
+	err := forumService.RemoveVoteFromQuestion("valid-question", "")
+	assert.Error(t, err)
+	assert.Equal(t, "user ID is required", err.Error())
+}
+
+func TestRemoveVoteFromQuestionWithNonExistentQuestion(t *testing.T) {
+	mockForumRepo := &MockForumRepository{}
+	mockCourseRepo := &MockForumCourseRepository{}
+	forumService := service.NewForumService(mockForumRepo, mockCourseRepo)
+
+	err := forumService.RemoveVoteFromQuestion("non-existent-question", "user-123")
+	assert.Error(t, err)
+	assert.Equal(t, "question not found", err.Error())
+}
+
+// Tests for RemoveVoteFromAnswer
+func TestRemoveVoteFromAnswer(t *testing.T) {
+	mockForumRepo := &MockForumRepository{}
+	mockCourseRepo := &MockForumCourseRepository{}
+	forumService := service.NewForumService(mockForumRepo, mockCourseRepo)
+
+	err := forumService.RemoveVoteFromAnswer("question-with-answers", "answer-123", "user-123")
+	assert.NoError(t, err)
+}
+
+func TestRemoveVoteFromAnswerWithEmptyQuestionID(t *testing.T) {
+	mockForumRepo := &MockForumRepository{}
+	mockCourseRepo := &MockForumCourseRepository{}
+	forumService := service.NewForumService(mockForumRepo, mockCourseRepo)
+
+	err := forumService.RemoveVoteFromAnswer("", "answer-123", "user-123")
+	assert.Error(t, err)
+	assert.Equal(t, "question ID is required", err.Error())
+}
+
+func TestRemoveVoteFromAnswerWithEmptyAnswerID(t *testing.T) {
+	mockForumRepo := &MockForumRepository{}
+	mockCourseRepo := &MockForumCourseRepository{}
+	forumService := service.NewForumService(mockForumRepo, mockCourseRepo)
+
+	err := forumService.RemoveVoteFromAnswer("valid-question", "", "user-123")
+	assert.Error(t, err)
+	assert.Equal(t, "answer ID is required", err.Error())
+}
+
+func TestRemoveVoteFromAnswerWithEmptyUserID(t *testing.T) {
+	mockForumRepo := &MockForumRepository{}
+	mockCourseRepo := &MockForumCourseRepository{}
+	forumService := service.NewForumService(mockForumRepo, mockCourseRepo)
+
+	err := forumService.RemoveVoteFromAnswer("valid-question", "answer-123", "")
+	assert.Error(t, err)
+	assert.Equal(t, "user ID is required", err.Error())
+}
+
+func TestRemoveVoteFromAnswerWithNonExistentQuestion(t *testing.T) {
+	mockForumRepo := &MockForumRepository{}
+	mockCourseRepo := &MockForumCourseRepository{}
+	forumService := service.NewForumService(mockForumRepo, mockCourseRepo)
+
+	err := forumService.RemoveVoteFromAnswer("non-existent-question", "answer-123", "user-123")
+	assert.Error(t, err)
+	assert.Equal(t, "question not found", err.Error())
+}
+
+func TestRemoveVoteFromAnswerWithNonExistentAnswer(t *testing.T) {
+	mockForumRepo := &MockForumRepository{}
+	mockCourseRepo := &MockForumCourseRepository{}
+	forumService := service.NewForumService(mockForumRepo, mockCourseRepo)
+
+	err := forumService.RemoveVoteFromAnswer("question-with-answers", "non-existent-answer", "user-123")
+	assert.Error(t, err)
+	assert.Equal(t, "answer not found", err.Error())
+}
+
+// Additional tests for better coverage of existing functions
+func TestVoteQuestionWithInvalidVoteType(t *testing.T) {
+	mockForumRepo := &MockForumRepository{}
+	mockCourseRepo := &MockForumCourseRepository{}
+	forumService := service.NewForumService(mockForumRepo, mockCourseRepo)
+
+	err := forumService.VoteQuestion("valid-question", "user-123", 99)
+	assert.Error(t, err)
+	assert.Equal(t, "invalid vote type", err.Error())
+}
+
+func TestVoteAnswerWithInvalidVoteType(t *testing.T) {
+	mockForumRepo := &MockForumRepository{}
+	mockCourseRepo := &MockForumCourseRepository{}
+	forumService := service.NewForumService(mockForumRepo, mockCourseRepo)
+
+	err := forumService.VoteAnswer("question-with-answers", "answer-123", "user-123", 99)
+	assert.Error(t, err)
+	assert.Equal(t, "invalid vote type", err.Error())
+}
+
+func TestVoteAnswerWithNonExistentAnswer(t *testing.T) {
+	mockForumRepo := &MockForumRepository{}
+	mockCourseRepo := &MockForumCourseRepository{}
+	forumService := service.NewForumService(mockForumRepo, mockCourseRepo)
+
+	err := forumService.VoteAnswer("question-with-answers", "non-existent-answer", "user-123", model.VoteTypeUp)
+	assert.Error(t, err)
+	assert.Equal(t, "answer not found", err.Error())
+}
+
+func TestUpdateQuestionWithInvalidTags(t *testing.T) {
+	mockForumRepo := &MockForumRepository{}
+	mockCourseRepo := &MockForumCourseRepository{}
+	forumService := service.NewForumService(mockForumRepo, mockCourseRepo)
+
+	invalidTags := []model.QuestionTag{"invalid-tag"}
+	_, err := forumService.UpdateQuestion("valid-question", "New Title", "New Description", invalidTags)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid tag")
+}
+
+func TestUpdateAnswerWithNonExistentAnswer(t *testing.T) {
+	mockForumRepo := &MockForumRepository{}
+	mockCourseRepo := &MockForumCourseRepository{}
+	forumService := service.NewForumService(mockForumRepo, mockCourseRepo)
+
+	_, err := forumService.UpdateAnswer("question-with-answers", "non-existent-answer", "author-123", "Updated content")
+	assert.Error(t, err)
+	assert.Equal(t, "answer not found", err.Error())
+}
+
+func TestDeleteAnswerWithNonExistentAnswer(t *testing.T) {
+	mockForumRepo := &MockForumRepository{}
+	mockCourseRepo := &MockForumCourseRepository{}
+	forumService := service.NewForumService(mockForumRepo, mockCourseRepo)
+
+	err := forumService.DeleteAnswer("question-with-answers", "non-existent-answer", "author-123")
+	assert.Error(t, err)
+	assert.Equal(t, "answer not found", err.Error())
+}
+
+func TestAcceptAnswerWithNonExistentAnswer(t *testing.T) {
+	mockForumRepo := &MockForumRepository{}
+	mockCourseRepo := &MockForumCourseRepository{}
+	forumService := service.NewForumService(mockForumRepo, mockCourseRepo)
+
+	err := forumService.AcceptAnswer("question-with-answers", "non-existent-answer", "author-123")
+	assert.Error(t, err)
+	assert.Equal(t, "answer not found", err.Error())
+}
+
+func TestSearchQuestionsWithInvalidTags(t *testing.T) {
+	mockForumRepo := &MockForumRepository{}
+	mockCourseRepo := &MockForumCourseRepository{}
+	forumService := service.NewForumService(mockForumRepo, mockCourseRepo)
+
+	invalidTags := []model.QuestionTag{"invalid-tag"}
+	_, err := forumService.SearchQuestions("course-123", "", invalidTags, "")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid tag")
+}
+
+func TestSearchQuestionsWithInvalidStatus(t *testing.T) {
+	mockForumRepo := &MockForumRepository{}
+	mockCourseRepo := &MockForumCourseRepository{}
+	forumService := service.NewForumService(mockForumRepo, mockCourseRepo)
+
+	_, err := forumService.SearchQuestions("course-123", "", nil, "invalid-status")
+	assert.Error(t, err)
+	assert.Equal(t, "invalid question status", err.Error())
+}
+
+func TestValidateTagsWithEmptyTags(t *testing.T) {
+	mockForumRepo := &MockForumRepository{}
+	mockCourseRepo := &MockForumCourseRepository{}
+	forumService := service.NewForumService(mockForumRepo, mockCourseRepo)
+
+	// Test validateTags with empty tags by calling CreateQuestion with empty tags
+	_, err := forumService.CreateQuestion("course-123", "author-123", "Title", "Description", []model.QuestionTag{})
+	assert.NoError(t, err)
+}
