@@ -22,6 +22,7 @@ type CourseServiceInterface interface {
 	GetFavouriteCourses(studentId string) ([]*model.Course, error)
 	CreateCourseFeedback(courseId string, feedbackRequest schemas.CreateCourseFeedbackRequest) (*model.CourseFeedback, error)
 	GetCourseFeedback(courseId string, getCourseFeedbackRequest schemas.GetCourseFeedbackRequest) ([]*model.CourseFeedback, error)
+	GetCourseMembers(courseId string) (*schemas.CourseMembersResponse, error)
 }
 
 type ModuleServiceInterface interface {
@@ -62,4 +63,28 @@ type SubmissionServiceInterface interface {
 	GetOrCreateSubmission(ctx context.Context, assignmentID, studentUUID, studentName string) (*model.Submission, error)
 	GradeSubmission(ctx context.Context, submissionID string, score *float64, feedback string) (*model.Submission, error)
 	ValidateTeacherPermissions(ctx context.Context, assignmentID, teacherUUID string) error
+}
+
+type ForumServiceInterface interface {
+	// Question operations
+	CreateQuestion(courseID, authorID, title, description string, tags []model.QuestionTag) (*model.ForumQuestion, error)
+	GetQuestionById(id string) (*model.ForumQuestion, error)
+	GetQuestionsByCourseId(courseID string) ([]model.ForumQuestion, error)
+	UpdateQuestion(id, title, description string, tags []model.QuestionTag) (*model.ForumQuestion, error)
+	DeleteQuestion(id, authorID string) error
+
+	// Answer operations
+	AddAnswer(questionID, authorID, content string) (*model.ForumAnswer, error)
+	UpdateAnswer(questionID, answerID, authorID, content string) (*model.ForumAnswer, error)
+	DeleteAnswer(questionID, answerID, authorID string) error
+	AcceptAnswer(questionID, answerID, authorID string) error
+
+	// Vote operations
+	VoteQuestion(questionID, userID string, voteType int) error
+	VoteAnswer(questionID, answerID, userID string, voteType int) error
+	RemoveVoteFromQuestion(questionID, userID string) error
+	RemoveVoteFromAnswer(questionID, answerID, userID string) error
+
+	// Search and filter operations
+	SearchQuestions(courseID, query string, tags []model.QuestionTag, status model.QuestionStatus) ([]model.ForumQuestion, error)
 }

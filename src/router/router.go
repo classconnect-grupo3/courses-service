@@ -52,6 +52,7 @@ func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseControl
 	r.GET("/courses/user/:userId", controller.GetCoursesByUserId)
 	r.GET("/courses/title/:title", controller.GetCourseByTitle)
 	r.GET("/courses/:id", controller.GetCourseById)
+	r.GET("/courses/:id/members", controller.GetCourseMembers)
 	r.DELETE("/courses/:id", controller.DeleteCourse)
 	r.PUT("/courses/:id", controller.UpdateCourse)
 	r.POST("/courses/:id/aux-teacher/add", controller.AddAuxTeacherToCourse)
@@ -109,6 +110,30 @@ func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.Enrollmen
 	r.GET("/feedback/student/:id/summary", controller.GetStudentFeedbackSummary)
 }
 
+func InitializeForumRoutes(r *gin.Engine, controller *controller.ForumController) {
+	// Question endpoints
+	r.POST("/forum/questions", controller.CreateQuestion)
+	r.GET("/forum/questions/:questionId", controller.GetQuestionById)
+	r.GET("/forum/courses/:courseId/questions", controller.GetQuestionsByCourseId)
+	r.PUT("/forum/questions/:questionId", controller.UpdateQuestion)
+	r.DELETE("/forum/questions/:questionId", controller.DeleteQuestion)
+
+	// Answer endpoints
+	r.POST("/forum/questions/:questionId/answers", controller.AddAnswer)
+	r.PUT("/forum/questions/:questionId/answers/:answerId", controller.UpdateAnswer)
+	r.DELETE("/forum/questions/:questionId/answers/:answerId", controller.DeleteAnswer)
+	r.POST("/forum/questions/:questionId/answers/:answerId/accept", controller.AcceptAnswer)
+
+	// Vote endpoints
+	r.POST("/forum/questions/:questionId/vote", controller.VoteQuestion)
+	r.POST("/forum/questions/:questionId/answers/:answerId/vote", controller.VoteAnswer)
+	r.DELETE("/forum/questions/:questionId/vote", controller.RemoveVoteFromQuestion)
+	r.DELETE("/forum/questions/:questionId/answers/:answerId/vote", controller.RemoveVoteFromAnswer)
+
+	// Search endpoints
+	r.GET("/forum/courses/:courseId/search", controller.SearchQuestions)
+}
+
 func NewRouter(config *config.Config) *gin.Engine {
 	r := createRouterFromConfig(config)
 	addNewRelicMiddleware(r)
@@ -129,20 +154,23 @@ func NewRouter(config *config.Config) *gin.Engine {
 	assignmentRepository := repository.NewAssignmentRepository(dbClient, config.DBName)
 	submissionRepository := repository.NewMongoSubmissionRepository(dbClient.Database(config.DBName))
 	moduleRepository := repository.NewModuleRepository(dbClient, config.DBName)
+	forumRepository := repository.NewForumRepository(dbClient, config.DBName)
 
 	courseService := service.NewCourseService(courseRepo, enrollmentRepo)
 	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
 	assignmentService := service.NewAssignmentService(assignmentRepository, courseService)
 	submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository, courseService)
 	moduleService := service.NewModuleService(moduleRepository)
+	forumService := service.NewForumService(forumRepository, courseRepo)
 
 	courseController := controller.NewCourseController(courseService, aiClient)
 	enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient)
 	assignmentsController := controller.NewAssignmentsController(assignmentService)
 	submissionController := controller.NewSubmissionController(submissionService) // TODO change this when interface is added
 	moduleController := controller.NewModuleController(moduleService)
+	forumController := controller.NewForumController(forumService)
 
-	InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController, moduleController)
+	InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController, moduleController, forumController)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler)) // endpoint to consult the swagger documentation
 	return r
 }
@@ -154,10 +182,12 @@ func InitializeRoutes(
 	submissionController *controller.SubmissionController,
 	enrollmentController *controller.EnrollmentController,
 	moduleController *controller.ModuleController,
+	forumController *controller.ForumController,
 ) {
 	InitializeCoursesRoutes(r, courseController)
 	InitializeSubmissionRoutes(r, submissionController)
 	InitializeAssignmentsRoutes(r, assignmentsController)
 	InitializeEnrollmentsRoutes(r, enrollmentController)
 	InitializeModulesRoutes(r, moduleController)
+	InitializeForumRoutes(r, forumController)
 }

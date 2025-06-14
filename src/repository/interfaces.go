@@ -63,3 +63,27 @@ type SubmissionRepositoryInterface interface {
 	GetByAssignment(ctx context.Context, assignmentID string) ([]model.Submission, error)
 	GetByStudent(ctx context.Context, studentUUID string) ([]model.Submission, error)
 }
+
+type ForumRepositoryInterface interface {
+	// Question operations
+	CreateQuestion(question model.ForumQuestion) (*model.ForumQuestion, error)
+	GetQuestionById(id string) (*model.ForumQuestion, error)
+	GetQuestionsByCourseId(courseID string) ([]model.ForumQuestion, error)
+	UpdateQuestion(id string, question model.ForumQuestion) (*model.ForumQuestion, error)
+	DeleteQuestion(id string) error
+
+	// Answer operations
+	AddAnswer(questionID string, answer model.ForumAnswer) (*model.ForumAnswer, error)
+	UpdateAnswer(questionID string, answerID string, content string) (*model.ForumAnswer, error)
+	DeleteAnswer(questionID string, answerID string) error
+	AcceptAnswer(questionID string, answerID string) error
+
+	// Vote operations
+	AddVoteToQuestion(questionID string, userID string, voteType int) error
+	AddVoteToAnswer(questionID string, answerID string, userID string, voteType int) error
+	RemoveVoteFromQuestion(questionID string, userID string) error
+	RemoveVoteFromAnswer(questionID string, answerID string, userID string) error
+
+	// Search and filter operations
+	SearchQuestions(courseID string, query string, tags []model.QuestionTag, status model.QuestionStatus) ([]model.ForumQuestion, error)
+}

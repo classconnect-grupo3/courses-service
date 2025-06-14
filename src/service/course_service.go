@@ -234,3 +234,36 @@ func (s *CourseService) GetCourseFeedback(courseId string, getCourseFeedbackRequ
 
 	return feedback, nil
 }
+
+func (s *CourseService) GetCourseMembers(courseId string) (*schemas.CourseMembersResponse, error) {
+	if courseId == "" {
+		return nil, errors.New("courseId is required")
+	}
+
+	// Get course to get teacher and aux teachers
+	course, err := s.courseRepository.GetCourseById(courseId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get enrolled students
+	enrollments, err := s.enrollmentRepository.GetEnrollmentsByCourseId(courseId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract student IDs from enrollments
+	var studentIDs []string
+	for _, enrollment := range enrollments {
+		studentIDs = append(studentIDs, enrollment.StudentID)
+	}
+
+	// Build response
+	response := &schemas.CourseMembersResponse{
+		TeacherID:      course.TeacherUUID,
+		AuxTeachersIDs: course.AuxTeachers,
+		StudentsIDs:    studentIDs,
+	}
+
+	return response, nil
+}
