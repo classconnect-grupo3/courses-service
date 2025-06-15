@@ -1,6 +1,8 @@
 package queues
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -9,6 +11,7 @@ import (
 
 type NotificationsQueue struct {
 	channel *amqp.Channel
+	queueName string
 }
 
 func NewNotificationsQueue() (*NotificationsQueue, error) {
@@ -40,5 +43,30 @@ func NewNotificationsQueue() (*NotificationsQueue, error) {
 
 	return &NotificationsQueue{
 		channel: ch,
+		queueName: queueName,
 	}, nil
+}
+
+func (q *NotificationsQueue) Publish(message QueueMessage) error {
+	body, err := message.Encode()
+	if err != nil {
+		return fmt.Errorf("failed to encode message: %w", err)
+	}
+
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return fmt.Errorf("failed to marshal message: %w", err)
+	}
+
+	return q.channel.PublishWithContext(
+		context.Background(),
+		"",
+		q.queueName,
+		false,
+		false,
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        jsonBody,
+		},
+	)
 }
