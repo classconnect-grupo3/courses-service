@@ -34,7 +34,7 @@ func NewNotificationsQueue(config *config.Config) (*NotificationsQueue, error) {
 
 	_, err = ch.QueueDeclare(
 		queueName,
-		true,
+		false,
 		false,
 		false,
 		false,
