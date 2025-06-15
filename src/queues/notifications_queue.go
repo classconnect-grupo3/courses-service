@@ -1,4 +1,4 @@
-package router
+package queues
 
 import (
 	"fmt"
@@ -7,7 +7,11 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func CreateNotificationsQueue() (*amqp.Channel, error) {
+type NotificationsQueue struct {
+	channel *amqp.Channel
+}
+
+func NewNotificationsQueue() (*NotificationsQueue, error) {
 	queueName := os.Getenv("NOTIFICATIONS_QUEUE_NAME")
 	queueURL := os.Getenv("RABBITMQ_URL")
 
@@ -34,5 +38,7 @@ func CreateNotificationsQueue() (*amqp.Channel, error) {
 		return nil, fmt.Errorf("failed to declare queue: %w", err)
 	}
 
-	return ch, nil
+	return &NotificationsQueue{
+		channel: ch,
+	}, nil
 }
