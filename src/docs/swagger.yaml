@@ -10,12 +10,8 @@ definitions:
     properties:
       content:
         description: Can be string, []string for multiple choice, or file URL
-      feedback:
-        type: string
       question_id:
         type: string
-      score:
-        type: number
       type:
         description: text, multiple_choice, file
         type: string
@@ -76,6 +72,10 @@ definitions:
         type: string
       end_date:
         type: string
+      feedback:
+        items:
+          $ref: '#/definitions/model.CourseFeedback'
+        type: array
       id:
         type: string
       modules:
@@ -95,15 +95,74 @@ definitions:
       updated_at:
         type: string
     type: object
+  model.CourseFeedback:
+    properties:
+      created_at:
+        type: string
+      feedback:
+        type: string
+      feedback_type:
+        $ref: '#/definitions/model.FeedbackType'
+      id:
+        type: string
+      score:
+        type: integer
+      student_uuid:
+        type: string
+    type: object
+  model.Enrollment:
+    properties:
+      completed_date:
+        type: string
+      course_id:
+        type: string
+      enrolled_at:
+        type: string
+      favourite:
+        type: boolean
+      feedback:
+        items:
+          $ref: '#/definitions/model.StudentFeedback'
+        type: array
+      id:
+        type: string
+      status:
+        $ref: '#/definitions/model.EnrollmentStatus'
+      student_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.EnrollmentStatus:
+    enum:
+    - active
+    - dropped
+    - completed
+    type: string
+    x-enum-varnames:
+    - EnrollmentStatusActive
+    - EnrollmentStatusDropped
+    - EnrollmentStatusCompleted
+  model.FeedbackType:
+    enum:
+    - POSITIVO
+    - NEGATIVO
+    - NEUTRO
+    type: string
+    x-enum-varnames:
+    - FeedbackTypePositive
+    - FeedbackTypeNegative
+    - FeedbackTypeNeutral
   model.Module:
     properties:
-      content:
-        description: TODO change this with media in the future
-        type: string
       course_id:
         type: string
       created_at:
         type: string
+      data:
+        items:
+          $ref: '#/definitions/model.ModuleData'
+        type: array
       description:
         type: string
       id:
@@ -113,6 +172,31 @@ definitions:
       title:
         type: string
       updated_at:
+        type: string
+    type: object
+  model.ModuleData:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      module_id:
+        type: string
+      resources:
+        items:
+          $ref: '#/definitions/model.ModuleDataResource'
+        type: array
+      title:
+        type: string
+    type: object
+  model.ModuleDataResource:
+    properties:
+      id:
+        description: this comes from the frontend so it's a number
+        type: integer
+      name:
+        type: string
+      url:
         type: string
     type: object
   model.Question:
@@ -137,6 +221,34 @@ definitions:
       type:
         $ref: '#/definitions/model.QuestionType'
     type: object
+  model.QuestionStatus:
+    enum:
+    - open
+    - resolved
+    - closed
+    type: string
+    x-enum-varnames:
+    - QuestionStatusOpen
+    - QuestionStatusResolved
+    - QuestionStatusClosed
+  model.QuestionTag:
+    enum:
+    - general
+    - teoria
+    - practica
+    - necesito-ayuda
+    - informacion
+    - ejercitacion
+    - otro
+    type: string
+    x-enum-varnames:
+    - QuestionTagGeneral
+    - QuestionTagTeoria
+    - QuestionTagPractica
+    - QuestionTagNecesitoAyuda
+    - QuestionTagInformacion
+    - QuestionTagEjercitacion
+    - QuestionTagOtro
   model.QuestionType:
     enum:
     - text
@@ -147,6 +259,23 @@ definitions:
     - QuestionTypeText
     - QuestionTypeMultipleChoice
     - QuestionTypeFile
+  model.StudentFeedback:
+    properties:
+      created_at:
+        type: string
+      feedback:
+        type: string
+      feedback_type:
+        $ref: '#/definitions/model.FeedbackType'
+      id:
+        type: string
+      score:
+        type: integer
+      student_uuid:
+        type: string
+      teacher_uuid:
+        type: string
+    type: object
   model.Submission:
     properties:
       answers:
@@ -184,6 +313,46 @@ definitions:
     - SubmissionStatusDraft
     - SubmissionStatusSubmitted
     - SubmissionStatusLate
+  schemas.AnswerResponse:
+    properties:
+      author_id:
+        type: string
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      is_accepted:
+        type: boolean
+      updated_at:
+        type: string
+      vote_count:
+        type: integer
+    type: object
+  schemas.CourseMembersResponse:
+    properties:
+      aux_teachers_ids:
+        items:
+          type: string
+        type: array
+      students_ids:
+        items:
+          type: string
+        type: array
+      teacher_id:
+        type: string
+    type: object
+  schemas.CreateAnswerRequest:
+    properties:
+      author_id:
+        type: string
+      content:
+        type: string
+    required:
+    - author_id
+    - content
+    type: object
   schemas.CreateAssignmentRequest:
     properties:
       course_id:
@@ -223,6 +392,22 @@ definitions:
     - total_points
     - type
     type: object
+  schemas.CreateCourseFeedbackRequest:
+    properties:
+      feedback:
+        type: string
+      feedback_type:
+        $ref: '#/definitions/model.FeedbackType'
+      score:
+        type: integer
+      student_uuid:
+        type: string
+    required:
+    - feedback
+    - feedback_type
+    - score
+    - student_uuid
+    type: object
   schemas.CreateCourseRequest:
     properties:
       capacity:
@@ -251,8 +436,6 @@ definitions:
     type: object
   schemas.CreateModuleRequest:
     properties:
-      content:
-        type: string
       course_id:
         type: string
       description:
@@ -263,6 +446,48 @@ definitions:
     - course_id
     - description
     - title
+    type: object
+  schemas.CreateQuestionRequest:
+    properties:
+      author_id:
+        type: string
+      course_id:
+        type: string
+      description:
+        type: string
+      tags:
+        items:
+          $ref: '#/definitions/model.QuestionTag'
+        type: array
+      title:
+        type: string
+    required:
+    - author_id
+    - course_id
+    - description
+    - title
+    type: object
+  schemas.CreateStudentFeedbackRequest:
+    properties:
+      course_id:
+        type: string
+      feedback:
+        type: string
+      feedback_type:
+        $ref: '#/definitions/model.FeedbackType'
+      score:
+        type: integer
+      student_uuid:
+        type: string
+      teacher_uuid:
+        type: string
+    required:
+    - course_id
+    - feedback
+    - feedback_type
+    - score
+    - student_uuid
+    - teacher_uuid
     type: object
   schemas.DeleteCourseResponse:
     properties:
@@ -276,6 +501,111 @@ definitions:
     required:
     - student_id
     type: object
+  schemas.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  schemas.GetCourseFeedbackRequest:
+    properties:
+      end_date:
+        type: string
+      end_score:
+        type: integer
+      feedback_type:
+        $ref: '#/definitions/model.FeedbackType'
+      start_date:
+        type: string
+      start_score:
+        type: integer
+    type: object
+  schemas.GetFeedbackByStudentIdRequest:
+    properties:
+      course_id:
+        type: string
+      end_date:
+        type: string
+      end_score:
+        type: integer
+      feedback_type:
+        $ref: '#/definitions/model.FeedbackType'
+      start_date:
+        type: string
+      start_score:
+        type: integer
+    type: object
+  schemas.GradeSubmissionRequest:
+    properties:
+      feedback:
+        type: string
+      score:
+        type: number
+    type: object
+  schemas.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  schemas.QuestionDetailResponse:
+    properties:
+      accepted_answer_id:
+        type: string
+      answers:
+        items:
+          $ref: '#/definitions/schemas.AnswerResponse'
+        type: array
+      author_id:
+        type: string
+      course_id:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      status:
+        $ref: '#/definitions/model.QuestionStatus'
+      tags:
+        items:
+          $ref: '#/definitions/model.QuestionTag'
+        type: array
+      title:
+        type: string
+      updated_at:
+        type: string
+      vote_count:
+        type: integer
+    type: object
+  schemas.QuestionResponse:
+    properties:
+      accepted_answer_id:
+        type: string
+      answer_count:
+        type: integer
+      author_id:
+        type: string
+      course_id:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      status:
+        $ref: '#/definitions/model.QuestionStatus'
+      tags:
+        items:
+          $ref: '#/definitions/model.QuestionTag'
+        type: array
+      title:
+        type: string
+      updated_at:
+        type: string
+      vote_count:
+        type: integer
+    type: object
   schemas.RemoveAuxTeacherFromCourseRequest:
     properties:
       aux_teacher_id:
@@ -285,6 +615,27 @@ definitions:
     required:
     - aux_teacher_id
     - teacher_id
+    type: object
+  schemas.SearchQuestionsResponse:
+    properties:
+      questions:
+        items:
+          $ref: '#/definitions/schemas.QuestionResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  schemas.SetFavouriteCourseRequest:
+    properties:
+      student_id:
+        type: string
+    required:
+    - student_id
+    type: object
+  schemas.SetFavouriteCourseResponse:
+    properties:
+      message:
+        type: string
     type: object
   schemas.UnenrollStudentRequest:
     properties:
@@ -297,6 +648,25 @@ definitions:
     properties:
       message:
         type: string
+    type: object
+  schemas.UnsetFavouriteCourseRequest:
+    properties:
+      student_id:
+        type: string
+    required:
+    - student_id
+    type: object
+  schemas.UnsetFavouriteCourseResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  schemas.UpdateAnswerRequest:
+    properties:
+      content:
+        type: string
+    required:
+    - content
     type: object
   schemas.UpdateAssignmentRequest:
     properties:
@@ -340,13 +710,41 @@ definitions:
     type: object
   schemas.UpdateModuleRequest:
     properties:
-      content:
-        type: string
+      data:
+        items:
+          $ref: '#/definitions/model.ModuleData'
+        type: array
       description:
         type: string
       order:
         type: integer
       title:
+        type: string
+    type: object
+  schemas.UpdateQuestionRequest:
+    properties:
+      description:
+        type: string
+      tags:
+        items:
+          $ref: '#/definitions/model.QuestionTag'
+        type: array
+      title:
+        type: string
+    type: object
+  schemas.VoteRequest:
+    properties:
+      user_id:
+        type: string
+      vote_type:
+        type: integer
+    required:
+    - user_id
+    - vote_type
+    type: object
+  schemas.VoteResponse:
+    properties:
+      message:
         type: string
     type: object
 info:
@@ -569,6 +967,38 @@ paths:
       summary: Update a submission
       tags:
       - submissions
+  /assignments/{assignmentId}/submissions/{id}/grade:
+    put:
+      consumes:
+      - application/json
+      description: Grade a submission by ID (for teachers)
+      parameters:
+      - description: Assignment ID
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      - description: Submission ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Grade request
+        in: body
+        name: gradeRequest
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.GradeSubmissionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Submission'
+      summary: Grade a submission
+      tags:
+      - submissions
   /assignments/{assignmentId}/submissions/{id}/submit:
     post:
       consumes:
@@ -746,6 +1176,191 @@ paths:
       summary: Enroll a student in a course
       tags:
       - enrollments
+  /courses/{id}/enrollments:
+    get:
+      consumes:
+      - application/json
+      description: Get enrollments by course ID
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Enrollment'
+            type: array
+      summary: Get enrollments by course ID
+      tags:
+      - enrollments
+  /courses/{id}/favourite:
+    delete:
+      consumes:
+      - application/json
+      description: Unset a course as favourite
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Unset favourite course request
+        in: body
+        name: unsetFavouriteCourseRequest
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.UnsetFavouriteCourseRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.UnsetFavouriteCourseResponse'
+      summary: Unset a course as favourite
+      tags:
+      - enrollments
+    post:
+      consumes:
+      - application/json
+      description: Set a course as favourite
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Favourite course request
+        in: body
+        name: favouriteCourseRequest
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.SetFavouriteCourseRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.SetFavouriteCourseResponse'
+      summary: Set a course as favourite
+      tags:
+      - enrollments
+  /courses/{id}/feedback:
+    get:
+      consumes:
+      - application/json
+      description: Get course feedback by course ID
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Get course feedback request
+        in: body
+        name: getCourseFeedbackRequest
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.GetCourseFeedbackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.CourseFeedback'
+            type: array
+      summary: Get course feedback
+      tags:
+      - courses
+    post:
+      consumes:
+      - application/json
+      description: Create course feedback by course ID
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Course feedback
+        in: body
+        name: feedback
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.CreateCourseFeedbackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CourseFeedback'
+      summary: Create course feedback
+      tags:
+      - courses
+  /courses/{id}/feedback/summary:
+    get:
+      consumes:
+      - application/json
+      description: Get course feedback summary by course ID
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Course feedback summary
+          schema:
+            type: string
+      summary: Get course feedback summary
+      tags:
+      - courses
+  /courses/{id}/members:
+    get:
+      consumes:
+      - application/json
+      description: Get all members of a course (teacher, aux teachers, and students)
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.CourseMembersResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Get course members
+      tags:
+      - courses
   /courses/{id}/remove-aux-teacher:
     delete:
       consumes:
@@ -773,6 +1388,33 @@ paths:
       summary: Remove an aux teacher from a course
       tags:
       - courses
+  /courses/{id}/student-feedback:
+    post:
+      consumes:
+      - application/json
+      description: Create a feedback for a course
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Feedback request
+        in: body
+        name: feedbackRequest
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.CreateStudentFeedbackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.StudentFeedback'
+      summary: Create a feedback for a course
+      tags:
+      - enrollments
   /courses/{id}/unenroll:
     delete:
       consumes:
@@ -800,6 +1442,29 @@ paths:
       summary: Unenroll a student from a course
       tags:
       - enrollments
+  /courses/favourite/{studentId}:
+    get:
+      consumes:
+      - application/json
+      description: Get favourite courses by student ID
+      parameters:
+      - description: Student ID
+        in: path
+        name: studentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Course'
+            type: array
+      summary: Get favourite courses
+      tags:
+      - courses
   /courses/student/{studentId}:
     get:
       consumes:
@@ -892,6 +1557,608 @@ paths:
       summary: Get courses by user ID
       tags:
       - courses
+  /feedback/student/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get feedback by student ID
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Get feedback by student ID request
+        in: body
+        name: getFeedbackByStudentIdRequest
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.GetFeedbackByStudentIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.StudentFeedback'
+            type: array
+      summary: Get feedback by student ID
+      tags:
+      - enrollments
+  /feedback/student/{id}/summary:
+    get:
+      consumes:
+      - application/json
+      description: Get student feedback summary by student ID
+      parameters:
+      - description: Student ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Student feedback summary
+          schema:
+            type: string
+      summary: Get student feedback summary
+      tags:
+      - enrollments
+  /forum/courses/{courseId}/questions:
+    get:
+      consumes:
+      - application/json
+      description: Get all questions for a specific course
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schemas.QuestionResponse'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Get questions by course ID
+      tags:
+      - forum
+  /forum/courses/{courseId}/search:
+    get:
+      consumes:
+      - application/json
+      description: Search questions in a course with optional filters
+      parameters:
+      - description: Course ID
+        in: path
+        name: courseId
+        required: true
+        type: string
+      - description: Search query
+        in: query
+        name: query
+        type: string
+      - collectionFormat: csv
+        description: Filter by tags
+        in: query
+        items:
+          type: string
+        name: tags
+        type: array
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.SearchQuestionsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Search questions
+      tags:
+      - forum
+  /forum/questions:
+    post:
+      consumes:
+      - application/json
+      description: Create a new question in the forum for a specific course
+      parameters:
+      - description: Question to create
+        in: body
+        name: question
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.CreateQuestionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/schemas.QuestionDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Create a new question
+      tags:
+      - forum
+  /forum/questions/{questionId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a question (only by the author)
+      parameters:
+      - description: Question ID
+        in: path
+        name: questionId
+        required: true
+        type: string
+      - description: Author ID
+        in: query
+        name: authorId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.MessageResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Delete a question
+      tags:
+      - forum
+    get:
+      consumes:
+      - application/json
+      description: Get a specific question by its ID with all answers
+      parameters:
+      - description: Question ID
+        in: path
+        name: questionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.QuestionDetailResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Get question by ID
+      tags:
+      - forum
+    put:
+      consumes:
+      - application/json
+      description: Update a question's title, description, or tags
+      parameters:
+      - description: Question ID
+        in: path
+        name: questionId
+        required: true
+        type: string
+      - description: Question update data
+        in: body
+        name: question
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.UpdateQuestionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.QuestionDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Update a question
+      tags:
+      - forum
+  /forum/questions/{questionId}/answers:
+    post:
+      consumes:
+      - application/json
+      description: Add a new answer to a specific question
+      parameters:
+      - description: Question ID
+        in: path
+        name: questionId
+        required: true
+        type: string
+      - description: Answer to create
+        in: body
+        name: answer
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.CreateAnswerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/schemas.AnswerResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Add an answer to a question
+      tags:
+      - forum
+  /forum/questions/{questionId}/answers/{answerId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an answer (only by the author)
+      parameters:
+      - description: Question ID
+        in: path
+        name: questionId
+        required: true
+        type: string
+      - description: Answer ID
+        in: path
+        name: answerId
+        required: true
+        type: string
+      - description: Author ID
+        in: query
+        name: authorId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.MessageResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Delete an answer
+      tags:
+      - forum
+    put:
+      consumes:
+      - application/json
+      description: Update an answer's content (only by the author)
+      parameters:
+      - description: Question ID
+        in: path
+        name: questionId
+        required: true
+        type: string
+      - description: Answer ID
+        in: path
+        name: answerId
+        required: true
+        type: string
+      - description: Answer update data
+        in: body
+        name: answer
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.UpdateAnswerRequest'
+      - description: Author ID
+        in: query
+        name: authorId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.AnswerResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Update an answer
+      tags:
+      - forum
+  /forum/questions/{questionId}/answers/{answerId}/accept:
+    post:
+      consumes:
+      - application/json
+      description: Accept an answer as the solution (only by the question author)
+      parameters:
+      - description: Question ID
+        in: path
+        name: questionId
+        required: true
+        type: string
+      - description: Answer ID
+        in: path
+        name: answerId
+        required: true
+        type: string
+      - description: Question Author ID
+        in: query
+        name: authorId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.MessageResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Accept an answer
+      tags:
+      - forum
+  /forum/questions/{questionId}/answers/{answerId}/vote:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a user's vote from an answer
+      parameters:
+      - description: Question ID
+        in: path
+        name: questionId
+        required: true
+        type: string
+      - description: Answer ID
+        in: path
+        name: answerId
+        required: true
+        type: string
+      - description: User ID
+        in: query
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.MessageResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Remove vote from answer
+      tags:
+      - forum
+    post:
+      consumes:
+      - application/json
+      description: Vote up or down on an answer
+      parameters:
+      - description: Question ID
+        in: path
+        name: questionId
+        required: true
+        type: string
+      - description: Answer ID
+        in: path
+        name: answerId
+        required: true
+        type: string
+      - description: Vote data
+        in: body
+        name: vote
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.VoteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.VoteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Vote on an answer
+      tags:
+      - forum
+  /forum/questions/{questionId}/vote:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a user's vote from a question
+      parameters:
+      - description: Question ID
+        in: path
+        name: questionId
+        required: true
+        type: string
+      - description: User ID
+        in: query
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.MessageResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Remove vote from question
+      tags:
+      - forum
+    post:
+      consumes:
+      - application/json
+      description: Vote up or down on a question
+      parameters:
+      - description: Question ID
+        in: path
+        name: questionId
+        required: true
+        type: string
+      - description: Vote data
+        in: body
+        name: vote
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.VoteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.VoteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Vote on a question
+      tags:
+      - forum
   /modules:
     post:
       consumes:

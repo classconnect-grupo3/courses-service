@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"courses-service/src/model"
@@ -11,12 +12,14 @@ import (
 type SubmissionService struct {
 	submissionRepo repository.SubmissionRepositoryInterface
 	assignmentRepo repository.AssignmentRepositoryInterface
+	courseService  CourseServiceInterface
 }
 
-func NewSubmissionService(submissionRepo repository.SubmissionRepositoryInterface, assignmentRepo repository.AssignmentRepositoryInterface) *SubmissionService {
+func NewSubmissionService(submissionRepo repository.SubmissionRepositoryInterface, assignmentRepo repository.AssignmentRepositoryInterface, courseService CourseServiceInterface) *SubmissionService {
 	return &SubmissionService{
 		submissionRepo: submissionRepo,
 		assignmentRepo: assignmentRepo,
+		courseService:  courseService,
 	}
 }
 
@@ -123,4 +126,62 @@ func (s *SubmissionService) GetOrCreateSubmission(ctx context.Context, assignmen
 	}
 
 	return newSubmission, nil
+}
+
+// GradeSubmission updates the score and feedback of a submission
+func (s *SubmissionService) GradeSubmission(ctx context.Context, submissionID string, score *float64, feedback string) (*model.Submission, error) {
+	submission, err := s.submissionRepo.GetByID(ctx, submissionID)
+	if err != nil {
+		return nil, err
+	}
+	if submission == nil {
+		return nil, ErrSubmissionNotFound
+	}
+
+	// Update submission with grading information
+	submission.Score = score
+	submission.Feedback = feedback
+	submission.UpdatedAt = time.Now()
+
+	err = s.submissionRepo.Update(ctx, submission)
+	if err != nil {
+		return nil, err
+	}
+
+	return submission, nil
+}
+
+// ValidateTeacherPermissions validates if a teacher can grade submissions for a given assignment
+func (s *SubmissionService) ValidateTeacherPermissions(ctx context.Context, assignmentID, teacherUUID string) error {
+	// Get assignment
+	assignment, err := s.assignmentRepo.GetByID(ctx, assignmentID)
+	if err != nil {
+		return err
+	}
+	if assignment == nil {
+		return ErrAssignmentNotFound
+	}
+
+	// Get course
+	course, err := s.courseService.GetCourseById(assignment.CourseID)
+	if err != nil {
+		return err
+	}
+	if course == nil {
+		return errors.New("course not found")
+	}
+
+	// Check if teacher is the main teacher
+	if course.TeacherUUID == teacherUUID {
+		return nil
+	}
+
+	// Check if teacher is an auxiliary teacher
+	for _, auxTeacher := range course.AuxTeachers {
+		if auxTeacher == teacherUUID {
+			return nil
+		}
+	}
+
+	return errors.New("teacher not authorized to grade this assignment")
 }

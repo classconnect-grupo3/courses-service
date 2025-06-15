@@ -74,7 +74,7 @@ func (r *MongoSubmissionRepository) GetByAssignment(ctx context.Context, assignm
 	}
 	defer cursor.Close(ctx)
 
-	var submissions []model.Submission
+	var submissions []model.Submission = make([]model.Submission, 0)
 	if err = cursor.All(ctx, &submissions); err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (r *MongoSubmissionRepository) GetByStudent(ctx context.Context, studentUUI
 	}
 	defer cursor.Close(ctx)
 
-	var submissions []model.Submission
+	var submissions []model.Submission = make([]model.Submission, 0)
 	if err = cursor.All(ctx, &submissions); err != nil {
 		return nil, err
 	}

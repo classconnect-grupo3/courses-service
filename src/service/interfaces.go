@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"courses-service/src/model"
 	"courses-service/src/schemas"
 )
@@ -18,6 +19,10 @@ type CourseServiceInterface interface {
 	UpdateCourse(id string, updateCourseRequest schemas.UpdateCourseRequest) (*model.Course, error)
 	AddAuxTeacherToCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error)
 	RemoveAuxTeacherFromCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error)
+	GetFavouriteCourses(studentId string) ([]*model.Course, error)
+	CreateCourseFeedback(courseId string, feedbackRequest schemas.CreateCourseFeedbackRequest) (*model.CourseFeedback, error)
+	GetCourseFeedback(courseId string, getCourseFeedbackRequest schemas.GetCourseFeedbackRequest) ([]*model.CourseFeedback, error)
+	GetCourseMembers(courseId string) (*schemas.CourseMembersResponse, error)
 }
 
 type ModuleServiceInterface interface {
@@ -33,6 +38,10 @@ type EnrollmentServiceInterface interface {
 	GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error)
 	EnrollStudent(studentID, courseID string) error
 	UnenrollStudent(studentID, courseID string) error
+	SetFavouriteCourse(studentID, courseID string) error
+	UnsetFavouriteCourse(studentID, courseID string) error
+	CreateStudentFeedback(feedbackRequest schemas.CreateStudentFeedbackRequest) error
+	GetFeedbackByStudentId(studentID string, getFeedbackByStudentIdRequest schemas.GetFeedbackByStudentIdRequest) ([]*model.StudentFeedback, error)
 }
 
 type AssignmentServiceInterface interface {
@@ -42,4 +51,40 @@ type AssignmentServiceInterface interface {
 	GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error)
 	UpdateAssignment(id string, updateAssignmentRequest schemas.UpdateAssignmentRequest) (*model.Assignment, error)
 	DeleteAssignment(id string) error
+}
+
+type SubmissionServiceInterface interface {
+	CreateSubmission(ctx context.Context, submission *model.Submission) error
+	UpdateSubmission(ctx context.Context, submission *model.Submission) error
+	SubmitSubmission(ctx context.Context, submissionID string) error
+	GetSubmission(ctx context.Context, id string) (*model.Submission, error)
+	GetSubmissionsByAssignment(ctx context.Context, assignmentID string) ([]model.Submission, error)
+	GetSubmissionsByStudent(ctx context.Context, studentUUID string) ([]model.Submission, error)
+	GetOrCreateSubmission(ctx context.Context, assignmentID, studentUUID, studentName string) (*model.Submission, error)
+	GradeSubmission(ctx context.Context, submissionID string, score *float64, feedback string) (*model.Submission, error)
+	ValidateTeacherPermissions(ctx context.Context, assignmentID, teacherUUID string) error
+}
+
+type ForumServiceInterface interface {
+	// Question operations
+	CreateQuestion(courseID, authorID, title, description string, tags []model.QuestionTag) (*model.ForumQuestion, error)
+	GetQuestionById(id string) (*model.ForumQuestion, error)
+	GetQuestionsByCourseId(courseID string) ([]model.ForumQuestion, error)
+	UpdateQuestion(id, title, description string, tags []model.QuestionTag) (*model.ForumQuestion, error)
+	DeleteQuestion(id, authorID string) error
+
+	// Answer operations
+	AddAnswer(questionID, authorID, content string) (*model.ForumAnswer, error)
+	UpdateAnswer(questionID, answerID, authorID, content string) (*model.ForumAnswer, error)
+	DeleteAnswer(questionID, answerID, authorID string) error
+	AcceptAnswer(questionID, answerID, authorID string) error
+
+	// Vote operations
+	VoteQuestion(questionID, userID string, voteType int) error
+	VoteAnswer(questionID, answerID, userID string, voteType int) error
+	RemoveVoteFromQuestion(questionID, userID string) error
+	RemoveVoteFromAnswer(questionID, answerID, userID string) error
+
+	// Search and filter operations
+	SearchQuestions(courseID, query string, tags []model.QuestionTag, status model.QuestionStatus) ([]model.ForumQuestion, error)
 }

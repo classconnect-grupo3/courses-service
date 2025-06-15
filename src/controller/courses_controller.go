@@ -3,7 +3,10 @@ package controller
 import (
 	"log/slog"
 	"net/http"
+	"slices"
 
+	"courses-service/src/ai"
+	"courses-service/src/model"
 	"courses-service/src/schemas"
 	"courses-service/src/service"
 
@@ -11,11 +14,12 @@ import (
 )
 
 type CourseController struct {
-	service service.CourseServiceInterface
+	service  service.CourseServiceInterface
+	aiClient *ai.AiClient
 }
 
-func NewCourseController(service service.CourseServiceInterface) *CourseController {
-	return &CourseController{service: service}
+func NewCourseController(service service.CourseServiceInterface, aiClient *ai.AiClient) *CourseController {
+	return &CourseController{service: service, aiClient: aiClient}
 }
 
 // @Summary Get all courses
@@ -293,4 +297,181 @@ func (c *CourseController) RemoveAuxTeacherFromCourse(ctx *gin.Context) {
 	}
 	slog.Debug("Aux teacher removed from course", "course", course)
 	ctx.JSON(http.StatusOK, course)
+}
+
+// @Summary Get favourite courses
+// @Description Get favourite courses by student ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param studentId path string true "Student ID"
+// @Success 200 {array} model.Course
+// @Router /courses/favourite/{studentId} [get]
+func (c *CourseController) GetFavouriteCourses(ctx *gin.Context) {
+	slog.Debug("Getting favourite courses")
+	studentId := ctx.Param("studentId")
+	if studentId == "" {
+		slog.Error("Student ID is required")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Student ID is required"})
+		return
+	}
+
+	courses, err := c.service.GetFavouriteCourses(studentId)
+	if err != nil {
+		slog.Error("Error getting favourite courses", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	slog.Debug("Favourite courses retrieved", "courses", courses)
+	ctx.JSON(http.StatusOK, courses)
+}
+
+// @Summary Create course feedback
+// @Description Create course feedback by course ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param feedback body schemas.CreateCourseFeedbackRequest true "Course feedback"
+// @Success 200 {object} model.CourseFeedback
+// @Router /courses/{id}/feedback [post]
+func (c *CourseController) CreateCourseFeedback(ctx *gin.Context) {
+	slog.Debug("Creating course feedback")
+	courseId := ctx.Param("id")
+	if courseId == "" {
+		slog.Error("Course ID is required")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+		return
+	}
+
+	var feedback schemas.CreateCourseFeedbackRequest
+	if err := ctx.ShouldBindJSON(&feedback); err != nil {
+		slog.Error("Error binding create course feedback request", "error", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if !slices.Contains(model.FeedbackTypes, feedback.FeedbackType) {
+		slog.Error("Invalid feedback type")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid feedback type"})
+		return
+	}
+
+	feedbackModel, err := c.service.CreateCourseFeedback(courseId, feedback)
+	if err != nil {
+		slog.Error("Error creating course feedback", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	slog.Debug("Course feedback created", "feedback", feedbackModel)
+	ctx.JSON(http.StatusOK, feedbackModel)
+}
+
+// @Summary Get course feedback
+// @Description Get course feedback by course ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param getCourseFeedbackRequest body schemas.GetCourseFeedbackRequest true "Get course feedback request"
+// @Success 200 {array} model.CourseFeedback
+// @Router /courses/{id}/feedback [get]
+func (c *CourseController) GetCourseFeedback(ctx *gin.Context) {
+	slog.Debug("Getting course feedback")
+	courseId := ctx.Param("id")
+	if courseId == "" {
+		slog.Error("Course ID is required")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+		return
+	}
+
+	var getCourseFeedbackRequest schemas.GetCourseFeedbackRequest
+	if err := ctx.ShouldBindJSON(&getCourseFeedbackRequest); err != nil {
+		slog.Error("Error binding get course feedback request", "error", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	feedback, err := c.service.GetCourseFeedback(courseId, getCourseFeedbackRequest)
+	if err != nil {
+		slog.Error("Error getting course feedback", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	slog.Debug("Course feedback retrieved", "feedback", feedback)
+	ctx.JSON(http.StatusOK, feedback)
+}
+
+// @Summary Get course feedback summary
+// @Description Get course feedback summary by course ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Success 200 {string} string "Course feedback summary"
+// @Router /courses/{id}/feedback/summary [get]
+func (c *CourseController) GetCourseFeedbackSummary(ctx *gin.Context) {
+	slog.Debug("Getting course feedback summary")
+	courseId := ctx.Param("id")
+	if courseId == "" {
+		slog.Error("Course ID is required")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+		return
+	}
+
+	feedbacks, err := c.service.GetCourseFeedback(courseId, schemas.GetCourseFeedbackRequest{})
+	if err != nil {
+		slog.Error("Error getting course feedback", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if len(feedbacks) == 0 {
+		slog.Error("No feedbacks found")
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "No feedbacks found"})
+		return
+	}
+
+	summary, err := c.aiClient.SummarizeCourseFeedbacks(feedbacks)
+	if err != nil {
+		slog.Error("Error getting course feedback summary", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	slog.Debug("Course feedback summary retrieved", "summary", summary)
+	ctx.JSON(http.StatusOK, summary)
+}
+
+// @Summary Get course members
+// @Description Get all members of a course (teacher, aux teachers, and students)
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Success 200 {object} schemas.CourseMembersResponse
+// @Failure 400 {object} schemas.ErrorResponse
+// @Failure 404 {object} schemas.ErrorResponse
+// @Failure 500 {object} schemas.ErrorResponse
+// @Router /courses/{id}/members [get]
+func (c *CourseController) GetCourseMembers(ctx *gin.Context) {
+	slog.Debug("Getting course members")
+
+	courseId := ctx.Param("id")
+	if courseId == "" {
+		ctx.JSON(http.StatusBadRequest, schemas.ErrorResponse{Error: "Course ID is required"})
+		return
+	}
+
+	members, err := c.service.GetCourseMembers(courseId)
+	if err != nil {
+		slog.Error("Error getting course members", "error", err)
+		ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	slog.Debug("Course members retrieved", "course_id", courseId)
+	ctx.JSON(http.StatusOK, members)
 }

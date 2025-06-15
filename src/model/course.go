@@ -18,6 +18,7 @@ type Course struct {
 	AuxTeachers    []string           `json:"aux_teachers" bson:"aux_teachers"`
 	StartDate      time.Time          `json:"start_date" bson:"start_date"`
 	EndDate        time.Time          `json:"end_date" bson:"end_date"`
+	Feedback       []CourseFeedback   `json:"feedback" bson:"feedback"`
 	CreatedAt      time.Time          `json:"created_at" bson:"created_at"`
 	UpdatedAt      time.Time          `json:"updated_at" bson:"updated_at"`
 }
