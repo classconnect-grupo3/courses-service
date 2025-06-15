@@ -17,6 +17,12 @@ services:
     logging:
       driver: "none"
     command: mongod --quiet
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - courses-network
 
@@ -34,6 +40,12 @@ services:
       - rabbitmq_data:/var/lib/rabbitmq
     logging:
       driver: "none"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - courses-network
 
@@ -50,8 +62,10 @@ services:
     ports:
       - "9090:9090"
     depends_on:
-      - mongodb
-      - rabbitmq
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - courses-network
 

@@ -16,6 +16,12 @@ services:
     networks:
       - courses-network
     command: mongod --quiet
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   rabbitmq-test:
     image: rabbitmq:3-management-alpine
@@ -31,6 +37,12 @@ services:
       - rabbitmq_data:/var/lib/rabbitmq
     logging:
       driver: "none"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - courses-network
 
@@ -47,8 +59,10 @@ services:
       - RABBITMQ_URL=amqp://admin:password@rabbitmq-test:5672/
       - NOTIFICATIONS_QUEUE_NAME=notifications_test
     depends_on:
-      - mongodb
-      - rabbitmq-test
+      mongodb:
+        condition: service_healthy
+      rabbitmq-test:
+        condition: service_healthy
     networks:
       - courses-network
     volumes:
