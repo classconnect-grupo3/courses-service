@@ -1,7 +1,6 @@
 package queues
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -9,8 +8,12 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+type NotificationsQueueInterface interface {
+	Publish(message QueueMessage) error
+}
+
 type NotificationsQueue struct {
-	channel *amqp.Channel
+	channel   *amqp.Channel
 	queueName string
 }
 
@@ -42,12 +45,16 @@ func NewNotificationsQueue() (*NotificationsQueue, error) {
 	}
 
 	return &NotificationsQueue{
-		channel: ch,
+		channel:   ch,
 		queueName: queueName,
 	}, nil
 }
 
 func (q *NotificationsQueue) Publish(message QueueMessage) error {
+	if q.channel == nil {
+		return nil // testing purposes
+	}
+
 	body, err := message.Encode()
 	if err != nil {
 		return fmt.Errorf("failed to encode message: %w", err)
@@ -58,8 +65,7 @@ func (q *NotificationsQueue) Publish(message QueueMessage) error {
 		return fmt.Errorf("failed to marshal message: %w", err)
 	}
 
-	return q.channel.PublishWithContext(
-		context.Background(),
+	return q.channel.Publish(
 		"",
 		q.queueName,
 		false,
