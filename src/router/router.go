@@ -149,7 +149,7 @@ func NewRouter(config *config.Config) *gin.Engine {
 	slog.Debug("Connected to database")
 
 	aiClient := ai.NewAiClient(config)
-	notificationsQueue, err := queues.NewNotificationsQueue()
+	notificationsQueue, err := queues.NewNotificationsQueue(config)
 	if err != nil {
 		log.Fatalf("Failed to create notifications queue: %v", err)
 	}

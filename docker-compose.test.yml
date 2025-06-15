@@ -17,6 +17,23 @@ services:
       - courses-network
     command: mongod --quiet
 
+  rabbitmq-test:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq-test
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=password
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    logging:
+      driver: "none"
+    networks:
+      - courses-network
+
   app-test:
     build:
       context: .
@@ -25,14 +42,21 @@ services:
     restart: "no"
     env_file:
       - ./src/.env.test
+    environment:
+      - DB_URI=mongodb://admin:password@mongodb:27017/test_db?authSource=admin
+      - RABBITMQ_URL=amqp://admin:password@rabbitmq-test:5672/
+      - NOTIFICATIONS_QUEUE_NAME=notifications_test
     depends_on:
       - mongodb
+      - rabbitmq-test
     networks:
       - courses-network
     volumes:
       - ./coverage:/app/coverage
+
 volumes:
   mongodb_data: {}
+  rabbitmq_data: {}
 
 networks:
   courses-network:

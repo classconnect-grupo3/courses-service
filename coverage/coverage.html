@@ -57,7 +57,7 @@
 				
 				<option value="file0">courses-service/src/config/config.go (100.0%)</option>
 				
-				<option value="file1">courses-service/src/controller/assignments_controller.go (77.8%)</option>
+				<option value="file1">courses-service/src/controller/assignments_controller.go (95.8%)</option>
 				
 				<option value="file2">courses-service/src/controller/courses_controller.go (88.9%)</option>
 				
@@ -83,7 +83,7 @@
 				
 				<option value="file13">courses-service/src/repository/submission_repository.go (83.3%)</option>
 				
-				<option value="file14">courses-service/src/router/router.go (97.1%)</option>
+				<option value="file14">courses-service/src/router/router.go (96.3%)</option>
 				
 				<option value="file15">courses-service/src/service/assignment_service.go (100.0%)</option>
 				
@@ -116,26 +116,30 @@
 import "os"
 
 type Config struct {
-        DBUsername   string
-        DBPassword   string
-        DBName       string
-        DBURI        string
-        Host         string
-        Port         string
-        Environment  string
-        GeminiApiKey string
+        DBUsername             string
+        DBPassword             string
+        DBName                 string
+        DBURI                  string
+        Host                   string
+        Port                   string
+        Environment            string
+        GeminiApiKey           string
+        RabbitMQURL            string
+        NotificationsQueueName string
 }
 
 func NewConfig() *Config <span class="cov8" title="1">{
         return &amp;Config{
-                DBUsername:   os.Getenv("DB_USERNAME"),
-                DBPassword:   os.Getenv("DB_PASSWORD"),
-                DBName:       os.Getenv("DB_NAME"),
-                DBURI:        os.Getenv("DB_URI"),
-                Host:         os.Getenv("HOST"),
-                Port:         os.Getenv("PORT"),
-                Environment:  os.Getenv("ENVIRONMENT"),
-                GeminiApiKey: os.Getenv("GEMINI_API_KEY"),
+                DBUsername:             os.Getenv("DB_USERNAME"),
+                DBPassword:             os.Getenv("DB_PASSWORD"),
+                DBName:                 os.Getenv("DB_NAME"),
+                DBURI:                  os.Getenv("DB_URI"),
+                Host:                   os.Getenv("HOST"),
+                Port:                   os.Getenv("PORT"),
+                Environment:            os.Getenv("ENVIRONMENT"),
+                GeminiApiKey:           os.Getenv("GEMINI_API_KEY"),
+                RabbitMQURL:            os.Getenv("RABBITMQ_URL"),
+                NotificationsQueueName: os.Getenv("NOTIFICATIONS_QUEUE_NAME"),
         }
 }</span>
 </pre>
@@ -143,26 +147,30 @@ func NewConfig() *Config <span class="cov8" title="1">{
 		<pre class="file" id="file1" style="display: none">package controller
 
 import (
-        "encoding/json"
         "log"
         "log/slog"
         "net/http"
-        "os"
-        "time"
 
+        "courses-service/src/queues"
         "courses-service/src/schemas"
         "courses-service/src/service"
 
         "github.com/gin-gonic/gin"
-        "github.com/rabbitmq/amqp091-go"
 )
 
 type AssignmentsController struct {
-        service service.AssignmentServiceInterface
+        service            service.AssignmentServiceInterface
+        notificationsQueue queues.NotificationsQueueInterface
 }
 
-func NewAssignmentsController(service service.AssignmentServiceInterface) *AssignmentsController <span class="cov8" title="1">{
-        return &amp;AssignmentsController{service: service}
+func NewAssignmentsController(
+        service service.AssignmentServiceInterface,
+        notificationsQueue queues.NotificationsQueueInterface,
+) *AssignmentsController <span class="cov8" title="1">{
+        return &amp;AssignmentsController{
+                service:            service,
+                notificationsQueue: notificationsQueue,
+        }
 }</span>
 
 // @Summary Get all assignments
@@ -212,65 +220,77 @@ func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) <span class="
         }</span>
 
         // 🟡 Publicar evento en RabbitMQ con amqp091-go
-        <span class="cov8" title="1">go func() </span><span class="cov8" title="1">{
-                conn, err := amqp091.Dial(os.Getenv("RABBITMQ_URL"))
-                if err != nil </span><span class="cov8" title="1">{
-                        log.Println("RabbitMQ connection error:", err)
-                        return
-                }</span>
-                <span class="cov0" title="0">defer conn.Close()
+        // go func() {
+        //         conn, err := amqp091.Dial(os.Getenv("RABBITMQ_URL"))
+        //         if err != nil {
+        //                 log.Println("RabbitMQ connection error:", err)
+        //                 return
+        //         }
+        //         defer conn.Close()
 
-                ch, err := conn.Channel()
-                if err != nil </span><span class="cov0" title="0">{
-                        log.Println("RabbitMQ channel error:", err)
-                        return
-                }</span>
-                <span class="cov0" title="0">defer ch.Close()
+        //         ch, err := conn.Channel()
+        //         if err != nil {
+        //                 log.Println("RabbitMQ channel error:", err)
+        //                 return
+        //         }
+        //         defer ch.Close()
 
-                _, err = ch.QueueDeclare(
-                        os.Getenv("NOTIFICATIONS_QUEUE_NAME"),
-                        false,
-                        false,
-                        false,
-                        false,
-                        nil,
-                )
-                if err != nil </span><span class="cov0" title="0">{
-                        log.Println("Queue declare error:", err)
-                        return
-                }</span>
+        //         _, err = ch.QueueDeclare(
+        //                 os.Getenv("NOTIFICATIONS_QUEUE_NAME"),
+        //                 false,
+        //                 false,
+        //                 false,
+        //                 false,
+        //                 nil,
+        //         )
+        //         if err != nil {
+        //                 log.Println("Queue declare error:", err)
+        //                 return
+        //         }
 
-                <span class="cov0" title="0">event := map[string]interface{}{
-                        "event_type":          "assignment.created",
-                        "course_id":           createdAssignment.CourseID,
-                        "assignment_id":       createdAssignment.ID,
-                        "assignment_title":    createdAssignment.Title,
-                        "assignment_due_date": createdAssignment.DueDate.Format(time.RFC3339),
-                }
+        //         event := map[string]interface{}{
+        //                 "event_type":          "assignment.created",
+        //                 "course_id":           createdAssignment.CourseID,
+        //                 "assignment_id":       createdAssignment.ID,
+        //                 "assignment_title":    createdAssignment.Title,
+        //                 "assignment_due_date": createdAssignment.DueDate.Format(time.RFC3339),
+        //         }
 
-                body, err := json.Marshal(event)
-                if err != nil </span><span class="cov0" title="0">{
-                        log.Println("Error marshaling event:", err)
-                        return
-                }</span>
+        //         body, err := json.Marshal(event)
+        //         if err != nil {
+        //                 log.Println("Error marshaling event:", err)
+        //                 return
+        //         }
 
-                <span class="cov0" title="0">err = ch.Publish(
-                        "",
-                        os.Getenv("NOTIFICATIONS_QUEUE_NAME"),
-                        false,
-                        false,
-                        amqp091.Publishing{
-                                ContentType: "application/json",
-                                Body:        body,
-                        },
-                )
-                if err != nil </span><span class="cov0" title="0">{
-                        log.Println("Error publishing message:", err)
-                        return
-                }</span>
+        //         err = ch.Publish(
+        //                 "",
+        //                 os.Getenv("NOTIFICATIONS_QUEUE_NAME"),
+        //                 false,
+        //                 false,
+        //                 amqp091.Publishing{
+        //                         ContentType: "application/json",
+        //                         Body:        body,
+        //                 },
+        //         )
+        //         if err != nil {
+        //                 log.Println("Error publishing message:", err)
+        //                 return
+        //         }
 
-                <span class="cov0" title="0">log.Println("📤 Event published: assignment.created")</span>
-        }()
+        //         log.Println("📤 Event published: assignment.created")
+        // }()
+        <span class="cov8" title="1">queueMessage := queues.NewAssignmentCreatedMessage(
+                createdAssignment.CourseID,
+                createdAssignment.ID.Hex(),
+                createdAssignment.Title,
+                createdAssignment.DueDate,
+        )
+        err = c.notificationsQueue.Publish(queueMessage)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error publishing message:", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
 
         <span class="cov8" title="1">log.Println("Assignment created:", createdAssignment.ID)
         ctx.JSON(http.StatusCreated, createdAssignment)</span>
@@ -3971,6 +3991,7 @@ import (
         "courses-service/src/controller"
         "courses-service/src/database"
         "courses-service/src/middleware"
+        "courses-service/src/queues"
         "courses-service/src/repository"
         "courses-service/src/service"
         "log"
@@ -4113,8 +4134,12 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
         <span class="cov8" title="1">slog.Debug("Connected to database")
 
         aiClient := ai.NewAiClient(config)
+        notificationsQueue, err := queues.NewNotificationsQueue(config)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatalf("Failed to create notifications queue: %v", err)
+        }</span>
 
-        courseRepo := repository.NewCourseRepository(dbClient, config.DBName)
+        <span class="cov8" title="1">courseRepo := repository.NewCourseRepository(dbClient, config.DBName)
         enrollmentRepo := repository.NewEnrollmentRepository(dbClient, config.DBName, courseRepo)
         assignmentRepository := repository.NewAssignmentRepository(dbClient, config.DBName)
         submissionRepository := repository.NewMongoSubmissionRepository(dbClient.Database(config.DBName))
@@ -4130,7 +4155,7 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
 
         courseController := controller.NewCourseController(courseService, aiClient)
         enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient)
-        assignmentsController := controller.NewAssignmentsController(assignmentService)
+        assignmentsController := controller.NewAssignmentsController(assignmentService, notificationsQueue)
         submissionController := controller.NewSubmissionController(submissionService) // TODO change this when interface is added
         moduleController := controller.NewModuleController(moduleService)
         forumController := controller.NewForumController(forumService)

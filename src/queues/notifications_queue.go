@@ -3,7 +3,8 @@ package queues
 import (
 	"encoding/json"
 	"fmt"
-	"os"
+
+	"courses-service/src/config"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -17,9 +18,9 @@ type NotificationsQueue struct {
 	queueName string
 }
 
-func NewNotificationsQueue() (*NotificationsQueue, error) {
-	queueName := os.Getenv("NOTIFICATIONS_QUEUE_NAME")
-	queueURL := os.Getenv("RABBITMQ_URL")
+func NewNotificationsQueue(config *config.Config) (*NotificationsQueue, error) {
+	queueName := config.NotificationsQueueName
+	queueURL := config.RabbitMQURL
 
 	conn, err := amqp.Dial(queueURL)
 	if err != nil {

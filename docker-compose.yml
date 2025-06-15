@@ -20,6 +20,23 @@ services:
     networks:
       - courses-network
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=password
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    logging:
+      driver: "none"
+    networks:
+      - courses-network
+
   app:
     build: .
     container_name: courses-service
@@ -28,15 +45,19 @@ services:
       - ./src/.env.dev
     environment:
       - DB_URI=mongodb://admin:password@mongodb:27017/courses_db?authSource=admin
+      - RABBITMQ_URL=amqp://admin:password@rabbitmq:5672/
+      - NOTIFICATIONS_QUEUE_NAME=notifications
     ports:
       - "9090:9090"
     depends_on:
       - mongodb
+      - rabbitmq
     networks:
       - courses-network
 
 volumes:
   mongodb_data:
+  rabbitmq_data:
 
 networks:
   courses-network:
