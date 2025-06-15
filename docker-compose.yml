@@ -17,6 +17,35 @@ services:
     logging:
       driver: "none"
     command: mongod --quiet
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - courses-network
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=password
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    logging:
+      driver: "none"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - courses-network
 
@@ -28,15 +57,21 @@ services:
       - ./src/.env.dev
     environment:
       - DB_URI=mongodb://admin:password@mongodb:27017/courses_db?authSource=admin
+      - RABBITMQ_URL=amqp://admin:password@rabbitmq:5672/
+      - NOTIFICATIONS_QUEUE_NAME=notifications
     ports:
       - "9090:9090"
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - courses-network
 
 volumes:
   mongodb_data:
+  rabbitmq_data:
 
 networks:
   courses-network:

@@ -6,6 +6,7 @@ import (
 	"courses-service/src/controller"
 	"courses-service/src/database"
 	"courses-service/src/middleware"
+	"courses-service/src/queues"
 	"courses-service/src/repository"
 	"courses-service/src/service"
 	"log"
@@ -148,6 +149,10 @@ func NewRouter(config *config.Config) *gin.Engine {
 	slog.Debug("Connected to database")
 
 	aiClient := ai.NewAiClient(config)
+	notificationsQueue, err := queues.NewNotificationsQueue(config)
+	if err != nil {
+		log.Fatalf("Failed to create notifications queue: %v", err)
+	}
 
 	courseRepo := repository.NewCourseRepository(dbClient, config.DBName)
 	enrollmentRepo := repository.NewEnrollmentRepository(dbClient, config.DBName, courseRepo)
@@ -165,7 +170,7 @@ func NewRouter(config *config.Config) *gin.Engine {
 
 	courseController := controller.NewCourseController(courseService, aiClient)
 	enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient)
-	assignmentsController := controller.NewAssignmentsController(assignmentService)
+	assignmentsController := controller.NewAssignmentsController(assignmentService, notificationsQueue)
 	submissionController := controller.NewSubmissionController(submissionService) // TODO change this when interface is added
 	moduleController := controller.NewModuleController(moduleService)
 	forumController := controller.NewForumController(forumService)

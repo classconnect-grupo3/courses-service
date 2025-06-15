@@ -10,6 +10,7 @@ import (
 
 	"courses-service/src/controller"
 	"courses-service/src/model"
+	"courses-service/src/queues"
 	"courses-service/src/router"
 	"courses-service/src/schemas"
 
@@ -21,8 +22,9 @@ import (
 var (
 	mockAssignmentService      = &MockAssignmentService{}
 	mockAssignmentErrorService = &MockAssignmentServiceWithError{}
-	normalAssignmentController = controller.NewAssignmentsController(mockAssignmentService)
-	errorAssignmentController  = controller.NewAssignmentsController(mockAssignmentErrorService)
+	mockNotificationsQueue     = &MockNotificationsQueue{}
+	normalAssignmentController = controller.NewAssignmentsController(mockAssignmentService, mockNotificationsQueue)
+	errorAssignmentController  = controller.NewAssignmentsController(mockAssignmentErrorService, mockNotificationsQueue)
 	normalAssignmentRouter     = gin.Default()
 	errorAssignmentRouter      = gin.Default()
 )
@@ -31,6 +33,12 @@ func init() {
 	gin.SetMode(gin.TestMode)
 	router.InitializeAssignmentsRoutes(normalAssignmentRouter, normalAssignmentController)
 	router.InitializeAssignmentsRoutes(errorAssignmentRouter, errorAssignmentController)
+}
+
+type MockNotificationsQueue struct{}
+
+func (m *MockNotificationsQueue) Publish(message queues.QueueMessage) error {
+	return nil
 }
 
 type MockAssignmentService struct{}
