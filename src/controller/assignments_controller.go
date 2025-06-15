@@ -73,66 +73,6 @@ func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) {
 		return
 	}
 
-	// 🟡 Publicar evento en RabbitMQ con amqp091-go
-	// go func() {
-	// 	conn, err := amqp091.Dial(os.Getenv("RABBITMQ_URL"))
-	// 	if err != nil {
-	// 		log.Println("RabbitMQ connection error:", err)
-	// 		return
-	// 	}
-	// 	defer conn.Close()
-
-	// 	ch, err := conn.Channel()
-	// 	if err != nil {
-	// 		log.Println("RabbitMQ channel error:", err)
-	// 		return
-	// 	}
-	// 	defer ch.Close()
-
-	// 	_, err = ch.QueueDeclare(
-	// 		os.Getenv("NOTIFICATIONS_QUEUE_NAME"),
-	// 		false,
-	// 		false,
-	// 		false,
-	// 		false,
-	// 		nil,
-	// 	)
-	// 	if err != nil {
-	// 		log.Println("Queue declare error:", err)
-	// 		return
-	// 	}
-
-	// 	event := map[string]interface{}{
-	// 		"event_type":          "assignment.created",
-	// 		"course_id":           createdAssignment.CourseID,
-	// 		"assignment_id":       createdAssignment.ID,
-	// 		"assignment_title":    createdAssignment.Title,
-	// 		"assignment_due_date": createdAssignment.DueDate.Format(time.RFC3339),
-	// 	}
-
-	// 	body, err := json.Marshal(event)
-	// 	if err != nil {
-	// 		log.Println("Error marshaling event:", err)
-	// 		return
-	// 	}
-
-	// 	err = ch.Publish(
-	// 		"",
-	// 		os.Getenv("NOTIFICATIONS_QUEUE_NAME"),
-	// 		false,
-	// 		false,
-	// 		amqp091.Publishing{
-	// 			ContentType: "application/json",
-	// 			Body:        body,
-	// 		},
-	// 	)
-	// 	if err != nil {
-	// 		log.Println("Error publishing message:", err)
-	// 		return
-	// 	}
-
-	// 	log.Println("📤 Event published: assignment.created")
-	// }()
 	queueMessage := queues.NewAssignmentCreatedMessage(
 		createdAssignment.CourseID,
 		createdAssignment.ID.Hex(),
