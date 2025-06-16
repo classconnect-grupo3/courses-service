@@ -49,8 +49,9 @@ type UpdateCourseResponse struct {
 }
 
 type GetCoursesByUserIdResponse struct {
-	Teacher []*model.Course `json:"teacher"`
-	Student []*model.Course `json:"student"`
+	Teacher    []*model.Course `json:"teacher"`
+	AuxTeacher []*model.Course `json:"aux_teacher"`
+	Student    []*model.Course `json:"student"`
 }
 
 type AddAuxTeacherToCourseRequest struct {

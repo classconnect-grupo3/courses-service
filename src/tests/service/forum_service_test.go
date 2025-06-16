@@ -341,6 +341,10 @@ func (m *MockForumCourseRepository) RemoveAuxTeacherFromCourse(course *model.Cou
 	return &model.Course{}, nil
 }
 
+func (m *MockForumCourseRepository) GetCoursesByAuxTeacherId(auxTeacherId string) ([]*model.Course, error) {
+	return []*model.Course{}, nil
+}
+
 // Helper function
 func mustParseForumObjectID(id string) primitive.ObjectID {
 	if len(id) == 24 {

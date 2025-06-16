@@ -162,6 +162,23 @@ func (r *CourseRepository) GetCoursesByStudentId(studentId string) ([]*model.Cou
 	return courses, nil
 }
 
+func (r *CourseRepository) GetCoursesByAuxTeacherId(auxTeacherId string) ([]*model.Course, error) {
+	// Find all courses where the auxTeacherId is in the aux_teachers array
+	// Using $in to be explicit about searching within an array
+	filter := bson.M{"aux_teachers": bson.M{"$in": []string{auxTeacherId}}}
+	cursor, err := r.courseCollection.Find(context.TODO(), filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get courses by aux teacher id: %v", err)
+	}
+
+	var courses []*model.Course
+	if err := cursor.All(context.TODO(), &courses); err != nil {
+		return nil, fmt.Errorf("failed to get courses by aux teacher id: %v", err)
+	}
+
+	return courses, nil
+}
+
 func (r *CourseRepository) GetCourseByTitle(title string) ([]*model.Course, error) {
 	filter := bson.M{
 		"title": bson.M{

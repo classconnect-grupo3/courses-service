@@ -97,8 +97,14 @@ func (s *CourseService) GetCoursesByUserId(userId string) (*schemas.GetCoursesBy
 		return nil, err
 	}
 
+	auxTeacherCourses, err := s.courseRepository.GetCoursesByAuxTeacherId(userId)
+	if err != nil {
+		return nil, err
+	}
+
 	result.Student = studentCourses
 	result.Teacher = teacherCourses
+	result.AuxTeacher = auxTeacherCourses
 
 	return &result, nil
 }

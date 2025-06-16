@@ -233,6 +233,9 @@ func (m *MockCourseRepositoryForEnrollment) RemoveAuxTeacherFromCourse(course *m
 func (m *MockCourseRepositoryForEnrollment) UpdateStudentsAmount(courseID string, newStudentsAmount int) error {
 	return nil
 }
+func (m *MockCourseRepositoryForEnrollment) GetCoursesByAuxTeacherId(auxTeacherId string) ([]*model.Course, error) {
+	return nil, nil
+}
 
 func TestEnrollStudent(t *testing.T) {
 	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})

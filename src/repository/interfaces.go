@@ -13,6 +13,7 @@ type CourseRepositoryInterface interface {
 	DeleteCourse(id string) error
 	GetCourseByTeacherId(teacherId string) ([]*model.Course, error)
 	GetCoursesByStudentId(studentId string) ([]*model.Course, error)
+	GetCoursesByAuxTeacherId(auxTeacherId string) ([]*model.Course, error)
 	GetCourseByTitle(title string) ([]*model.Course, error)
 	UpdateCourse(id string, updateCourseRequest model.Course) (*model.Course, error)
 	AddAuxTeacherToCourse(course *model.Course, auxTeacherId string) (*model.Course, error)

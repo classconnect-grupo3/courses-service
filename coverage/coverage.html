@@ -73,7 +73,7 @@
 				
 				<option value="file8">courses-service/src/repository/assignment_repository.go (87.0%)</option>
 				
-				<option value="file9">courses-service/src/repository/course_repository.go (82.4%)</option>
+				<option value="file9">courses-service/src/repository/course_repository.go (82.0%)</option>
 				
 				<option value="file10">courses-service/src/repository/enrollment_repository.go (81.4%)</option>
 				
@@ -87,7 +87,7 @@
 				
 				<option value="file15">courses-service/src/service/assignment_service.go (100.0%)</option>
 				
-				<option value="file16">courses-service/src/service/course_service.go (94.4%)</option>
+				<option value="file16">courses-service/src/service/course_service.go (93.8%)</option>
 				
 				<option value="file17">courses-service/src/service/enrollment_service.go (96.2%)</option>
 				
@@ -2568,6 +2568,23 @@ func (r *CourseRepository) GetCoursesByStudentId(studentId string) ([]*model.Cou
         <span class="cov8" title="1">return courses, nil</span>
 }
 
+func (r *CourseRepository) GetCoursesByAuxTeacherId(auxTeacherId string) ([]*model.Course, error) <span class="cov8" title="1">{
+        // Find all courses where the auxTeacherId is in the aux_teachers array
+        // Using $in to be explicit about searching within an array
+        filter := bson.M{"aux_teachers": bson.M{"$in": []string{auxTeacherId}}}
+        cursor, err := r.courseCollection.Find(context.TODO(), filter)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get courses by aux teacher id: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">var courses []*model.Course
+        if err := cursor.All(context.TODO(), &amp;courses); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get courses by aux teacher id: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">return courses, nil</span>
+}
+
 func (r *CourseRepository) GetCourseByTitle(title string) ([]*model.Course, error) <span class="cov8" title="1">{
         filter := bson.M{
                 "title": bson.M{
@@ -4385,8 +4402,14 @@ func (s *CourseService) GetCoursesByUserId(userId string) (*schemas.GetCoursesBy
                 return nil, err
         }</span>
 
+        <span class="cov8" title="1">auxTeacherCourses, err := s.courseRepository.GetCoursesByAuxTeacherId(userId)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
         <span class="cov8" title="1">result.Student = studentCourses
         result.Teacher = teacherCourses
+        result.AuxTeacher = auxTeacherCourses
 
         return &amp;result, nil</span>
 }

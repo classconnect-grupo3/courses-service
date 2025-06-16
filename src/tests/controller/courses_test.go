@@ -58,8 +58,9 @@ func (m *MockCourseService) GetCoursesByStudentId(studentId string) ([]*model.Co
 // GetCoursesByUserId implements controller.CourseService.
 func (m *MockCourseService) GetCoursesByUserId(userId string) (*schemas.GetCoursesByUserIdResponse, error) {
 	return &schemas.GetCoursesByUserIdResponse{
-		Student: []*model.Course{},
-		Teacher: []*model.Course{},
+		Student:    []*model.Course{},
+		Teacher:    []*model.Course{},
+		AuxTeacher: []*model.Course{},
 	}, nil
 }
 

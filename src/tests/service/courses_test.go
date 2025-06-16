@@ -627,6 +627,8 @@ func TestGetCoursesByUserId(t *testing.T) {
 	assert.NotNil(t, response)
 	assert.Equal(t, 1, len(response.Student))
 	assert.Equal(t, 1, len(response.Teacher))
+	assert.Equal(t, 1, len(response.AuxTeacher))
+	assert.Equal(t, "Aux Teacher Course", response.AuxTeacher[0].Title)
 }
 
 func TestGetCoursesByUserIdWithEmptyId(t *testing.T) {
@@ -1300,4 +1302,27 @@ func (m *MockCourseRepositoryWithError) AddAuxTeacherToCourse(course *model.Cour
 
 func (m *MockCourseRepositoryWithError) RemoveAuxTeacherFromCourse(course *model.Course, auxTeacherId string) (*model.Course, error) {
 	return nil, errors.New("error removing aux teacher")
+}
+
+func (m *MockCourseRepositoryWithError) GetCoursesByAuxTeacherId(auxTeacherId string) ([]*model.Course, error) {
+	return nil, errors.New("error getting courses by aux teacher")
+}
+
+func (m *MockCourseRepository) GetCoursesByAuxTeacherId(auxTeacherId string) ([]*model.Course, error) {
+	if auxTeacherId == "123e4567-e89b-12d3-a456-426614174000" {
+		return []*model.Course{
+			{
+				ID:          primitive.NewObjectID(),
+				Title:       "Aux Teacher Course",
+				Description: "Course where user is aux teacher",
+				TeacherUUID: "main-teacher-123",
+				AuxTeachers: []string{auxTeacherId, "other-aux-teacher"},
+				Capacity:    25,
+			},
+		}, nil
+	}
+	if auxTeacherId == "error-getting-courses" {
+		return nil, errors.New("Error getting courses")
+	}
+	return []*model.Course{}, nil
 }
