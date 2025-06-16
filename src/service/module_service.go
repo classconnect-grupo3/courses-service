@@ -26,6 +26,7 @@ func (s *ModuleService) CreateModule(module schemas.CreateModuleRequest) (*model
 	moduleModel := model.Module{
 		Title:       module.Title,
 		Description: module.Description,
+		CourseID:    module.CourseID,
 		Data:        []model.ModuleData{},
 	}
 
