@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 )
 
 type ModuleService struct {
@@ -62,20 +63,35 @@ func (s *ModuleService) GetModuleByOrder(courseID string, order int) (*model.Mod
 	}
 	return s.moduleRepository.GetModuleByOrder(courseID, order)
 }
+
 func (s *ModuleService) UpdateModule(id string, module model.Module) (*model.Module, error) {
 	slog.Debug("Updating module", "id", id, "module", module)
 	if id == "" {
 		return nil, errors.New("module id is required")
 	}
 
-	existingModule, err := s.moduleRepository.GetModuleByName(module.CourseID, module.Title)
+	// First, get the current module to check if title is changing
+	currentModule, err := s.moduleRepository.GetModuleById(id)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get current module: %v", err)
 	}
 
-	// Check if the module we are updating is the same as the existing module
-	if existingModule.ID != module.ID {
-		return nil, fmt.Errorf("module with title %s already exists in course %s", module.Title, module.CourseID)
+	// Only check for duplicate titles if the title is actually changing
+	if module.Title != "" && module.Title != currentModule.Title {
+		existingModule, err := s.moduleRepository.GetModuleByName(module.CourseID, module.Title)
+		if err == nil {
+			// Module with this title exists, check if it's a different module
+			if existingModule.ID != module.ID {
+				return nil, fmt.Errorf("module with title %s already exists in course %s", module.Title, module.CourseID)
+			}
+		} else {
+			// Check if it's a "not found" error or a real error
+			if !strings.Contains(err.Error(), "module not found") {
+				// It's a real error (DB connection, etc.), propagate it
+				return nil, fmt.Errorf("error checking module title: %v", err)
+			}
+			// If it's "module not found", that's fine - the title is unique
+		}
 	}
 
 	return s.moduleRepository.UpdateModule(id, module)

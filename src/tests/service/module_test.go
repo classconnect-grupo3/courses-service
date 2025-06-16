@@ -560,6 +560,28 @@ func TestUpdateModuleWithErrorGettingByName(t *testing.T) {
 		CourseID:    "error-course",
 	}
 
+	// Este test debe fallar porque GetModuleByName falla cuando courseid=error-course
+	// pero ahora primero se llama GetModuleById, así que necesitamos que ese ID falle
+	module, err := moduleService.UpdateModule("error-module-id", updateModule)
+	assert.Error(t, err)
+	assert.Nil(t, module)
+	assert.Contains(t, err.Error(), "failed to get current module")
+}
+
+func TestUpdateModuleWithErrorGettingModuleByName(t *testing.T) {
+	moduleService := service.NewModuleService(&MockModuleRepository{})
+
+	updateModule := model.Module{
+		Title:       "Some Module", // Título diferente al actual
+		Description: "Updated description",
+		Order:       1,
+		CourseID:    "error-course", // Este courseID hace que GetModuleByName falle
+	}
+
+	// Este caso específico:
+	// 1. GetModuleById("valid-module-id") funciona → obtiene módulo con título "Test Module"
+	// 2. Título "Some Module" != "Test Module" → necesita verificar duplicados
+	// 3. GetModuleByName("error-course", "Some Module") falla → retorna error
 	module, err := moduleService.UpdateModule("valid-module-id", updateModule)
 	assert.Error(t, err)
 	assert.Nil(t, module)
