@@ -793,6 +793,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/courses/{id}/aux-teacher/remove": {
+            "delete": {
+                "description": "Remove an aux teacher from a course by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Remove an aux teacher from a course",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Teacher ID",
+                        "name": "teacherId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Aux teacher ID",
+                        "name": "auxTeacherId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Course"
+                        }
+                    }
+                }
+            }
+        },
         "/courses/{id}/enroll": {
             "post": {
                 "description": "Enroll a student in a course",
@@ -943,7 +989,7 @@ const docTemplate = `{
             }
         },
         "/courses/{id}/feedback": {
-            "get": {
+            "put": {
                 "description": "Get course feedback by course ID",
                 "consumes": [
                     "application/json"
@@ -1107,47 +1153,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/courses/{id}/remove-aux-teacher": {
-            "delete": {
-                "description": "Remove an aux teacher from a course by ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "courses"
-                ],
-                "summary": "Remove an aux teacher from a course",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Course ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Remove aux teacher from course request",
-                        "name": "removeAuxTeacherRequest",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/schemas.RemoveAuxTeacherFromCourseRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.Course"
-                        }
-                    }
-                }
-            }
-        },
         "/courses/{id}/student-feedback": {
             "post": {
                 "description": "Create a feedback for a course",
@@ -1231,7 +1236,7 @@ const docTemplate = `{
             }
         },
         "/feedback/student/{id}": {
-            "get": {
+            "put": {
                 "description": "Get feedback by student ID",
                 "consumes": [
                     "application/json"
@@ -3226,21 +3231,6 @@ const docTemplate = `{
                 },
                 "vote_count": {
                     "type": "integer"
-                }
-            }
-        },
-        "schemas.RemoveAuxTeacherFromCourseRequest": {
-            "type": "object",
-            "required": [
-                "aux_teacher_id",
-                "teacher_id"
-            ],
-            "properties": {
-                "aux_teacher_id": {
-                    "type": "string"
-                },
-                "teacher_id": {
-                    "type": "string"
                 }
             }
         },

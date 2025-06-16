@@ -7,6 +7,7 @@ import (
 	"courses-service/src/schemas"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -476,9 +477,10 @@ func TestAddAuxTeacherToCourseWithEmptyCourseId(t *testing.T) {
 
 func TestRemoveAuxTeacherFromCourse(t *testing.T) {
 	w := httptest.NewRecorder()
-	body := `{"teacher_id": "123", "aux_teacher_id": "456"}`
+	teacherId := "123"
+	auxTeacherId := "456"
 
-	req, _ := http.NewRequest("DELETE", "/courses/123/aux-teacher/remove", strings.NewReader(body))
+	req, _ := http.NewRequest("DELETE", fmt.Sprintf("/courses/123/aux-teacher/remove?teacherId=%s&auxTeacherId=%s", teacherId, auxTeacherId), nil)
 	normalRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -486,20 +488,22 @@ func TestRemoveAuxTeacherFromCourse(t *testing.T) {
 
 func TestRemoveAuxTeacherFromCourseWithInvalidBody(t *testing.T) {
 	w := httptest.NewRecorder()
-	body := `{"invalid": "body"}`
+	teacherId := ""
+	auxTeacherId := ""
 
-	req, _ := http.NewRequest("DELETE", "/courses/123/aux-teacher/remove", strings.NewReader(body))
+	req, _ := http.NewRequest("DELETE", fmt.Sprintf("/courses/123/aux-teacher/remove?teacherId=%s&auxTeacherId=%s", teacherId, auxTeacherId), nil)
 	normalRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	assert.Contains(t, w.Body.String(), "Error:Field validation")
+	assert.Contains(t, w.Body.String(), "Teacher ID and aux teacher ID are required")
 }
 
 func TestRemoveAuxTeacherFromCourseWithError(t *testing.T) {
 	w := httptest.NewRecorder()
-	body := `{"teacher_id": "123", "aux_teacher_id": "456"}`
+	teacherId := "123"
+	auxTeacherId := "456"
 
-	req, _ := http.NewRequest("DELETE", "/courses/123/aux-teacher/remove", strings.NewReader(body))
+	req, _ := http.NewRequest("DELETE", fmt.Sprintf("/courses/123/aux-teacher/remove?teacherId=%s&auxTeacherId=%s", teacherId, auxTeacherId), nil)
 	errorRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
@@ -508,9 +512,10 @@ func TestRemoveAuxTeacherFromCourseWithError(t *testing.T) {
 
 func TestRemoveAuxTeacherFromCourseWithEmptyCourseId(t *testing.T) {
 	w := httptest.NewRecorder()
-	body := `{"teacher_id": "123", "aux_teacher_id": "456"}`
+	teacherId := "123"
+	auxTeacherId := "456"
 
-	req, _ := http.NewRequest("DELETE", "/courses//aux-teacher/remove", strings.NewReader(body))
+	req, _ := http.NewRequest("DELETE", fmt.Sprintf("/courses//aux-teacher/remove?teacherId=%s&auxTeacherId=%s", teacherId, auxTeacherId), nil)
 	normalRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)

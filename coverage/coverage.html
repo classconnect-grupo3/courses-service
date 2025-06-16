@@ -611,9 +611,10 @@ func (c *CourseController) AddAuxTeacherToCourse(ctx *gin.Context) <span class="
 // @Accept json
 // @Produce json
 // @Param id path string true "Course ID"
-// @Param removeAuxTeacherRequest body schemas.RemoveAuxTeacherFromCourseRequest true "Remove aux teacher from course request"
+// @Param teacherId query string true "Teacher ID"
+// @Param auxTeacherId query string true "Aux teacher ID"
 // @Success 200 {object} model.Course
-// @Router /courses/{id}/remove-aux-teacher [delete]
+// @Router /courses/{id}/aux-teacher/remove [delete]
 func (c *CourseController) RemoveAuxTeacherFromCourse(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Removing aux teacher from course")
         id := ctx.Param("id")
@@ -623,16 +624,16 @@ func (c *CourseController) RemoveAuxTeacherFromCourse(ctx *gin.Context) <span cl
                 return
         }</span>
 
-        <span class="cov8" title="1">var removeAuxTeacherRequest schemas.RemoveAuxTeacherFromCourseRequest
-        if err := ctx.ShouldBindJSON(&amp;removeAuxTeacherRequest); err != nil </span><span class="cov8" title="1">{
-                slog.Error("Error binding JSON", "error", err)
-                ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        <span class="cov8" title="1">teacherId := ctx.Query("teacherId")
+        auxTeacherId := ctx.Query("auxTeacherId")
+
+        if teacherId == "" || auxTeacherId == "" </span><span class="cov8" title="1">{
+                slog.Error("Teacher ID and aux teacher ID are required")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Teacher ID and aux teacher ID are required"})
                 return
         }</span>
 
-        <span class="cov8" title="1">teacherId := removeAuxTeacherRequest.TeacherID
-        auxTeacherId := removeAuxTeacherRequest.AuxTeacherID
-        course, err := c.service.RemoveAuxTeacherFromCourse(id, teacherId, auxTeacherId)
+        <span class="cov8" title="1">course, err := c.service.RemoveAuxTeacherFromCourse(id, teacherId, auxTeacherId)
         if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error removing aux teacher from course", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
