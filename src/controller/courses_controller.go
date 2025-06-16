@@ -376,7 +376,7 @@ func (c *CourseController) CreateCourseFeedback(ctx *gin.Context) {
 // @Param id path string true "Course ID"
 // @Param getCourseFeedbackRequest body schemas.GetCourseFeedbackRequest true "Get course feedback request"
 // @Success 200 {array} model.CourseFeedback
-// @Router /courses/{id}/feedback [get]
+// @Router /courses/{id}/feedback [put]
 func (c *CourseController) GetCourseFeedback(ctx *gin.Context) {
 	slog.Debug("Getting course feedback")
 	courseId := ctx.Param("id")

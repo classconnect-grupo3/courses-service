@@ -241,7 +241,7 @@ func (c *EnrollmentController) CreateFeedback(ctx *gin.Context) {
 // @Param id path string true "Student ID"
 // @Param getFeedbackByStudentIdRequest body schemas.GetFeedbackByStudentIdRequest true "Get feedback by student ID request"
 // @Success 200 {array} model.StudentFeedback
-// @Router /feedback/student/{id} [get]
+// @Router /feedback/student/{id} [put]
 func (c *EnrollmentController) GetFeedbackByStudentId(ctx *gin.Context) {
 	slog.Debug("Getting feedback by student ID", "studentId", ctx.Param("id"))
 	studentID := ctx.Param("id")

@@ -483,7 +483,7 @@ func TestGetFeedbackByStudentId(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{"course_id": "course-123", "feedback_type": "POSITIVO"}`
 
-	req, _ := http.NewRequest("GET", "/feedback/student/student-with-feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/feedback/student/student-with-feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalEnrollmentRouter.ServeHTTP(w, req)
 
@@ -499,7 +499,7 @@ func TestGetFeedbackByStudentIdWithEmptyStudentId(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{"course_id": "course-123"}`
 
-	req, _ := http.NewRequest("GET", "/feedback/student/", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/feedback/student/", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalEnrollmentRouter.ServeHTTP(w, req)
 
@@ -510,7 +510,7 @@ func TestGetFeedbackByStudentIdWithInvalidBody(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{"invalid": "body"}`
 
-	req, _ := http.NewRequest("GET", "/feedback/student/student-123", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/feedback/student/student-123", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalEnrollmentRouter.ServeHTTP(w, req)
 
@@ -522,7 +522,7 @@ func TestGetFeedbackByStudentIdWithMalformedJSON(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{"course_id": "course-123", "invalid_json"`
 
-	req, _ := http.NewRequest("GET", "/feedback/student/student-123", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/feedback/student/student-123", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalEnrollmentRouter.ServeHTTP(w, req)
 
@@ -534,7 +534,7 @@ func TestGetFeedbackByStudentIdWithServiceError(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{"course_id": "course-123"}`
 
-	req, _ := http.NewRequest("GET", "/feedback/student/student-123", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/feedback/student/student-123", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	errorEnrollmentRouter.ServeHTTP(w, req)
 
@@ -546,7 +546,7 @@ func TestGetFeedbackByStudentIdWithNoFeedback(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{"course_id": "course-123"}`
 
-	req, _ := http.NewRequest("GET", "/feedback/student/student-without-feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/feedback/student/student-without-feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalEnrollmentRouter.ServeHTTP(w, req)
 
@@ -603,7 +603,7 @@ func TestGetFeedbackByStudentIdWithDifferentFilters(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
 
-			req, _ := http.NewRequest("GET", fmt.Sprintf("/feedback/student/%s", tc.studentID), strings.NewReader(tc.body))
+			req, _ := http.NewRequest("PUT", fmt.Sprintf("/feedback/student/%s", tc.studentID), strings.NewReader(tc.body))
 			req.Header.Set("Content-Type", "application/json")
 			normalEnrollmentRouter.ServeHTTP(w, req)
 

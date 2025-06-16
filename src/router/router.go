@@ -59,7 +59,7 @@ func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseControl
 	r.POST("/courses/:id/aux-teacher/add", controller.AddAuxTeacherToCourse)
 	r.DELETE("/courses/:id/aux-teacher/remove", controller.RemoveAuxTeacherFromCourse)
 	r.POST("/courses/:id/feedback", controller.CreateCourseFeedback)
-	r.GET("/courses/:id/feedback", controller.GetCourseFeedback)
+	r.PUT("/courses/:id/feedback", controller.GetCourseFeedback) // has to be a put because get doesnt receive a body and it was made to receive a body
 	r.GET("/courses/:id/feedback/summary", controller.GetCourseFeedbackSummary)
 }
 
@@ -107,7 +107,7 @@ func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.Enrollmen
 	r.POST("/courses/:id/favourite", controller.SetFavouriteCourse)
 	r.DELETE("/courses/:id/favourite", controller.UnsetFavouriteCourse)
 	r.POST("/courses/:id/student-feedback", controller.CreateFeedback)
-	r.GET("/feedback/student/:id", controller.GetFeedbackByStudentId)
+	r.PUT("/feedback/student/:id", controller.GetFeedbackByStudentId)
 	r.GET("/feedback/student/:id/summary", controller.GetStudentFeedbackSummary)
 }
 

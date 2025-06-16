@@ -746,7 +746,7 @@ func TestGetCourseFeedback(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{}`
 
-	req, _ := http.NewRequest("GET", "/courses/course-with-feedback/feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/courses/course-with-feedback/feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalRouter.ServeHTTP(w, req)
 
@@ -763,7 +763,7 @@ func TestGetCourseFeedbackWithEmptyCourseID(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{}`
 
-	req, _ := http.NewRequest("GET", "/courses//feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/courses//feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalRouter.ServeHTTP(w, req)
 
@@ -775,7 +775,7 @@ func TestGetCourseFeedbackWithNoFeedback(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{}`
 
-	req, _ := http.NewRequest("GET", "/courses/course-no-feedback/feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/courses/course-no-feedback/feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalRouter.ServeHTTP(w, req)
 
@@ -788,7 +788,7 @@ func TestGetCourseFeedbackWithFeedbackTypeFilter(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{"feedback_type": "POSITIVO"}`
 
-	req, _ := http.NewRequest("GET", "/courses/course-with-feedback/feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/courses/course-with-feedback/feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalRouter.ServeHTTP(w, req)
 
@@ -804,7 +804,7 @@ func TestGetCourseFeedbackWithScoreRangeFilter(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{"start_score": 4, "end_score": 5}`
 
-	req, _ := http.NewRequest("GET", "/courses/course-with-feedback/feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/courses/course-with-feedback/feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalRouter.ServeHTTP(w, req)
 
@@ -820,7 +820,7 @@ func TestGetCourseFeedbackWithCombinedFilters(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{"feedback_type": "POSITIVO", "start_score": 4, "end_score": 5}`
 
-	req, _ := http.NewRequest("GET", "/courses/course-with-feedback/feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/courses/course-with-feedback/feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalRouter.ServeHTTP(w, req)
 
@@ -834,7 +834,7 @@ func TestGetCourseFeedbackWithInvalidJSON(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{"feedback_type": "POSITIVO", "start_score": invalid}`
 
-	req, _ := http.NewRequest("GET", "/courses/course-with-feedback/feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/courses/course-with-feedback/feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalRouter.ServeHTTP(w, req)
 
@@ -846,7 +846,7 @@ func TestGetCourseFeedbackWithServiceError(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{}`
 
-	req, _ := http.NewRequest("GET", "/courses/error-course/feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/courses/error-course/feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	errorRouter.ServeHTTP(w, req)
 
@@ -858,7 +858,7 @@ func TestGetCourseFeedbackWithDateRangeFilter(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{"start_date": "2024-01-01T00:00:00Z", "end_date": "2024-12-31T23:59:59Z"}`
 
-	req, _ := http.NewRequest("GET", "/courses/course-with-feedback/feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/courses/course-with-feedback/feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalRouter.ServeHTTP(w, req)
 
