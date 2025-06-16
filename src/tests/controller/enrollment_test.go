@@ -159,9 +159,9 @@ func TestEnrollStudentWithError(t *testing.T) {
 
 func TestUnenrollStudent(t *testing.T) {
 	w := httptest.NewRecorder()
-	body := `{"student_id": "123e4567-e89b-12d3-a456-426614174000"}`
+	studentId := "123e4567-e89b-12d3-a456-426614174000"
 
-	req, _ := http.NewRequest("DELETE", "/courses/course-123/unenroll", strings.NewReader(body))
+	req, _ := http.NewRequest("DELETE", fmt.Sprintf("/courses/course-123/unenroll?studentId=%s", studentId), nil)
 	normalEnrollmentRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -170,20 +170,19 @@ func TestUnenrollStudent(t *testing.T) {
 
 func TestUnenrollStudentWithInvalidBody(t *testing.T) {
 	w := httptest.NewRecorder()
-	body := `{"invalid": "body"}`
 
-	req, _ := http.NewRequest("DELETE", "/courses/course-123/unenroll", strings.NewReader(body))
+	req, _ := http.NewRequest("DELETE", "/courses/course-123/unenroll?studentId=", nil)
 	normalEnrollmentRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	assert.Contains(t, w.Body.String(), "Error:Field validation")
+	assert.Contains(t, w.Body.String(), "Student ID is required")
 }
 
 func TestUnenrollStudentWithEmptyCourseId(t *testing.T) {
 	w := httptest.NewRecorder()
-	body := `{"student_id": "123e4567-e89b-12d3-a456-426614174000"}`
+	studentId := "123e4567-e89b-12d3-a456-426614174000"
 
-	req, _ := http.NewRequest("DELETE", "/courses//unenroll", strings.NewReader(body))
+	req, _ := http.NewRequest("DELETE", fmt.Sprintf("/courses//unenroll?studentId=%s", studentId), nil)
 	normalEnrollmentRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -191,9 +190,9 @@ func TestUnenrollStudentWithEmptyCourseId(t *testing.T) {
 
 func TestUnenrollStudentWithError(t *testing.T) {
 	w := httptest.NewRecorder()
-	body := `{"student_id": "123e4567-e89b-12d3-a456-426614174000"}`
+	studentId := "123e4567-e89b-12d3-a456-426614174000"
 
-	req, _ := http.NewRequest("DELETE", "/courses/course-123/unenroll", strings.NewReader(body))
+	req, _ := http.NewRequest("DELETE", fmt.Sprintf("/courses/course-123/unenroll?studentId=%s", studentId), nil)
 	errorEnrollmentRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
@@ -265,9 +264,9 @@ func TestSetFavouriteCourseWithError(t *testing.T) {
 
 func TestUnsetFavouriteCourse(t *testing.T) {
 	w := httptest.NewRecorder()
-	body := `{"student_id": "123e4567-e89b-12d3-a456-426614174000"}`
+	studentId := "123e4567-e89b-12d3-a456-426614174000"
 
-	req, _ := http.NewRequest("DELETE", "/courses/course-123/favourite", strings.NewReader(body))
+	req, _ := http.NewRequest("DELETE", fmt.Sprintf("/courses/course-123/favourite?studentId=%s", studentId), nil)
 	normalEnrollmentRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -276,20 +275,19 @@ func TestUnsetFavouriteCourse(t *testing.T) {
 
 func TestUnsetFavouriteCourseWithInvalidBody(t *testing.T) {
 	w := httptest.NewRecorder()
-	body := `{"invalid": "body"}`
 
-	req, _ := http.NewRequest("DELETE", "/courses/course-123/favourite", strings.NewReader(body))
+	req, _ := http.NewRequest("DELETE", "/courses/course-123/favourite?studentId=", nil)
 	normalEnrollmentRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	assert.Contains(t, w.Body.String(), "Error:Field validation")
+	assert.Contains(t, w.Body.String(), "Student ID is required")
 }
 
 func TestUnsetFavouriteCourseWithEmptyCourseId(t *testing.T) {
 	w := httptest.NewRecorder()
-	body := `{"student_id": "123e4567-e89b-12d3-a456-426614174000"}`
+	studentId := "123e4567-e89b-12d3-a456-426614174000"
 
-	req, _ := http.NewRequest("DELETE", "/courses//favourite", strings.NewReader(body))
+	req, _ := http.NewRequest("DELETE", fmt.Sprintf("/courses//favourite?studentId=%s", studentId), nil)
 	normalEnrollmentRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -298,9 +296,9 @@ func TestUnsetFavouriteCourseWithEmptyCourseId(t *testing.T) {
 
 func TestUnsetFavouriteCourseWithError(t *testing.T) {
 	w := httptest.NewRecorder()
-	body := `{"student_id": "123e4567-e89b-12d3-a456-426614174000"}`
+	studentId := "123e4567-e89b-12d3-a456-426614174000"
 
-	req, _ := http.NewRequest("DELETE", "/courses/course-123/favourite", strings.NewReader(body))
+	req, _ := http.NewRequest("DELETE", fmt.Sprintf("/courses/course-123/favourite?studentId=%s", studentId), nil)
 	errorEnrollmentRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
