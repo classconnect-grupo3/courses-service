@@ -538,14 +538,21 @@ func TestGetCourseByTitleWithNonExistentTitle(t *testing.T) {
 
 func TestDeleteCourse(t *testing.T) {
 	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
-	err := courseService.DeleteCourse("123e4567-e89b-12d3-a456-426614174000")
+	err := courseService.DeleteCourse("123e4567-e89b-12d3-a456-426614174000", "titular-teacher")
 	assert.NoError(t, err)
 }
 
 func TestDeleteCourseWithEmptyId(t *testing.T) {
 	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
-	err := courseService.DeleteCourse("")
+	err := courseService.DeleteCourse("", "titular-teacher")
 	assert.Error(t, err)
+}
+
+func TestDeleteCourseWithNonOwnerTeacher(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	err := courseService.DeleteCourse("123e4567-e89b-12d3-a456-426614174000", "non-owner-teacher")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "the user trying to delete the course is not the owner of the course")
 }
 
 func TestUpdateCourse(t *testing.T) {
@@ -553,7 +560,7 @@ func TestUpdateCourse(t *testing.T) {
 	course, err := courseService.UpdateCourse("123e4567-e89b-12d3-a456-426614174000", schemas.UpdateCourseRequest{
 		Title:       "Test Course",
 		Description: "Test Description",
-		TeacherID:   "123e4567-e89b-12d3-a456-426614174000",
+		TeacherID:   "titular-teacher",
 		Capacity:    10,
 	})
 	assert.NoError(t, err)
@@ -565,11 +572,24 @@ func TestUpdateCourseWithEmptyId(t *testing.T) {
 	course, err := courseService.UpdateCourse("", schemas.UpdateCourseRequest{
 		Title:       "Test Course",
 		Description: "Test Description",
-		TeacherID:   "123e4567-e89b-12d3-a456-426614174000",
+		TeacherID:   "titular-teacher",
 		Capacity:    10,
 	})
 	assert.Error(t, err)
 	assert.Nil(t, course)
+}
+
+func TestUpdateCourseWithNonOwnerTeacher(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	course, err := courseService.UpdateCourse("123e4567-e89b-12d3-a456-426614174000", schemas.UpdateCourseRequest{
+		Title:       "Test Course",
+		Description: "Test Description",
+		TeacherID:   "non-owner-teacher",
+		Capacity:    10,
+	})
+	assert.Error(t, err)
+	assert.Nil(t, course)
+	assert.Contains(t, err.Error(), "the user trying to update the course is not the owner of the course")
 }
 
 func TestGetCoursesByStudentId(t *testing.T) {

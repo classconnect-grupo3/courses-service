@@ -89,7 +89,7 @@ func (m *MockCourseService) GetCourseById(id string) (*model.Course, error) {
 	}, nil
 }
 
-func (m *MockCourseService) DeleteCourse(id string) error {
+func (m *MockCourseService) DeleteCourse(id string, teacherId string) error {
 	return nil
 }
 
@@ -218,7 +218,7 @@ func (m *MockCourseServiceWithError) GetCourseById(id string) (*model.Course, er
 	return nil, errors.New("Error getting course by ID")
 }
 
-func (m *MockCourseServiceWithError) DeleteCourse(id string) error {
+func (m *MockCourseServiceWithError) DeleteCourse(id string, teacherId string) error {
 	return errors.New("Error deleting course")
 }
 
@@ -321,7 +321,7 @@ func TestGetCourseByIdWithError(t *testing.T) {
 
 func TestDeleteCourse(t *testing.T) {
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("DELETE", "/courses/123", nil)
+	req, _ := http.NewRequest("DELETE", "/courses/123?teacherId=teacher123", nil)
 	normalRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -329,10 +329,19 @@ func TestDeleteCourse(t *testing.T) {
 
 func TestDeleteCourseWithError(t *testing.T) {
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("DELETE", "/courses/123", nil)
+	req, _ := http.NewRequest("DELETE", "/courses/123?teacherId=teacher123", nil)
 	errorRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestDeleteCourseWithoutTeacherId(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/courses/123", nil)
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Teacher ID is required")
 }
 
 func TestGetCourseByTeacherId(t *testing.T) {

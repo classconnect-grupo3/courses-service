@@ -252,7 +252,7 @@ func (m *MockCourseService) GetCourses() ([]*model.Course, error) { return nil, 
 func (m *MockCourseService) CreateCourse(c schemas.CreateCourseRequest) (*model.Course, error) {
 	return nil, nil
 }
-func (m *MockCourseService) DeleteCourse(id string) error { return nil }
+func (m *MockCourseService) DeleteCourse(id string, teacherId string) error { return nil }
 func (m *MockCourseService) GetCourseByTeacherId(teacherId string) ([]*model.Course, error) {
 	return nil, nil
 }

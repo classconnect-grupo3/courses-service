@@ -207,7 +207,7 @@ func (m *CourseMockService) CreateCourse(c schemas.CreateCourseRequest) (*model.
 	return nil, nil
 }
 
-func (m *CourseMockService) DeleteCourse(id string) error {
+func (m *CourseMockService) DeleteCourse(id string, teacherId string) error {
 	return nil
 }
 

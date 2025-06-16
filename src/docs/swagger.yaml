@@ -627,24 +627,10 @@ definitions:
       message:
         type: string
     type: object
-  schemas.UnenrollStudentRequest:
-    properties:
-      student_id:
-        type: string
-    required:
-    - student_id
-    type: object
   schemas.UnenrollStudentResponse:
     properties:
       message:
         type: string
-    type: object
-  schemas.UnsetFavouriteCourseRequest:
-    properties:
-      student_id:
-        type: string
-    required:
-    - student_id
     type: object
   schemas.UnsetFavouriteCourseResponse:
     properties:
@@ -697,6 +683,8 @@ definitions:
         type: string
       title:
         type: string
+    required:
+    - teacher_id
     type: object
   schemas.UpdateModuleRequest:
     properties:
@@ -1087,6 +1075,11 @@ paths:
         name: id
         required: true
         type: string
+      - description: Teacher ID
+        in: query
+        name: teacherId
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -1231,12 +1224,11 @@ paths:
         name: id
         required: true
         type: string
-      - description: Unset favourite course request
-        in: body
-        name: unsetFavouriteCourseRequest
+      - description: Student ID
+        in: query
+        name: studentId
         required: true
-        schema:
-          $ref: '#/definitions/schemas.UnsetFavouriteCourseRequest'
+        type: string
       produces:
       - application/json
       responses:
@@ -1420,12 +1412,11 @@ paths:
         name: id
         required: true
         type: string
-      - description: Unenrollment request
-        in: body
-        name: unenrollmentRequest
+      - description: Student ID
+        in: query
+        name: studentId
         required: true
-        schema:
-          $ref: '#/definitions/schemas.UnenrollStudentRequest'
+        type: string
       produces:
       - application/json
       responses:

@@ -63,7 +63,7 @@ func (c *EnrollmentController) EnrollStudent(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Course ID"
-// @Param unenrollmentRequest body schemas.UnenrollStudentRequest true "Unenrollment request"
+// @Param studentId query string true "Student ID"
 // @Success 200 {object} schemas.UnenrollStudentResponse
 // @Router /courses/{id}/unenroll [delete]
 func (c *EnrollmentController) UnenrollStudent(ctx *gin.Context) {
@@ -76,21 +76,21 @@ func (c *EnrollmentController) UnenrollStudent(ctx *gin.Context) {
 		return
 	}
 
-	var unenrollmentRequest schemas.UnenrollStudentRequest
-	if err := ctx.ShouldBindJSON(&unenrollmentRequest); err != nil {
-		slog.Error("Error binding unenrollment request", "error", err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	studentId := ctx.Query("studentId")
+	if studentId == "" {
+		slog.Error("Student ID is required")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Student ID is required"})
 		return
 	}
 
-	err := c.enrollmentService.UnenrollStudent(unenrollmentRequest.StudentID, courseID)
+	err := c.enrollmentService.UnenrollStudent(studentId, courseID)
 	if err != nil {
 		slog.Error("Error unenrolling student", "error", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	slog.Debug("Student unenrolled from course", "studentId", unenrollmentRequest.StudentID, "courseId", courseID)
+	slog.Debug("Student unenrolled from course", "studentId", studentId, "courseId", courseID)
 	ctx.JSON(http.StatusOK, gin.H{"message": "Student successfully unenrolled from course"})
 }
 
@@ -159,7 +159,7 @@ func (c *EnrollmentController) SetFavouriteCourse(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Course ID"
-// @Param unsetFavouriteCourseRequest body schemas.UnsetFavouriteCourseRequest true "Unset favourite course request"
+// @Param studentId query string true "Student ID"
 // @Success 200 {object} schemas.UnsetFavouriteCourseResponse
 // @Router /courses/{id}/favourite [delete]
 func (c *EnrollmentController) UnsetFavouriteCourse(ctx *gin.Context) {
@@ -172,21 +172,20 @@ func (c *EnrollmentController) UnsetFavouriteCourse(ctx *gin.Context) {
 		return
 	}
 
-	var unsetFavouriteCourseRequest schemas.UnsetFavouriteCourseRequest
-	if err := ctx.ShouldBindJSON(&unsetFavouriteCourseRequest); err != nil {
-		slog.Error("Error binding unset favourite course request", "error", err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	studentId := ctx.Query("studentId")
+	if studentId == "" {
+		slog.Error("Student ID is required")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Student ID is required"})
 		return
 	}
-
-	err := c.enrollmentService.UnsetFavouriteCourse(unsetFavouriteCourseRequest.StudentID, courseID)
+	err := c.enrollmentService.UnsetFavouriteCourse(studentId, courseID)
 	if err != nil {
 		slog.Error("Error unsetting favourite course", "error", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	slog.Debug("Favourite course unset", "studentId", unsetFavouriteCourseRequest.StudentID, "courseId", courseID)
+	slog.Debug("Favourite course unset", "studentId", studentId, "courseId", courseID)
 	ctx.JSON(http.StatusOK, gin.H{"message": "Favourite course unset"})
 }
 

@@ -59,7 +59,7 @@
 				
 				<option value="file1">courses-service/src/controller/assignments_controller.go (95.8%)</option>
 				
-				<option value="file2">courses-service/src/controller/courses_controller.go (88.9%)</option>
+				<option value="file2">courses-service/src/controller/courses_controller.go (88.0%)</option>
 				
 				<option value="file3">courses-service/src/controller/enrollment_controller.go (82.5%)</option>
 				
@@ -87,7 +87,7 @@
 				
 				<option value="file15">courses-service/src/service/assignment_service.go (100.0%)</option>
 				
-				<option value="file16">courses-service/src/service/course_service.go (95.6%)</option>
+				<option value="file16">courses-service/src/service/course_service.go (94.4%)</option>
 				
 				<option value="file17">courses-service/src/service/enrollment_service.go (96.2%)</option>
 				
@@ -441,13 +441,26 @@ func (c *CourseController) GetCourseById(ctx *gin.Context) <span class="cov8" ti
 // @Accept json
 // @Produce json
 // @Param id path string true "Course ID"
+// @Param teacherId query string true "Teacher ID"
 // @Success 200 {object} schemas.DeleteCourseResponse
 // @Router /courses/{id} [delete]
 func (c *CourseController) DeleteCourse(ctx *gin.Context) <span class="cov8" title="1">{
         slog.Debug("Deleting course")
         id := ctx.Param("id")
+        if id == "" </span><span class="cov0" title="0">{
+                slog.Error("Course ID is required")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+                return
+        }</span>
 
-        err := c.service.DeleteCourse(id)
+        <span class="cov8" title="1">teacherId := ctx.Query("teacherId")
+        if teacherId == "" </span><span class="cov8" title="1">{
+                slog.Error("Teacher ID is required")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Teacher ID is required"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">err := c.service.DeleteCourse(id, teacherId)
         if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error deleting course", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -4326,10 +4339,20 @@ func (s *CourseService) GetCourseById(id string) (*model.Course, error) <span cl
         <span class="cov8" title="1">return s.courseRepository.GetCourseById(id)</span>
 }
 
-func (s *CourseService) DeleteCourse(id string) error <span class="cov8" title="1">{
+func (s *CourseService) DeleteCourse(id string, teacherId string) error <span class="cov8" title="1">{
         if id == "" </span><span class="cov8" title="1">{
                 return errors.New("id is required")
         }</span>
+
+        <span class="cov8" title="1">course, err := s.courseRepository.GetCourseById(id)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">if course.TeacherUUID != teacherId </span><span class="cov8" title="1">{
+                return errors.New("the user trying to delete the course is not the owner of the course")
+        }</span>
+
         <span class="cov8" title="1">return s.courseRepository.DeleteCourse(id)</span>
 }
 
@@ -4380,14 +4403,22 @@ func (s *CourseService) UpdateCourse(id string, updateCourseRequest schemas.Upda
         if id == "" </span><span class="cov8" title="1">{
                 return nil, errors.New("id is required")
         }</span>
-        <span class="cov8" title="1">course := model.Course{
+
+        <span class="cov8" title="1">course, err := s.courseRepository.GetCourseById(id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">if course.TeacherUUID != updateCourseRequest.TeacherID </span><span class="cov8" title="1">{
+                return nil, errors.New("the user trying to update the course is not the owner of the course")
+        }</span>
+        <span class="cov8" title="1">courseToUpdate := model.Course{
                 Title:       updateCourseRequest.Title,
                 Description: updateCourseRequest.Description,
                 TeacherUUID: updateCourseRequest.TeacherID,
                 Capacity:    updateCourseRequest.Capacity,
                 UpdatedAt:   time.Now(),
         }
-        return s.courseRepository.UpdateCourse(id, course)</span>
+        return s.courseRepository.UpdateCourse(id, courseToUpdate)</span>
 }
 
 func (s *CourseService) AddAuxTeacherToCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error) <span class="cov8" title="1">{

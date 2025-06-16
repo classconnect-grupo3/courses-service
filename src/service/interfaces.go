@@ -11,7 +11,7 @@ type CourseServiceInterface interface {
 	GetCourses() ([]*model.Course, error)
 	CreateCourse(c schemas.CreateCourseRequest) (*model.Course, error)
 	GetCourseById(id string) (*model.Course, error)
-	DeleteCourse(id string) error
+	DeleteCourse(id string, teacherId string) error
 	GetCourseByTeacherId(teacherId string) ([]*model.Course, error)
 	GetCoursesByStudentId(studentId string) ([]*model.Course, error)
 	GetCoursesByUserId(userId string) (*schemas.GetCoursesByUserIdResponse, error)

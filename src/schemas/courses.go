@@ -30,7 +30,7 @@ type CreateCourseResponse struct {
 type UpdateCourseRequest struct {
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
-	TeacherID   string    `json:"teacher_id"`
+	TeacherID   string    `json:"teacher_id" binding:"required"`
 	Capacity    int       `json:"capacity"`
 	StartDate   time.Time `json:"start_date"`
 	EndDate     time.Time `json:"end_date"`

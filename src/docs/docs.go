@@ -781,6 +781,13 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Teacher ID",
+                        "name": "teacherId",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -969,13 +976,11 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Unset favourite course request",
-                        "name": "unsetFavouriteCourseRequest",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/schemas.UnsetFavouriteCourseRequest"
-                        }
+                        "type": "string",
+                        "description": "Student ID",
+                        "name": "studentId",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1216,13 +1221,11 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Unenrollment request",
-                        "name": "unenrollmentRequest",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/schemas.UnenrollStudentRequest"
-                        }
+                        "type": "string",
+                        "description": "Student ID",
+                        "name": "studentId",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -3267,32 +3270,10 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.UnenrollStudentRequest": {
-            "type": "object",
-            "required": [
-                "student_id"
-            ],
-            "properties": {
-                "student_id": {
-                    "type": "string"
-                }
-            }
-        },
         "schemas.UnenrollStudentResponse": {
             "type": "object",
             "properties": {
                 "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "schemas.UnsetFavouriteCourseRequest": {
-            "type": "object",
-            "required": [
-                "student_id"
-            ],
-            "properties": {
-                "student_id": {
                     "type": "string"
                 }
             }
@@ -3356,6 +3337,9 @@ const docTemplate = `{
         },
         "schemas.UpdateCourseRequest": {
             "type": "object",
+            "required": [
+                "teacher_id"
+            ],
             "properties": {
                 "capacity": {
                     "type": "integer"

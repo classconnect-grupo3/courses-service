@@ -98,13 +98,26 @@ func (c *CourseController) GetCourseById(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Course ID"
+// @Param teacherId query string true "Teacher ID"
 // @Success 200 {object} schemas.DeleteCourseResponse
 // @Router /courses/{id} [delete]
 func (c *CourseController) DeleteCourse(ctx *gin.Context) {
 	slog.Debug("Deleting course")
 	id := ctx.Param("id")
+	if id == "" {
+		slog.Error("Course ID is required")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+		return
+	}
 
-	err := c.service.DeleteCourse(id)
+	teacherId := ctx.Query("teacherId")
+	if teacherId == "" {
+		slog.Error("Teacher ID is required")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Teacher ID is required"})
+		return
+	}
+
+	err := c.service.DeleteCourse(id, teacherId)
 	if err != nil {
 		slog.Error("Error deleting course", "error", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
