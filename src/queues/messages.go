@@ -42,27 +42,27 @@ func (m *AssignmentCreatedMessage) Encode() (map[string]any, error) {
 }
 
 type AddedAuxTeacherToCourseMessage struct {
-	EventType string `json:"event_type"`
-	CourseID  string `json:"course_id"`
+	EventType  string `json:"event_type"`
+	CourseID   string `json:"course_id"`
 	CourseName string `json:"course_name"`
-	TeacherID string `json:"teacher_id"`
+	TeacherID  string `json:"teacher_id"`
 }
 
 func NewAddedAuxTeacherToCourseMessage(courseID string, courseName string, teacherID string) *AddedAuxTeacherToCourseMessage {
 	return &AddedAuxTeacherToCourseMessage{
-		EventType: "aux_teacher.added",
-		CourseID:  courseID,
+		EventType:  "aux_teacher.added",
+		CourseID:   courseID,
 		CourseName: courseName,
-		TeacherID: teacherID,
+		TeacherID:  teacherID,
 	}
-}	
+}
 
 func (m *AddedAuxTeacherToCourseMessage) Encode() (map[string]any, error) {
 	return map[string]any{
-		"event_type": m.EventType,
-		"course_id":  m.CourseID,
+		"event_type":  m.EventType,
+		"course_id":   m.CourseID,
 		"course_name": m.CourseName,
-		"teacher_id": m.TeacherID,
+		"teacher_id":  m.TeacherID,
 	}, nil
 }
 
@@ -138,7 +138,7 @@ func NewEnrolledStudentToCourseMessage(courseID string, studentID string) *Enrol
 
 func (m *EnrolledStudentToCourseMessage) Encode() (map[string]any, error) {
 	return map[string]any{
-		"event_type": m.EventType,	
+		"event_type": m.EventType,
 		"course_id":  m.CourseID,
 		"student_id": m.StudentID,
 	}, nil
@@ -151,65 +151,65 @@ type UnenrolledStudentFromCourseMessage struct {
 }
 
 type AICorrectionMessage struct {
-	EventType string `json:"event_type"`
-	CourseID  string `json:"course_id"`
-	StudentID string `json:"student_id"`
-	SubmissionID string `json:"submission_id"`
-	SubmissionText string `json:"submission_text"`
+	EventType           string    `json:"event_type"`
+	CourseID            string    `json:"course_id"`
+	StudentID           string    `json:"student_id"`
+	SubmissionID        string    `json:"submission_id"`
+	SubmissionText      string    `json:"submission_text"`
 	SubmissionCreatedAt time.Time `json:"submission_created_at"`
-	SubmissionFeedback string `json:"submission_feedback"`
+	SubmissionFeedback  string    `json:"submission_feedback"`
 }
 
 func NewAICorrectionMessage(courseID string, studentID string, submissionID string, submissionText string, submissionCreatedAt time.Time) *AICorrectionMessage {
 	return &AICorrectionMessage{
-		EventType: "ai.correction",
-		CourseID:  courseID,
-		StudentID: studentID,
-		SubmissionID: submissionID,
-		SubmissionText: submissionText,
+		EventType:           "ai.correction",
+		CourseID:            courseID,
+		StudentID:           studentID,
+		SubmissionID:        submissionID,
+		SubmissionText:      submissionText,
 		SubmissionCreatedAt: submissionCreatedAt,
 	}
 }
 
 func (m *AICorrectionMessage) Encode() (map[string]any, error) {
 	return map[string]any{
-		"event_type": m.EventType,
-		"course_id":  m.CourseID,
-		"student_id": m.StudentID,
-		"submission_id": m.SubmissionID,
-		"submission_text": m.SubmissionText,
+		"event_type":            m.EventType,
+		"course_id":             m.CourseID,
+		"student_id":            m.StudentID,
+		"submission_id":         m.SubmissionID,
+		"submission_text":       m.SubmissionText,
 		"submission_created_at": m.SubmissionCreatedAt.Format(time.RFC3339),
-		"submission_feedback": m.SubmissionFeedback,
+		"submission_feedback":   m.SubmissionFeedback,
 	}, nil
 }
 
 type ForumActivityMessage struct {
-	EventType string `json:"event_type"`
-	CourseID  string `json:"course_id"`
-	StudentID string `json:"student_id"`
-	PostID string `json:"post_id"`
-	PostText string `json:"post_text"`
+	EventType     string    `json:"event_type"`
+	CourseID      string    `json:"course_id"`
+	StudentID     string    `json:"student_id"`
+	PostID        string    `json:"post_id"`
+	PostText      string    `json:"post_text"`
 	PostCreatedAt time.Time `json:"post_created_at"`
 }
 
 func NewForumActivityMessage(courseID string, studentID string, postID string, postText string, postCreatedAt time.Time) *ForumActivityMessage {
 	return &ForumActivityMessage{
-		EventType: "forum.activity",
-		CourseID:  courseID,
-		StudentID: studentID,
-		PostID: postID,
-		PostText: postText,
+		EventType:     "forum.activity",
+		CourseID:      courseID,
+		StudentID:     studentID,
+		PostID:        postID,
+		PostText:      postText,
 		PostCreatedAt: postCreatedAt,
 	}
 }
 
-func (m *ForumActivityMessage) Encode() (map[string]any, error) {	
+func (m *ForumActivityMessage) Encode() (map[string]any, error) {
 	return map[string]any{
-		"event_type": m.EventType,
-		"course_id":  m.CourseID,
-		"student_id": m.StudentID,
-		"post_id": m.PostID,
-		"post_text": m.PostText,
+		"event_type":      m.EventType,
+		"course_id":       m.CourseID,
+		"student_id":      m.StudentID,
+		"post_id":         m.PostID,
+		"post_text":       m.PostText,
 		"post_created_at": m.PostCreatedAt.Format(time.RFC3339),
 	}, nil
 }
