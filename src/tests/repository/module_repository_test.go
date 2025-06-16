@@ -845,3 +845,216 @@ func TestUpdateModuleWithData(t *testing.T) {
 		t.Errorf("Expected 0 resources in second data item, got %d", len(updatedModule.Data[1].Resources))
 	}
 }
+
+func TestDeleteModuleWithReordering(t *testing.T) {
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+	})
+
+	moduleRepo := repository.NewModuleRepository(dbSetup.Client, dbSetup.DBName)
+	courseRepo := repository.NewCourseRepository(dbSetup.Client, dbSetup.DBName)
+
+	// Create a test course with 5 modules in order 1, 2, 3, 4, 5
+	course := model.Course{
+		Title:          "Test Course for Reordering",
+		Description:    "Test Description",
+		TeacherUUID:    "teacher-123",
+		TeacherName:    "Test Teacher",
+		Capacity:       30,
+		StudentsAmount: 0,
+		StartDate:      time.Now(),
+		EndDate:        time.Now().Add(24 * time.Hour * 30),
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
+		Modules: []model.Module{
+			{
+				ID:          primitive.NewObjectID(),
+				Title:       "Module 1",
+				Description: "First module",
+				Order:       1,
+				Data:        []model.ModuleData{},
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
+			},
+			{
+				ID:          primitive.NewObjectID(),
+				Title:       "Module 2",
+				Description: "Second module",
+				Order:       2,
+				Data:        []model.ModuleData{},
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
+			},
+			{
+				ID:          primitive.NewObjectID(),
+				Title:       "Module 3",
+				Description: "Third module",
+				Order:       3,
+				Data:        []model.ModuleData{},
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
+			},
+			{
+				ID:          primitive.NewObjectID(),
+				Title:       "Module 4",
+				Description: "Fourth module",
+				Order:       4,
+				Data:        []model.ModuleData{},
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
+			},
+			{
+				ID:          primitive.NewObjectID(),
+				Title:       "Module 5",
+				Description: "Fifth module",
+				Order:       5,
+				Data:        []model.ModuleData{},
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
+			},
+		},
+	}
+
+	// Insert the course
+	createdCourse, err := courseRepo.CreateCourse(course)
+	if err != nil {
+		t.Fatalf("Failed to create test course: %v", err)
+	}
+
+	// Delete Module 3 (middle module)
+	moduleToDelete := createdCourse.Modules[2] // Module 3 (index 2)
+	err = moduleRepo.DeleteModule(moduleToDelete.ID.Hex())
+	if err != nil {
+		t.Fatalf("Failed to delete module: %v", err)
+	}
+
+	// Get remaining modules
+	remainingModules, err := moduleRepo.GetModulesByCourseId(createdCourse.ID.Hex())
+	if err != nil {
+		t.Fatalf("Failed to get remaining modules: %v", err)
+	}
+
+	// Should have 4 modules now
+	if len(remainingModules) != 4 {
+		t.Errorf("Expected 4 remaining modules, got %d", len(remainingModules))
+	}
+
+	// Verify correct reordering: should be 1, 2, 3, 4 (no gaps)
+	expectedOrders := map[string]int{
+		"Module 1": 1, // Should remain unchanged
+		"Module 2": 2, // Should remain unchanged
+		"Module 4": 3, // Should shift down from 4 to 3
+		"Module 5": 4, // Should shift down from 5 to 4
+	}
+
+	moduleOrders := make(map[string]int)
+	for _, module := range remainingModules {
+		moduleOrders[module.Title] = module.Order
+	}
+
+	for title, expectedOrder := range expectedOrders {
+		if actualOrder, exists := moduleOrders[title]; !exists {
+			t.Errorf("Module '%s' not found after deletion", title)
+		} else if actualOrder != expectedOrder {
+			t.Errorf("Module '%s' expected order %d, got %d", title, expectedOrder, actualOrder)
+		}
+	}
+
+	// Verify Module 3 was actually deleted
+	_, err = moduleRepo.GetModuleById(moduleToDelete.ID.Hex())
+	if err == nil {
+		t.Error("Expected error when getting deleted module, got nil")
+	}
+
+	// Test case 2: Delete first module
+	// Delete Module 1
+	moduleToDeleteFirst := remainingModules[0] // Should be Module 1
+	if moduleToDeleteFirst.Title != "Module 1" {
+		t.Fatalf("Expected first module to be 'Module 1', got '%s'", moduleToDeleteFirst.Title)
+	}
+
+	err = moduleRepo.DeleteModule(moduleToDeleteFirst.ID.Hex())
+	if err != nil {
+		t.Fatalf("Failed to delete first module: %v", err)
+	}
+
+	// Get modules after deleting first
+	modulesAfterFirstDeletion, err := moduleRepo.GetModulesByCourseId(createdCourse.ID.Hex())
+	if err != nil {
+		t.Fatalf("Failed to get modules after first deletion: %v", err)
+	}
+
+	// Should have 3 modules now
+	if len(modulesAfterFirstDeletion) != 3 {
+		t.Errorf("Expected 3 modules after first deletion, got %d", len(modulesAfterFirstDeletion))
+	}
+
+	// Verify reordering after deleting first module: should be 1, 2, 3
+	expectedOrdersAfterFirst := map[string]int{
+		"Module 2": 1, // Should shift down from 2 to 1
+		"Module 4": 2, // Should shift down from 3 to 2 (was already 3 after previous deletion)
+		"Module 5": 3, // Should shift down from 4 to 3 (was already 4 after previous deletion)
+	}
+
+	moduleOrdersAfterFirst := make(map[string]int)
+	for _, module := range modulesAfterFirstDeletion {
+		moduleOrdersAfterFirst[module.Title] = module.Order
+	}
+
+	for title, expectedOrder := range expectedOrdersAfterFirst {
+		if actualOrder, exists := moduleOrdersAfterFirst[title]; !exists {
+			t.Errorf("Module '%s' not found after first deletion", title)
+		} else if actualOrder != expectedOrder {
+			t.Errorf("After first deletion - Module '%s' expected order %d, got %d", title, expectedOrder, actualOrder)
+		}
+	}
+
+	// Test case 3: Delete last module
+	// Delete Module 5 (which should now be at order 3)
+	var moduleToDeleteLast model.Module
+	for _, module := range modulesAfterFirstDeletion {
+		if module.Title == "Module 5" {
+			moduleToDeleteLast = module
+			break
+		}
+	}
+
+	if moduleToDeleteLast.Title != "Module 5" {
+		t.Fatalf("Could not find Module 5 to delete")
+	}
+
+	err = moduleRepo.DeleteModule(moduleToDeleteLast.ID.Hex())
+	if err != nil {
+		t.Fatalf("Failed to delete last module: %v", err)
+	}
+
+	// Get final modules
+	finalModules, err := moduleRepo.GetModulesByCourseId(createdCourse.ID.Hex())
+	if err != nil {
+		t.Fatalf("Failed to get final modules: %v", err)
+	}
+
+	// Should have 2 modules now
+	if len(finalModules) != 2 {
+		t.Errorf("Expected 2 final modules, got %d", len(finalModules))
+	}
+
+	// Verify final ordering: should be 1, 2
+	expectedFinalOrders := map[string]int{
+		"Module 2": 1, // Should remain unchanged
+		"Module 4": 2, // Should remain unchanged (was already 2)
+	}
+
+	finalModuleOrders := make(map[string]int)
+	for _, module := range finalModules {
+		finalModuleOrders[module.Title] = module.Order
+	}
+
+	for title, expectedOrder := range expectedFinalOrders {
+		if actualOrder, exists := finalModuleOrders[title]; !exists {
+			t.Errorf("Module '%s' not found in final modules", title)
+		} else if actualOrder != expectedOrder {
+			t.Errorf("Final modules - Module '%s' expected order %d, got %d", title, expectedOrder, actualOrder)
+		}
+	}
+}

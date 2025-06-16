@@ -79,7 +79,7 @@
 				
 				<option value="file11">courses-service/src/repository/forum_repository.go (87.1%)</option>
 				
-				<option value="file12">courses-service/src/repository/module_repository.go (89.9%)</option>
+				<option value="file12">courses-service/src/repository/module_repository.go (90.0%)</option>
 				
 				<option value="file13">courses-service/src/repository/submission_repository.go (83.3%)</option>
 				
@@ -219,66 +219,6 @@ func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) <span class="
                 return
         }</span>
 
-        // 🟡 Publicar evento en RabbitMQ con amqp091-go
-        // go func() {
-        //         conn, err := amqp091.Dial(os.Getenv("RABBITMQ_URL"))
-        //         if err != nil {
-        //                 log.Println("RabbitMQ connection error:", err)
-        //                 return
-        //         }
-        //         defer conn.Close()
-
-        //         ch, err := conn.Channel()
-        //         if err != nil {
-        //                 log.Println("RabbitMQ channel error:", err)
-        //                 return
-        //         }
-        //         defer ch.Close()
-
-        //         _, err = ch.QueueDeclare(
-        //                 os.Getenv("NOTIFICATIONS_QUEUE_NAME"),
-        //                 false,
-        //                 false,
-        //                 false,
-        //                 false,
-        //                 nil,
-        //         )
-        //         if err != nil {
-        //                 log.Println("Queue declare error:", err)
-        //                 return
-        //         }
-
-        //         event := map[string]interface{}{
-        //                 "event_type":          "assignment.created",
-        //                 "course_id":           createdAssignment.CourseID,
-        //                 "assignment_id":       createdAssignment.ID,
-        //                 "assignment_title":    createdAssignment.Title,
-        //                 "assignment_due_date": createdAssignment.DueDate.Format(time.RFC3339),
-        //         }
-
-        //         body, err := json.Marshal(event)
-        //         if err != nil {
-        //                 log.Println("Error marshaling event:", err)
-        //                 return
-        //         }
-
-        //         err = ch.Publish(
-        //                 "",
-        //                 os.Getenv("NOTIFICATIONS_QUEUE_NAME"),
-        //                 false,
-        //                 false,
-        //                 amqp091.Publishing{
-        //                         ContentType: "application/json",
-        //                         Body:        body,
-        //                 },
-        //         )
-        //         if err != nil {
-        //                 log.Println("Error publishing message:", err)
-        //                 return
-        //         }
-
-        //         log.Println("📤 Event published: assignment.created")
-        // }()
         <span class="cov8" title="1">queueMessage := queues.NewAssignmentCreatedMessage(
                 createdAssignment.CourseID,
                 createdAssignment.ID.Hex(),
@@ -3779,13 +3719,56 @@ func (r *ModuleRepository) DeleteModule(id string) error <span class="cov8" titl
                 return fmt.Errorf("invalid module ID: %v", err)
         }</span>
 
+        // First, get the course and find the module to delete
         <span class="cov8" title="1">filter := bson.M{"modules._id": moduleUUID}
-        update := bson.M{"$pull": bson.M{"modules": bson.M{"_id": moduleUUID}}}
-
         var course model.Course
-        err = r.moduleCollection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&amp;course)
+        err = r.moduleCollection.FindOne(context.TODO(), filter).Decode(&amp;course)
         if err != nil </span><span class="cov8" title="1">{
-                return fmt.Errorf("failed to delete module: %v", err)
+                return fmt.Errorf("failed to find module: %v", err)
+        }</span>
+
+        // Find the module to delete and its order
+        <span class="cov8" title="1">var deletedModuleOrder int
+        moduleFound := false
+        for _, module := range course.Modules </span><span class="cov8" title="1">{
+                if module.ID == moduleUUID </span><span class="cov8" title="1">{
+                        deletedModuleOrder = module.Order
+                        moduleFound = true
+                        break</span>
+                }
+        }
+
+        <span class="cov8" title="1">if !moduleFound </span><span class="cov0" title="0">{
+                return fmt.Errorf("module not found")
+        }</span>
+
+        // Remove the module from the array
+        <span class="cov8" title="1">filteredModules := make([]model.Module, 0)
+        for _, module := range course.Modules </span><span class="cov8" title="1">{
+                if module.ID != moduleUUID </span><span class="cov8" title="1">{
+                        filteredModules = append(filteredModules, module)
+                }</span>
+        }
+
+        // Reorder modules: any module with order &gt; deletedModuleOrder should decrease by 1
+        <span class="cov8" title="1">for i := range filteredModules </span><span class="cov8" title="1">{
+                if filteredModules[i].Order &gt; deletedModuleOrder </span><span class="cov8" title="1">{
+                        filteredModules[i].Order = filteredModules[i].Order - 1
+                }</span>
+        }
+
+        // Sort modules by order to maintain consistency
+        <span class="cov8" title="1">sort.Slice(filteredModules, func(i, j int) bool </span><span class="cov8" title="1">{
+                return filteredModules[i].Order &lt; filteredModules[j].Order
+        }</span>)
+
+        // Update the course with the reordered modules
+        <span class="cov8" title="1">courseFilter := bson.M{"_id": course.ID}
+        update := bson.M{"$set": bson.M{"modules": filteredModules}}
+
+        _, err = r.moduleCollection.UpdateOne(context.TODO(), courseFilter, update)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to update modules after deletion: %v", err)
         }</span>
 
         <span class="cov8" title="1">return nil</span>
@@ -5277,6 +5260,7 @@ func (s *ModuleService) CreateModule(module schemas.CreateModuleRequest) (*model
         <span class="cov8" title="1">moduleModel := model.Module{
                 Title:       module.Title,
                 Description: module.Description,
+                CourseID:    module.CourseID,
                 Data:        []model.ModuleData{},
         }
 
