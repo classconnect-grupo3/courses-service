@@ -688,24 +688,13 @@ definitions:
     type: object
   schemas.UpdateModuleRequest:
     properties:
-      data:
-        items:
-          $ref: '#/definitions/model.ModuleData'
-        type: array
       description:
         type: string
       order:
         type: integer
-      title:
-        type: string
-    type: object
-  schemas.UpdateQuestionRequest:
-    properties:
-      description:
-        type: string
-      tags:
+      resources:
         items:
-          $ref: '#/definitions/model.QuestionTag'
+          $ref: '#/definitions/model.ModuleResource'
         type: array
       title:
         type: string

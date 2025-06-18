@@ -16,8 +16,8 @@ type CreateModuleResponse struct {
 }
 
 type UpdateModuleRequest struct {
-	Title       string             `json:"title"`
-	Description string             `json:"description"`
-	Order       int                `json:"order"`
-	Data        []model.ModuleData `json:"data"`
+	Title       string                 `json:"title"`
+	Description string                 `json:"description"`
+	Order       int                    `json:"order"`
+	Resources   []model.ModuleResource `json:"resources"`
 }
