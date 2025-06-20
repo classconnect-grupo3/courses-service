@@ -179,7 +179,6 @@ func NewRouter(config *config.Config) *gin.Engine {
 	submissionRepository := repository.NewMongoSubmissionRepository(dbClient.Database(config.DBName))
 	moduleRepository := repository.NewModuleRepository(dbClient, config.DBName)
 	forumRepository := repository.NewForumRepository(dbClient, config.DBName)
-	statisticsRepository := repository.NewStatisticsRepository(dbClient, config.DBName, courseRepo, enrollmentRepo, submissionRepository, assignmentRepository, forumRepository)
 
 	courseService := service.NewCourseService(courseRepo, enrollmentRepo)
 	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
@@ -187,7 +186,7 @@ func NewRouter(config *config.Config) *gin.Engine {
 	submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository, courseService)
 	moduleService := service.NewModuleService(moduleRepository)
 	forumService := service.NewForumService(forumRepository, courseRepo)
-	statisticsService := service.NewStatisticsService(statisticsRepository)
+	statisticsService := service.NewStatisticsService(courseRepo, assignmentRepository, enrollmentRepo, submissionRepository, forumRepository)
 
 	courseController := controller.NewCourseController(courseService, aiClient)
 	enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient)
