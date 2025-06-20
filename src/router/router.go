@@ -135,6 +135,25 @@ func InitializeForumRoutes(r *gin.Engine, controller *controller.ForumController
 	r.GET("/forum/courses/:courseId/search", controller.SearchQuestions)
 }
 
+// InitializeStatisticsRoutes sets up all statistics-related routes
+func InitializeStatisticsRoutes(r *gin.Engine, controller *controller.StatisticsController) {
+	// Group all statistics routes
+	statisticsGroup := r.Group("/statistics")
+
+	// Apply teacher authentication middleware for all statistics routes
+	// Only teachers should be able to access these analytics
+	statisticsGroup.Use(middleware.TeacherAuth())
+
+	// Course statistics endpoints - supports JSON or CSV via ?format=csv
+	statisticsGroup.GET("/courses/:courseId", controller.GetCourseStatistics)
+
+	// Student statistics endpoints - supports JSON or CSV via ?format=csv
+	statisticsGroup.GET("/students/:studentId", controller.GetStudentStatistics)
+
+	// Teacher's courses statistics endpoint
+	statisticsGroup.GET("/teachers/:teacherId/courses", controller.GetTeacherCoursesStatistics)
+}
+
 func NewRouter(config *config.Config) *gin.Engine {
 	r := createRouterFromConfig(config)
 	addNewRelicMiddleware(r)
@@ -160,6 +179,7 @@ func NewRouter(config *config.Config) *gin.Engine {
 	submissionRepository := repository.NewMongoSubmissionRepository(dbClient.Database(config.DBName))
 	moduleRepository := repository.NewModuleRepository(dbClient, config.DBName)
 	forumRepository := repository.NewForumRepository(dbClient, config.DBName)
+	statisticsRepository := repository.NewStatisticsRepository(dbClient, config.DBName, courseRepo, enrollmentRepo, submissionRepository, assignmentRepository, forumRepository)
 
 	courseService := service.NewCourseService(courseRepo, enrollmentRepo)
 	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
@@ -167,6 +187,7 @@ func NewRouter(config *config.Config) *gin.Engine {
 	submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository, courseService)
 	moduleService := service.NewModuleService(moduleRepository)
 	forumService := service.NewForumService(forumRepository, courseRepo)
+	statisticsService := service.NewStatisticsService(statisticsRepository)
 
 	courseController := controller.NewCourseController(courseService, aiClient)
 	enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient)
@@ -174,8 +195,9 @@ func NewRouter(config *config.Config) *gin.Engine {
 	submissionController := controller.NewSubmissionController(submissionService) // TODO change this when interface is added
 	moduleController := controller.NewModuleController(moduleService)
 	forumController := controller.NewForumController(forumService)
+	statisticsController := controller.NewStatisticsController(statisticsService)
 
-	InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController, moduleController, forumController)
+	InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController, moduleController, forumController, statisticsController)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler)) // endpoint to consult the swagger documentation
 	return r
 }
@@ -188,6 +210,7 @@ func InitializeRoutes(
 	enrollmentController *controller.EnrollmentController,
 	moduleController *controller.ModuleController,
 	forumController *controller.ForumController,
+	statisticsController *controller.StatisticsController,
 ) {
 	InitializeCoursesRoutes(r, courseController)
 	InitializeSubmissionRoutes(r, submissionController)
@@ -195,4 +218,5 @@ func InitializeRoutes(
 	InitializeEnrollmentsRoutes(r, enrollmentController)
 	InitializeModulesRoutes(r, moduleController)
 	InitializeForumRoutes(r, forumController)
+	InitializeStatisticsRoutes(r, statisticsController)
 }
