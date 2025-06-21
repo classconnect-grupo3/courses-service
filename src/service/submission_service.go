@@ -166,6 +166,10 @@ func (s *SubmissionService) GradeSubmission(ctx context.Context, submissionID st
 	submission.Feedback = feedback
 	submission.UpdatedAt = time.Now()
 
+	// Mark as reviewed by teacher (no longer needs manual review)
+	needsReview := false
+	submission.NeedsManualReview = &needsReview
+
 	err = s.submissionRepo.Update(ctx, submission)
 	if err != nil {
 		return nil, err
