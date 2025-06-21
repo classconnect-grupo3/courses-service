@@ -218,10 +218,11 @@ func (c *SubmissionController) sendCorrectionNotification(submission *model.Subm
 		needsManualReview,
 	)
 
-	if err := c.notificationsQueue.Publish(queueMessage); err != nil {
-		// Log the error but don't fail the response
-		fmt.Printf("Error publishing correction notification: %v\n", err)
-	}
+	// if err := c.notificationsQueue.Publish(queueMessage); err != nil {
+	// 	// Log the error but don't fail the response
+	// 	fmt.Printf("Error publishing correction notification: %v\n", err)
+	// } TODO: Uncomment this when the notifications queue is implemented
+	fmt.Println("queueMessage: ", queueMessage)
 }
 
 // @Summary Get submissions by assignment ID
