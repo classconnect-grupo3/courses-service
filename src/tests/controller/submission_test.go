@@ -12,6 +12,7 @@ import (
 
 	"courses-service/src/controller"
 	"courses-service/src/model"
+	"courses-service/src/schemas"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -79,6 +80,11 @@ func init() {
 }
 
 type MockSubmissionService struct{}
+
+// GenerateFeedbackSummary implements service.SubmissionServiceInterface.
+func (m *MockSubmissionService) GenerateFeedbackSummary(ctx context.Context, submissionID string) (*schemas.AiSummaryResponse, error) {
+	panic("unimplemented")
+}
 
 func (m *MockSubmissionService) CreateSubmission(ctx context.Context, submission *model.Submission) error {
 	submission.ID = primitive.NewObjectID()
@@ -252,6 +258,11 @@ func (m *MockSubmissionService) ValidateTeacherPermissions(ctx context.Context, 
 }
 
 type MockSubmissionServiceWithError struct{}
+
+// GenerateFeedbackSummary implements service.SubmissionServiceInterface.
+func (m *MockSubmissionServiceWithError) GenerateFeedbackSummary(ctx context.Context, submissionID string) (*schemas.AiSummaryResponse, error) {
+	panic("unimplemented")
+}
 
 func (m *MockSubmissionServiceWithError) CreateSubmission(ctx context.Context, submission *model.Submission) error {
 	return errors.New("error creating submission")

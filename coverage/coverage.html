@@ -69,7 +69,7 @@
 				
 				<option value="file6">courses-service/src/controller/statistics_controller.go (48.6%)</option>
 				
-				<option value="file7">courses-service/src/controller/submission_controller.go (91.2%)</option>
+				<option value="file7">courses-service/src/controller/submission_controller.go (76.9%)</option>
 				
 				<option value="file8">courses-service/src/database/connection.go (71.4%)</option>
 				
@@ -85,7 +85,7 @@
 				
 				<option value="file14">courses-service/src/repository/submission_repository.go (83.3%)</option>
 				
-				<option value="file15">courses-service/src/router/router.go (96.5%)</option>
+				<option value="file15">courses-service/src/router/router.go (96.6%)</option>
 				
 				<option value="file16">courses-service/src/service/assignment_service.go (100.0%)</option>
 				
@@ -99,7 +99,7 @@
 				
 				<option value="file21">courses-service/src/service/statistics_service.go (93.7%)</option>
 				
-				<option value="file22">courses-service/src/service/submission_service.go (88.3%)</option>
+				<option value="file22">courses-service/src/service/submission_service.go (77.3%)</option>
 				
 				<option value="file23">courses-service/src/tests/testutil/db_setup.go (72.2%)</option>
 				
@@ -2354,6 +2354,53 @@ func (c *SubmissionController) GradeSubmission(ctx *gin.Context) <span class="co
 
         <span class="cov8" title="1">ctx.JSON(http.StatusOK, gradedSubmission)</span>
 }
+
+// @Summary Generate feedback summary
+// @Description Generate an AI summary of the feedback for a submission
+// @Tags submissions
+// @Accept json
+// @Produce json
+// @Param assignmentId path string true "Assignment ID"
+// @Param id path string true "Submission ID"
+// @Success 200 {object} schemas.AiSummaryResponse
+// @Router /assignments/{assignmentId}/submissions/{id}/feedback-summary [get]
+func (c *SubmissionController) GenerateFeedbackSummary(ctx *gin.Context) <span class="cov0" title="0">{
+        assignmentID := ctx.Param("assignmentId")
+        id := ctx.Param("id")
+
+        // Get teacher info from context
+        teacherUUID := ctx.GetString("teacher_uuid")
+
+        // Validate teacher permissions for this assignment
+        if err := c.submissionService.ValidateTeacherPermissions(ctx, assignmentID, teacherUUID); err != nil </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        // Validate submission belongs to the assignment
+        <span class="cov0" title="0">submission, err := c.submissionService.GetSubmission(ctx, id)
+        if err != nil </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov0" title="0">if submission == nil </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusNotFound, gin.H{"error": "submission not found"})
+                return
+        }</span>
+        <span class="cov0" title="0">if submission.AssignmentID != assignmentID </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusNotFound, gin.H{"error": "submission not found"})
+                return
+        }</span>
+
+        // Generate feedback summary
+        <span class="cov0" title="0">summary, err := c.submissionService.GenerateFeedbackSummary(ctx, id)
+        if err != nil </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">ctx.JSON(http.StatusOK, summary)</span>
+}
 </pre>
 		
 		<pre class="file" id="file8" style="display: none">package database
@@ -4245,6 +4292,7 @@ func InitializeSubmissionRoutes(r *gin.Engine, controller *controller.Submission
         teacherAuthGroup := r.Group("")
         teacherAuthGroup.Use(middleware.TeacherAuth())
         teacherAuthGroup.PUT("/assignments/:assignmentId/submissions/:id/grade", controller.GradeSubmission)
+        teacherAuthGroup.GET("/assignments/:assignmentId/submissions/:id/feedback-summary", controller.GenerateFeedbackSummary)
 
         // Esta ruta no requiere autenticación de estudiante
         r.GET("/assignments/:assignmentId/submissions", controller.GetSubmissionsByAssignment)
@@ -4333,7 +4381,7 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
         courseService := service.NewCourseService(courseRepo, enrollmentRepo)
         enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
         assignmentService := service.NewAssignmentService(assignmentRepository, courseService)
-        submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository, courseService)
+        submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository, courseService, aiClient)
         moduleService := service.NewModuleService(moduleRepository)
         forumService := service.NewForumService(forumRepository, courseRepo)
         statisticsService := service.NewStatisticsService(courseRepo, assignmentRepository, enrollmentRepo, submissionRepository, forumRepository)
@@ -6075,21 +6123,25 @@ import (
         "errors"
         "time"
 
+        "courses-service/src/ai"
         "courses-service/src/model"
         "courses-service/src/repository"
+        "courses-service/src/schemas"
 )
 
 type SubmissionService struct {
         submissionRepo repository.SubmissionRepositoryInterface
         assignmentRepo repository.AssignmentRepositoryInterface
         courseService  CourseServiceInterface
+        aiClient       *ai.AiClient
 }
 
-func NewSubmissionService(submissionRepo repository.SubmissionRepositoryInterface, assignmentRepo repository.AssignmentRepositoryInterface, courseService CourseServiceInterface) *SubmissionService <span class="cov8" title="1">{
+func NewSubmissionService(submissionRepo repository.SubmissionRepositoryInterface, assignmentRepo repository.AssignmentRepositoryInterface, courseService CourseServiceInterface, aiClient *ai.AiClient) *SubmissionService <span class="cov8" title="1">{
         return &amp;SubmissionService{
                 submissionRepo: submissionRepo,
                 assignmentRepo: assignmentRepo,
                 courseService:  courseService,
+                aiClient:       aiClient,
         }
 }</span>
 
@@ -6254,6 +6306,33 @@ func (s *SubmissionService) ValidateTeacherPermissions(ctx context.Context, assi
         }
 
         <span class="cov8" title="1">return errors.New("teacher not authorized to grade this assignment")</span>
+}
+
+// GenerateFeedbackSummary generates an AI summary of the feedback for a submission
+func (s *SubmissionService) GenerateFeedbackSummary(ctx context.Context, submissionID string) (*schemas.AiSummaryResponse, error) <span class="cov0" title="0">{
+        // Get submission
+        submission, err := s.submissionRepo.GetByID(ctx, submissionID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if submission == nil </span><span class="cov0" title="0">{
+                return nil, ErrSubmissionNotFound
+        }</span>
+
+        // Check if submission has feedback
+        <span class="cov0" title="0">if submission.Feedback == "" </span><span class="cov0" title="0">{
+                return nil, errors.New("submission has no feedback to summarize")
+        }</span>
+
+        // Generate summary using AI
+        <span class="cov0" title="0">summary, err := s.aiClient.SummarizeSubmissionFeedback(submission.Score, submission.Feedback)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return &amp;schemas.AiSummaryResponse{
+                Summary: summary,
+        }, nil</span>
 }
 </pre>
 		
