@@ -1100,9 +1100,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Course feedback summary",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/schemas.AiSummaryResponse"
                         }
                     }
                 }
@@ -1306,9 +1306,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Student feedback summary",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/schemas.AiSummaryResponse"
                         }
                     }
                 }
@@ -2584,12 +2584,6 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.ModuleData"
-                    }
-                },
                 "description": {
                     "type": "string"
                 },
@@ -2599,6 +2593,12 @@ const docTemplate = `{
                 "order": {
                     "type": "integer"
                 },
+                "resources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ModuleResource"
+                    }
+                },
                 "title": {
                     "type": "string"
                 },
@@ -2607,30 +2607,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.ModuleData": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "module_id": {
-                    "type": "string"
-                },
-                "resources": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.ModuleDataResource"
-                    }
-                },
-                "title": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.ModuleDataResource": {
+        "model.ModuleResource": {
             "type": "object",
             "properties": {
                 "id": {
@@ -2804,6 +2781,14 @@ const docTemplate = `{
                 "SubmissionStatusSubmitted",
                 "SubmissionStatusLate"
             ]
+        },
+        "schemas.AiSummaryResponse": {
+            "type": "object",
+            "properties": {
+                "summary": {
+                    "type": "string"
+                }
+            }
         },
         "schemas.AnswerResponse": {
             "type": "object",
@@ -3364,17 +3349,17 @@ const docTemplate = `{
         "schemas.UpdateModuleRequest": {
             "type": "object",
             "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.ModuleData"
-                    }
-                },
                 "description": {
                     "type": "string"
                 },
                 "order": {
                     "type": "integer"
+                },
+                "resources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ModuleResource"
+                    }
                 },
                 "title": {
                     "type": "string"

@@ -275,7 +275,7 @@ func (c *EnrollmentController) GetFeedbackByStudentId(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Student ID"
-// @Success 200 {string} string "Student feedback summary"
+// @Success 200 {object} schemas.AiSummaryResponse
 // @Router /feedback/student/{id}/summary [get]
 func (c *EnrollmentController) GetStudentFeedbackSummary(ctx *gin.Context) {
 	slog.Debug("Getting student feedback summary", "studentId", ctx.Param("id"))
@@ -308,5 +308,5 @@ func (c *EnrollmentController) GetStudentFeedbackSummary(ctx *gin.Context) {
 	}
 
 	slog.Debug("Student feedback summary retrieved", "summary", summary)
-	ctx.JSON(http.StatusOK, summary)
+	ctx.JSON(http.StatusOK, schemas.AiSummaryResponse{Summary: summary})
 }
