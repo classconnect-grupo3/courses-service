@@ -98,9 +98,9 @@ func (r *ModuleRepository) updateModuleFields(modules []model.Module, targetModu
 			if updatedModule.Description != "" {
 				modules[i].Description = updatedModule.Description
 			}
-			// Update Data field - explicit handling for slice
-			if updatedModule.Data != nil {
-				modules[i].Data = updatedModule.Data
+			// Update Resources field - explicit handling for slice
+			if updatedModule.Resources != nil {
+				modules[i].Resources = updatedModule.Resources
 			}
 			break
 		}
@@ -172,8 +172,8 @@ func (r *ModuleRepository) UpdateModule(id string, module model.Module) (*model.
 			updateFields["modules.$.description"] = module.Description
 		}
 		// Handle Data field update
-		if module.Data != nil {
-			updateFields["modules.$.data"] = module.Data
+		if module.Resources != nil {
+			updateFields["modules.$.resources"] = module.Resources
 		}
 
 		if len(updateFields) > 0 {

@@ -159,37 +159,22 @@ definitions:
         type: string
       created_at:
         type: string
-      data:
-        items:
-          $ref: '#/definitions/model.ModuleData'
-        type: array
       description:
         type: string
       id:
         type: string
       order:
         type: integer
+      resources:
+        items:
+          $ref: '#/definitions/model.ModuleResource'
+        type: array
       title:
         type: string
       updated_at:
         type: string
     type: object
-  model.ModuleData:
-    properties:
-      description:
-        type: string
-      id:
-        type: string
-      module_id:
-        type: string
-      resources:
-        items:
-          $ref: '#/definitions/model.ModuleDataResource'
-        type: array
-      title:
-        type: string
-    type: object
-  model.ModuleDataResource:
+  model.ModuleResource:
     properties:
       id:
         description: this comes from the frontend so it's a number
@@ -693,14 +678,14 @@ definitions:
     type: object
   schemas.UpdateModuleRequest:
     properties:
-      data:
-        items:
-          $ref: '#/definitions/model.ModuleData'
-        type: array
       description:
         type: string
       order:
         type: integer
+      resources:
+        items:
+          $ref: '#/definitions/model.ModuleResource'
+        type: array
       title:
         type: string
     type: object

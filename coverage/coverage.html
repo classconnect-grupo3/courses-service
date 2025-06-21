@@ -3640,9 +3640,9 @@ func (r *ModuleRepository) updateModuleFields(modules []model.Module, targetModu
                         <span class="cov8" title="1">if updatedModule.Description != "" </span><span class="cov8" title="1">{
                                 modules[i].Description = updatedModule.Description
                         }</span>
-                        // Update Data field - explicit handling for slice
-                        <span class="cov8" title="1">if updatedModule.Data != nil </span><span class="cov8" title="1">{
-                                modules[i].Data = updatedModule.Data
+                        // Update Resources field - explicit handling for slice
+                        <span class="cov8" title="1">if updatedModule.Resources != nil </span><span class="cov8" title="1">{
+                                modules[i].Resources = updatedModule.Resources
                         }</span>
                         <span class="cov8" title="1">break</span>
                 }
@@ -3714,8 +3714,8 @@ func (r *ModuleRepository) UpdateModule(id string, module model.Module) (*model.
                         updateFields["modules.$.description"] = module.Description
                 }</span>
                 // Handle Data field update
-                <span class="cov8" title="1">if module.Data != nil </span><span class="cov8" title="1">{
-                        updateFields["modules.$.data"] = module.Data
+                <span class="cov8" title="1">if module.Resources != nil </span><span class="cov8" title="1">{
+                        updateFields["modules.$.resources"] = module.Resources
                 }</span>
 
                 <span class="cov8" title="1">if len(updateFields) &gt; 0 </span><span class="cov8" title="1">{
@@ -5316,7 +5316,7 @@ func (s *ModuleService) CreateModule(module schemas.CreateModuleRequest) (*model
                 Title:       module.Title,
                 Description: module.Description,
                 CourseID:    module.CourseID,
-                Data:        []model.ModuleData{},
+                Resources:   []model.ModuleResource{},
         }
 
         order, err := s.moduleRepository.GetNextModuleOrder(module.CourseID)
