@@ -5,21 +5,25 @@ import (
 	"errors"
 	"time"
 
+	"courses-service/src/ai"
 	"courses-service/src/model"
 	"courses-service/src/repository"
+	"courses-service/src/schemas"
 )
 
 type SubmissionService struct {
 	submissionRepo repository.SubmissionRepositoryInterface
 	assignmentRepo repository.AssignmentRepositoryInterface
 	courseService  CourseServiceInterface
+	aiClient       *ai.AiClient
 }
 
-func NewSubmissionService(submissionRepo repository.SubmissionRepositoryInterface, assignmentRepo repository.AssignmentRepositoryInterface, courseService CourseServiceInterface) *SubmissionService {
+func NewSubmissionService(submissionRepo repository.SubmissionRepositoryInterface, assignmentRepo repository.AssignmentRepositoryInterface, courseService CourseServiceInterface, aiClient *ai.AiClient) *SubmissionService {
 	return &SubmissionService{
 		submissionRepo: submissionRepo,
 		assignmentRepo: assignmentRepo,
 		courseService:  courseService,
+		aiClient:       aiClient,
 	}
 }
 
@@ -184,4 +188,31 @@ func (s *SubmissionService) ValidateTeacherPermissions(ctx context.Context, assi
 	}
 
 	return errors.New("teacher not authorized to grade this assignment")
+}
+
+// GenerateFeedbackSummary generates an AI summary of the feedback for a submission
+func (s *SubmissionService) GenerateFeedbackSummary(ctx context.Context, submissionID string) (*schemas.AiSummaryResponse, error) {
+	// Get submission
+	submission, err := s.submissionRepo.GetByID(ctx, submissionID)
+	if err != nil {
+		return nil, err
+	}
+	if submission == nil {
+		return nil, ErrSubmissionNotFound
+	}
+
+	// Check if submission has feedback
+	if submission.Feedback == "" {
+		return nil, errors.New("submission has no feedback to summarize")
+	}
+
+	// Generate summary using AI
+	summary, err := s.aiClient.SummarizeSubmissionFeedback(submission.Score, submission.Feedback)
+	if err != nil {
+		return nil, err
+	}
+
+	return &schemas.AiSummaryResponse{
+		Summary: summary,
+	}, nil
 }
