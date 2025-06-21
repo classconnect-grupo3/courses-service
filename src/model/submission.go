@@ -21,15 +21,16 @@ type Answer struct {
 }
 
 type Submission struct {
-	ID           primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	AssignmentID string             `json:"assignment_id" bson:"assignment_id"`
-	StudentUUID  string             `json:"student_uuid" bson:"student_uuid"`
-	StudentName  string             `json:"student_name" bson:"student_name"`
-	Status       SubmissionStatus   `json:"status" bson:"status"`
-	Answers      []Answer           `json:"answers" bson:"answers"`
-	Score        *float64           `json:"score,omitempty" bson:"score,omitempty"`
-	Feedback     string             `json:"feedback,omitempty" bson:"feedback,omitempty"`
-	SubmittedAt  *time.Time         `json:"submitted_at,omitempty" bson:"submitted_at,omitempty"`
-	CreatedAt    time.Time          `json:"created_at" bson:"created_at"`
-	UpdatedAt    time.Time          `json:"updated_at" bson:"updated_at"`
+	ID                primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	AssignmentID      string             `json:"assignment_id" bson:"assignment_id"`
+	StudentUUID       string             `json:"student_uuid" bson:"student_uuid"`
+	StudentName       string             `json:"student_name" bson:"student_name"`
+	Status            SubmissionStatus   `json:"status" bson:"status"`
+	Answers           []Answer           `json:"answers" bson:"answers"`
+	Score             *float64           `json:"score,omitempty" bson:"score,omitempty"`
+	Feedback          string             `json:"feedback,omitempty" bson:"feedback,omitempty"`
+	NeedsManualReview *bool              `json:"needs_manual_review,omitempty" bson:"needs_manual_review,omitempty"`
+	SubmittedAt       *time.Time         `json:"submitted_at,omitempty" bson:"submitted_at,omitempty"`
+	CreatedAt         time.Time          `json:"created_at" bson:"created_at"`
+	UpdatedAt         time.Time          `json:"updated_at" bson:"updated_at"`
 }
