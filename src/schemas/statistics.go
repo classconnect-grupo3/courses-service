@@ -84,7 +84,6 @@ type CourseStatisticsResponse struct {
 	ForumUniqueParticipants int     `json:"forum_unique_participants"`
 }
 
-
 // ExportFormat represents the format for exporting statistics
 type ExportFormat string
 
