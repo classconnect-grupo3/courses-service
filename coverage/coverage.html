@@ -69,7 +69,7 @@
 				
 				<option value="file6">courses-service/src/controller/statistics_controller.go (48.6%)</option>
 				
-				<option value="file7">courses-service/src/controller/submission_controller.go (76.9%)</option>
+				<option value="file7">courses-service/src/controller/submission_controller.go (76.6%)</option>
 				
 				<option value="file8">courses-service/src/database/connection.go (71.4%)</option>
 				
@@ -99,7 +99,7 @@
 				
 				<option value="file21">courses-service/src/service/statistics_service.go (93.7%)</option>
 				
-				<option value="file22">courses-service/src/service/submission_service.go (77.3%)</option>
+				<option value="file22">courses-service/src/service/submission_service.go (72.3%)</option>
 				
 				<option value="file23">courses-service/src/tests/testutil/db_setup.go (72.2%)</option>
 				
@@ -2073,6 +2073,7 @@ import (
         "time"
 
         "courses-service/src/model"
+        "courses-service/src/queues"
         "courses-service/src/schemas"
         "courses-service/src/service"
 
@@ -2080,12 +2081,14 @@ import (
 )
 
 type SubmissionController struct {
-        submissionService service.SubmissionServiceInterface
+        submissionService  service.SubmissionServiceInterface
+        notificationsQueue queues.NotificationsQueueInterface
 }
 
-func NewSubmissionController(submissionService service.SubmissionServiceInterface) *SubmissionController <span class="cov8" title="1">{
+func NewSubmissionController(submissionService service.SubmissionServiceInterface, notificationsQueue queues.NotificationsQueueInterface) *SubmissionController <span class="cov8" title="1">{
         return &amp;SubmissionController{
-                submissionService: submissionService,
+                submissionService:  submissionService,
+                notificationsQueue: notificationsQueue,
         }
 }</span>
 
@@ -2245,13 +2248,47 @@ func (c *SubmissionController) SubmitSubmission(ctx *gin.Context) <span class="c
                 return
         }</span>
 
-        <span class="cov8" title="1">submission, err = c.submissionService.GetSubmission(ctx, id)
+        // Get the updated submission after auto-correction
+        <span class="cov8" title="1">updatedSubmission, err := c.submissionService.GetSubmission(ctx, id)
         if err != nil </span><span class="cov0" title="0">{
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov8" title="1">ctx.JSON(http.StatusOK, submission)</span>
+        // Send notification about the corrected submission
+        <span class="cov8" title="1">c.sendCorrectionNotification(updatedSubmission, assignmentID)
+
+        ctx.JSON(http.StatusOK, updatedSubmission)</span>
+}
+
+// sendCorrectionNotification sends a notification about the corrected submission
+func (c *SubmissionController) sendCorrectionNotification(submission *model.Submission, assignmentID string) <span class="cov8" title="1">{
+        if c.notificationsQueue == nil </span><span class="cov8" title="1">{
+                return // Skip if notifications are not configured
+        }</span>
+
+        <span class="cov8" title="1">correctionType := "automatic"
+        needsManualReview := false
+
+        if submission.NeedsManualReview != nil &amp;&amp; *submission.NeedsManualReview </span><span class="cov0" title="0">{
+                correctionType = "needs_manual_review"
+                needsManualReview = true
+        }</span>
+
+        <span class="cov8" title="1">queueMessage := queues.NewSubmissionCorrectedMessage(
+                assignmentID,
+                submission.ID.Hex(),
+                submission.StudentUUID,
+                submission.Score,
+                submission.Feedback,
+                correctionType,
+                needsManualReview,
+        )
+
+        if err := c.notificationsQueue.Publish(queueMessage); err != nil </span><span class="cov0" title="0">{
+                // Log the error but don't fail the response
+                fmt.Printf("Error publishing correction notification: %v\n", err)
+        }</span>
 }
 
 // @Summary Get submissions by assignment ID
@@ -4389,7 +4426,7 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
         courseController := controller.NewCourseController(courseService, aiClient)
         enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient)
         assignmentsController := controller.NewAssignmentsController(assignmentService, notificationsQueue)
-        submissionController := controller.NewSubmissionController(submissionService) // TODO change this when interface is added
+        submissionController := controller.NewSubmissionController(submissionService, notificationsQueue)
         moduleController := controller.NewModuleController(moduleService)
         forumController := controller.NewForumController(forumService)
         statisticsController := controller.NewStatisticsController(statisticsService)
@@ -6122,6 +6159,9 @@ func (s *StatisticsService) filterAndSeparateAssignments(assignments []*model.As
 import (
         "context"
         "errors"
+        "fmt"
+        "log"
+        "strings"
         "time"
 
         "courses-service/src/ai"
@@ -6203,12 +6243,28 @@ func (s *SubmissionService) SubmitSubmission(ctx context.Context, submissionID s
                 gracePeriodEnd := assignment.DueDate.Add(time.Duration(assignment.GracePeriod) * time.Minute)
                 if now.After(gracePeriodEnd) </span><span class="cov8" title="1">{
                         submission.Status = model.SubmissionStatusLate
+                }</span> else<span class="cov0" title="0"> {
+                        submission.Status = model.SubmissionStatusSubmitted
                 }</span>
         } else<span class="cov8" title="1"> {
                 submission.Status = model.SubmissionStatusSubmitted
         }</span>
 
-        <span class="cov8" title="1">return s.submissionRepo.Update(ctx, submission)</span>
+        // Update submission status first
+        <span class="cov8" title="1">err = s.submissionRepo.Update(ctx, submission)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        // Attempt automatic correction after submission
+        <span class="cov8" title="1">if err := s.AutoCorrectSubmission(ctx, submissionID); err != nil </span><span class="cov0" title="0">{
+                // Log the error but don't fail the submission process
+                // The submission is already marked as submitted
+                fmt.Println("error auto correcting submission:", err)
+                _ = err // Ignore auto-correction errors for now
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
 }
 
 func (s *SubmissionService) GetSubmission(ctx context.Context, id string) (*model.Submission, error) <span class="cov8" title="1">{
@@ -6334,6 +6390,84 @@ func (s *SubmissionService) GenerateFeedbackSummary(ctx context.Context, submiss
         <span class="cov0" title="0">return &amp;schemas.AiSummaryResponse{
                 Summary: summary,
         }, nil</span>
+}
+
+// isSubmissionAutoCorrectible checks if a submission can be automatically corrected
+func (s *SubmissionService) isSubmissionAutoCorrectible(submission *model.Submission) bool <span class="cov8" title="1">{
+        for _, answer := range submission.Answers </span><span class="cov8" title="1">{
+                // Check if answer type is file - these need manual review
+                if answer.Type == "file" </span><span class="cov0" title="0">{
+                        return false
+                }</span>
+
+                // Check if content is a URL (simple check)
+                <span class="cov8" title="1">if contentStr, ok := answer.Content.(string); ok </span><span class="cov8" title="1">{
+                        contentStr = strings.TrimSpace(strings.ToLower(contentStr))
+                        if strings.HasPrefix(contentStr, "http://") ||
+                                strings.HasPrefix(contentStr, "https://") ||
+                                strings.HasPrefix(contentStr, "www.") ||
+                                strings.Contains(contentStr, ".com") ||
+                                strings.Contains(contentStr, ".org") ||
+                                strings.Contains(contentStr, ".edu") </span><span class="cov0" title="0">{
+                                return false
+                        }</span>
+                }
+        }
+        <span class="cov8" title="1">return true</span>
+}
+
+// AutoCorrectSubmission performs automatic correction of a submission using AI
+func (s *SubmissionService) AutoCorrectSubmission(ctx context.Context, submissionID string) error <span class="cov8" title="1">{
+        // Check if AI client is available
+        if s.aiClient == nil </span><span class="cov8" title="1">{
+                log.Printf("AI client not available for auto-correction of submission %s", submissionID)
+                return nil // Silently skip auto-correction if AI client is not available
+        }</span>
+
+        // Get submission
+        <span class="cov8" title="1">submission, err := s.submissionRepo.GetByID(ctx, submissionID)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if submission == nil </span><span class="cov0" title="0">{
+                return ErrSubmissionNotFound
+        }</span>
+
+        // Get assignment
+        <span class="cov8" title="1">assignment, err := s.assignmentRepo.GetByID(ctx, submission.AssignmentID)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if assignment == nil </span><span class="cov0" title="0">{
+                return ErrAssignmentNotFound
+        }</span>
+
+        // Check if submission can be auto-corrected
+        <span class="cov8" title="1">if !s.isSubmissionAutoCorrectible(submission) </span><span class="cov0" title="0">{
+                // Simply ignore submissions that can't be auto-corrected
+                // Leave them untouched for manual review by teachers
+                return nil
+        }</span>
+
+        // Perform AI correction
+        <span class="cov8" title="1">correctionResult, err := s.aiClient.CorrectSubmission(assignment, submission)
+        if err != nil </span><span class="cov0" title="0">{
+                // If AI correction fails, mark for manual review
+                needsReview := true
+                submission.NeedsManualReview = &amp;needsReview
+                submission.Feedback = "Error en la corrección automática. Requiere revisión manual."
+                submission.UpdatedAt = time.Now()
+
+                return s.submissionRepo.Update(ctx, submission)
+        }</span>
+
+        // Update submission with AI results
+        <span class="cov8" title="1">submission.Score = &amp;correctionResult.Score
+        submission.Feedback = correctionResult.Feedback
+        submission.NeedsManualReview = &amp;correctionResult.NeedsManualReview
+        submission.UpdatedAt = time.Now()
+
+        return s.submissionRepo.Update(ctx, submission)</span>
 }
 </pre>
 		

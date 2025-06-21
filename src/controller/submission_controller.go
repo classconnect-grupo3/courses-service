@@ -189,13 +189,13 @@ func (c *SubmissionController) SubmitSubmission(ctx *gin.Context) {
 	}
 
 	// Send notification about the corrected submission
-	c.sendCorrectionNotification(ctx, updatedSubmission, assignmentID)
+	c.sendCorrectionNotification(updatedSubmission, assignmentID)
 
 	ctx.JSON(http.StatusOK, updatedSubmission)
 }
 
 // sendCorrectionNotification sends a notification about the corrected submission
-func (c *SubmissionController) sendCorrectionNotification(ctx *gin.Context, submission *model.Submission, assignmentID string) {
+func (c *SubmissionController) sendCorrectionNotification(submission *model.Submission, assignmentID string) {
 	if c.notificationsQueue == nil {
 		return // Skip if notifications are not configured
 	}

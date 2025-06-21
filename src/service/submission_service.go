@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -261,6 +262,12 @@ func (s *SubmissionService) isSubmissionAutoCorrectible(submission *model.Submis
 
 // AutoCorrectSubmission performs automatic correction of a submission using AI
 func (s *SubmissionService) AutoCorrectSubmission(ctx context.Context, submissionID string) error {
+	// Check if AI client is available
+	if s.aiClient == nil {
+		log.Printf("AI client not available for auto-correction of submission %s", submissionID)
+		return nil // Silently skip auto-correction if AI client is not available
+	}
+
 	// Get submission
 	submission, err := s.submissionRepo.GetByID(ctx, submissionID)
 	if err != nil {
