@@ -5,8 +5,6 @@ import (
 	"courses-service/src/model"
 	"courses-service/src/schemas"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 // CourseServiceInterface define los métodos que debe implementar un servicio de cursos
