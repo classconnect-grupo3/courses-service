@@ -102,7 +102,7 @@ func (c *AiClient) SummarizeSubmissionFeedback(score *float64, feedback string) 
 		// Return a mock response for test environment
 		return "Resumen de retroalimentación generado por IA (entorno de test)", nil
 	}
-	
+
 	prompt := generateSubmissionFeedbackPrompt(score, feedback)
 	response, err := c.Client.Models.GenerateContent(c.context, aiModel, genai.Text(prompt), nil)
 	if err != nil {
