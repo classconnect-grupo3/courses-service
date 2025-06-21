@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -85,12 +86,28 @@ func (s *SubmissionService) SubmitSubmission(ctx context.Context, submissionID s
 		gracePeriodEnd := assignment.DueDate.Add(time.Duration(assignment.GracePeriod) * time.Minute)
 		if now.After(gracePeriodEnd) {
 			submission.Status = model.SubmissionStatusLate
+		} else {
+			submission.Status = model.SubmissionStatusSubmitted
 		}
 	} else {
 		submission.Status = model.SubmissionStatusSubmitted
 	}
 
-	return s.submissionRepo.Update(ctx, submission)
+	// Update submission status first
+	err = s.submissionRepo.Update(ctx, submission)
+	if err != nil {
+		return err
+	}
+
+	// Attempt automatic correction after submission
+	if err := s.AutoCorrectSubmission(ctx, submissionID); err != nil {
+		// Log the error but don't fail the submission process
+		// The submission is already marked as submitted
+		fmt.Println("error auto correcting submission:", err)
+		_ = err // Ignore auto-correction errors for now
+	}
+
+	return nil
 }
 
 func (s *SubmissionService) GetSubmission(ctx context.Context, id string) (*model.Submission, error) {
