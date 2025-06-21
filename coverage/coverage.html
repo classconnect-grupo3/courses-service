@@ -4985,6 +4985,7 @@ func (s *EnrollmentService) CreateStudentFeedback(feedbackRequest schemas.Create
         <span class="cov8" title="1">feedback := model.StudentFeedback{
                 StudentUUID:  feedbackRequest.StudentUUID,
                 TeacherUUID:  feedbackRequest.TeacherUUID,
+                CourseID:     feedbackRequest.CourseID,
                 FeedbackType: feedbackRequest.FeedbackType,
                 Score:        feedbackRequest.Score,
                 Feedback:     feedbackRequest.Feedback,

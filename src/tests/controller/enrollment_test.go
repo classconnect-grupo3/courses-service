@@ -44,6 +44,7 @@ func (m *MockEnrollmentService) GetFeedbackByStudentId(studentID string, getFeed
 			{
 				StudentUUID:  studentID,
 				TeacherUUID:  "teacher-123",
+				CourseID:     "course-123",
 				FeedbackType: model.FeedbackTypePositive,
 				Score:        5,
 				Feedback:     "Excellent work!",
@@ -51,6 +52,7 @@ func (m *MockEnrollmentService) GetFeedbackByStudentId(studentID string, getFeed
 			{
 				StudentUUID:  studentID,
 				TeacherUUID:  "teacher-456",
+				CourseID:     "course-456",
 				FeedbackType: model.FeedbackTypeNeutral,
 				Score:        3,
 				Feedback:     "Good effort",

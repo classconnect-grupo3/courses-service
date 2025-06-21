@@ -210,6 +210,7 @@ func (s *EnrollmentService) CreateStudentFeedback(feedbackRequest schemas.Create
 	feedback := model.StudentFeedback{
 		StudentUUID:  feedbackRequest.StudentUUID,
 		TeacherUUID:  feedbackRequest.TeacherUUID,
+		CourseID:     feedbackRequest.CourseID,
 		FeedbackType: feedbackRequest.FeedbackType,
 		Score:        feedbackRequest.Score,
 		Feedback:     feedbackRequest.Feedback,
