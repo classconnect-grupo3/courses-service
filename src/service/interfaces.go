@@ -65,6 +65,7 @@ type SubmissionServiceInterface interface {
 	GradeSubmission(ctx context.Context, submissionID string, score *float64, feedback string) (*model.Submission, error)
 	ValidateTeacherPermissions(ctx context.Context, assignmentID, teacherUUID string) error
 	GenerateFeedbackSummary(ctx context.Context, submissionID string) (*schemas.AiSummaryResponse, error)
+	AutoCorrectSubmission(ctx context.Context, submissionID string) error
 }
 
 type ForumServiceInterface interface {

@@ -192,7 +192,7 @@ func NewRouter(config *config.Config) *gin.Engine {
 	courseController := controller.NewCourseController(courseService, aiClient)
 	enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient)
 	assignmentsController := controller.NewAssignmentsController(assignmentService, notificationsQueue)
-	submissionController := controller.NewSubmissionController(submissionService) // TODO change this when interface is added
+	submissionController := controller.NewSubmissionController(submissionService, notificationsQueue)
 	moduleController := controller.NewModuleController(moduleService)
 	forumController := controller.NewForumController(forumService)
 	statisticsController := controller.NewStatisticsController(statisticsService)

@@ -22,8 +22,8 @@ import (
 var (
 	mockSubmissionService      = &MockSubmissionService{}
 	mockSubmissionErrorService = &MockSubmissionServiceWithError{}
-	normalSubmissionController = controller.NewSubmissionController(mockSubmissionService)
-	errorSubmissionController  = controller.NewSubmissionController(mockSubmissionErrorService)
+	normalSubmissionController = controller.NewSubmissionController(mockSubmissionService, nil)
+	errorSubmissionController  = controller.NewSubmissionController(mockSubmissionErrorService, nil)
 	normalSubmissionRouter     = gin.Default()
 	errorSubmissionRouter      = gin.Default()
 )
@@ -80,6 +80,11 @@ func init() {
 }
 
 type MockSubmissionService struct{}
+
+// AutoCorrectSubmission implements service.SubmissionServiceInterface.
+func (m *MockSubmissionService) AutoCorrectSubmission(ctx context.Context, submissionID string) error {
+	panic("unimplemented")
+}
 
 // GenerateFeedbackSummary implements service.SubmissionServiceInterface.
 func (m *MockSubmissionService) GenerateFeedbackSummary(ctx context.Context, submissionID string) (*schemas.AiSummaryResponse, error) {
@@ -258,6 +263,11 @@ func (m *MockSubmissionService) ValidateTeacherPermissions(ctx context.Context, 
 }
 
 type MockSubmissionServiceWithError struct{}
+
+// AutoCorrectSubmission implements service.SubmissionServiceInterface.
+func (m *MockSubmissionServiceWithError) AutoCorrectSubmission(ctx context.Context, submissionID string) error {
+	panic("unimplemented")
+}
 
 // GenerateFeedbackSummary implements service.SubmissionServiceInterface.
 func (m *MockSubmissionServiceWithError) GenerateFeedbackSummary(ctx context.Context, submissionID string) (*schemas.AiSummaryResponse, error) {

@@ -150,39 +150,6 @@ type UnenrolledStudentFromCourseMessage struct {
 	StudentID string `json:"student_id"`
 }
 
-type AICorrectionMessage struct {
-	EventType           string    `json:"event_type"`
-	CourseID            string    `json:"course_id"`
-	StudentID           string    `json:"student_id"`
-	SubmissionID        string    `json:"submission_id"`
-	SubmissionText      string    `json:"submission_text"`
-	SubmissionCreatedAt time.Time `json:"submission_created_at"`
-	SubmissionFeedback  string    `json:"submission_feedback"`
-}
-
-func NewAICorrectionMessage(courseID string, studentID string, submissionID string, submissionText string, submissionCreatedAt time.Time) *AICorrectionMessage {
-	return &AICorrectionMessage{
-		EventType:           "ai.correction",
-		CourseID:            courseID,
-		StudentID:           studentID,
-		SubmissionID:        submissionID,
-		SubmissionText:      submissionText,
-		SubmissionCreatedAt: submissionCreatedAt,
-	}
-}
-
-func (m *AICorrectionMessage) Encode() (map[string]any, error) {
-	return map[string]any{
-		"event_type":            m.EventType,
-		"course_id":             m.CourseID,
-		"student_id":            m.StudentID,
-		"submission_id":         m.SubmissionID,
-		"submission_text":       m.SubmissionText,
-		"submission_created_at": m.SubmissionCreatedAt.Format(time.RFC3339),
-		"submission_feedback":   m.SubmissionFeedback,
-	}, nil
-}
-
 type ForumActivityMessage struct {
 	EventType     string    `json:"event_type"`
 	CourseID      string    `json:"course_id"`
@@ -212,4 +179,58 @@ func (m *ForumActivityMessage) Encode() (map[string]any, error) {
 		"post_text":       m.PostText,
 		"post_created_at": m.PostCreatedAt.Format(time.RFC3339),
 	}, nil
+}
+
+type SubmissionCorrectedMessage struct {
+	EventType         string    `json:"event_type"`
+	CourseID          string    `json:"course_id"`
+	AssignmentID      string    `json:"assignment_id"`
+	SubmissionID      string    `json:"submission_id"`
+	StudentID         string    `json:"student_id"`
+	Score             *float64  `json:"score,omitempty"`
+	Feedback          string    `json:"feedback"`
+	CorrectionType    string    `json:"correction_type"` // "automatic", "needs_manual_review"
+	NeedsManualReview bool      `json:"needs_manual_review"`
+	CorrectedAt       time.Time `json:"corrected_at"`
+}
+
+func NewSubmissionCorrectedMessage(
+	assignmentID string,
+	submissionID string,
+	studentID string,
+	score *float64,
+	feedback string,
+	correctionType string,
+	needsManualReview bool,
+) *SubmissionCorrectedMessage {
+	return &SubmissionCorrectedMessage{
+		EventType:         "submission.corrected",
+		AssignmentID:      assignmentID,
+		SubmissionID:      submissionID,
+		StudentID:         studentID,
+		Score:             score,
+		Feedback:          feedback,
+		CorrectionType:    correctionType,
+		NeedsManualReview: needsManualReview,
+		CorrectedAt:       time.Now(),
+	}
+}
+
+func (m *SubmissionCorrectedMessage) Encode() (map[string]any, error) {
+	encoded := map[string]any{
+		"event_type":          m.EventType,
+		"assignment_id":       m.AssignmentID,
+		"submission_id":       m.SubmissionID,
+		"student_id":          m.StudentID,
+		"feedback":            m.Feedback,
+		"correction_type":     m.CorrectionType,
+		"needs_manual_review": m.NeedsManualReview,
+		"corrected_at":        m.CorrectedAt.Format(time.RFC3339),
+	}
+
+	if m.Score != nil {
+		encoded["score"] = *m.Score
+	}
+
+	return encoded, nil
 }

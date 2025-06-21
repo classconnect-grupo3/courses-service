@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"courses-service/src/model"
+	"courses-service/src/queues"
 	"courses-service/src/schemas"
 	"courses-service/src/service"
 
@@ -13,12 +14,14 @@ import (
 )
 
 type SubmissionController struct {
-	submissionService service.SubmissionServiceInterface
+	submissionService  service.SubmissionServiceInterface
+	notificationsQueue queues.NotificationsQueueInterface
 }
 
-func NewSubmissionController(submissionService service.SubmissionServiceInterface) *SubmissionController {
+func NewSubmissionController(submissionService service.SubmissionServiceInterface, notificationsQueue queues.NotificationsQueueInterface) *SubmissionController {
 	return &SubmissionController{
-		submissionService: submissionService,
+		submissionService:  submissionService,
+		notificationsQueue: notificationsQueue,
 	}
 }
 
@@ -178,13 +181,48 @@ func (c *SubmissionController) SubmitSubmission(ctx *gin.Context) {
 		return
 	}
 
-	submission, err = c.submissionService.GetSubmission(ctx, id)
+	// Get the updated submission after auto-correction
+	updatedSubmission, err := c.submissionService.GetSubmission(ctx, id)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, submission)
+	// Send notification about the corrected submission
+	c.sendCorrectionNotification(updatedSubmission, assignmentID)
+
+	ctx.JSON(http.StatusOK, updatedSubmission)
+}
+
+// sendCorrectionNotification sends a notification about the corrected submission
+func (c *SubmissionController) sendCorrectionNotification(submission *model.Submission, assignmentID string) {
+	if c.notificationsQueue == nil {
+		return // Skip if notifications are not configured
+	}
+
+	correctionType := "automatic"
+	needsManualReview := false
+
+	if submission.NeedsManualReview != nil && *submission.NeedsManualReview {
+		correctionType = "needs_manual_review"
+		needsManualReview = true
+	}
+
+	queueMessage := queues.NewSubmissionCorrectedMessage(
+		assignmentID,
+		submission.ID.Hex(),
+		submission.StudentUUID,
+		submission.Score,
+		submission.Feedback,
+		correctionType,
+		needsManualReview,
+	)
+
+	// if err := c.notificationsQueue.Publish(queueMessage); err != nil {
+	// 	// Log the error but don't fail the response
+	// 	fmt.Printf("Error publishing correction notification: %v\n", err)
+	// } TODO: Uncomment this when the notifications queue is implemented
+	fmt.Println("queueMessage: ", queueMessage)
 }
 
 // @Summary Get submissions by assignment ID

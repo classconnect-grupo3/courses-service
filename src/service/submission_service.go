@@ -3,6 +3,9 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log"
+	"strings"
 	"time"
 
 	"courses-service/src/ai"
@@ -84,12 +87,28 @@ func (s *SubmissionService) SubmitSubmission(ctx context.Context, submissionID s
 		gracePeriodEnd := assignment.DueDate.Add(time.Duration(assignment.GracePeriod) * time.Minute)
 		if now.After(gracePeriodEnd) {
 			submission.Status = model.SubmissionStatusLate
+		} else {
+			submission.Status = model.SubmissionStatusSubmitted
 		}
 	} else {
 		submission.Status = model.SubmissionStatusSubmitted
 	}
 
-	return s.submissionRepo.Update(ctx, submission)
+	// Update submission status first
+	err = s.submissionRepo.Update(ctx, submission)
+	if err != nil {
+		return err
+	}
+
+	// Attempt automatic correction after submission
+	if err := s.AutoCorrectSubmission(ctx, submissionID); err != nil {
+		// Log the error but don't fail the submission process
+		// The submission is already marked as submitted
+		fmt.Println("error auto correcting submission:", err)
+		_ = err // Ignore auto-correction errors for now
+	}
+
+	return nil
 }
 
 func (s *SubmissionService) GetSubmission(ctx context.Context, id string) (*model.Submission, error) {
@@ -146,6 +165,10 @@ func (s *SubmissionService) GradeSubmission(ctx context.Context, submissionID st
 	submission.Score = score
 	submission.Feedback = feedback
 	submission.UpdatedAt = time.Now()
+
+	// Mark as reviewed by teacher (no longer needs manual review)
+	needsReview := false
+	submission.NeedsManualReview = &needsReview
 
 	err = s.submissionRepo.Update(ctx, submission)
 	if err != nil {
@@ -215,4 +238,82 @@ func (s *SubmissionService) GenerateFeedbackSummary(ctx context.Context, submiss
 	return &schemas.AiSummaryResponse{
 		Summary: summary,
 	}, nil
+}
+
+// isSubmissionAutoCorrectible checks if a submission can be automatically corrected
+func (s *SubmissionService) isSubmissionAutoCorrectible(submission *model.Submission) bool {
+	for _, answer := range submission.Answers {
+		// Check if answer type is file - these need manual review
+		if answer.Type == "file" {
+			return false
+		}
+
+		// Check if content is a URL (simple check)
+		if contentStr, ok := answer.Content.(string); ok {
+			contentStr = strings.TrimSpace(strings.ToLower(contentStr))
+			if strings.HasPrefix(contentStr, "http://") ||
+				strings.HasPrefix(contentStr, "https://") ||
+				strings.HasPrefix(contentStr, "www.") ||
+				strings.Contains(contentStr, ".com") ||
+				strings.Contains(contentStr, ".org") ||
+				strings.Contains(contentStr, ".edu") {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// AutoCorrectSubmission performs automatic correction of a submission using AI
+func (s *SubmissionService) AutoCorrectSubmission(ctx context.Context, submissionID string) error {
+	// Check if AI client is available
+	if s.aiClient == nil {
+		log.Printf("AI client not available for auto-correction of submission %s", submissionID)
+		return nil // Silently skip auto-correction if AI client is not available
+	}
+
+	// Get submission
+	submission, err := s.submissionRepo.GetByID(ctx, submissionID)
+	if err != nil {
+		return err
+	}
+	if submission == nil {
+		return ErrSubmissionNotFound
+	}
+
+	// Get assignment
+	assignment, err := s.assignmentRepo.GetByID(ctx, submission.AssignmentID)
+	if err != nil {
+		return err
+	}
+	if assignment == nil {
+		return ErrAssignmentNotFound
+	}
+
+	// Check if submission can be auto-corrected
+	if !s.isSubmissionAutoCorrectible(submission) {
+		// Simply ignore submissions that can't be auto-corrected
+		// Leave them untouched for manual review by teachers
+		return nil
+	}
+
+	// Perform AI correction
+	correctionResult, err := s.aiClient.CorrectSubmission(assignment, submission)
+	if err != nil {
+		// If AI correction fails, mark for manual review
+		needsReview := true
+		submission.NeedsManualReview = &needsReview
+		submission.Feedback = "Error en la corrección automática. Requiere revisión manual."
+		submission.UpdatedAt = time.Now()
+
+		return s.submissionRepo.Update(ctx, submission)
+	}
+
+	// Update submission with AI results
+	submission.Score = &correctionResult.Score
+	submission.Feedback = correctionResult.Feedback
+	submission.NeedsManualReview = &correctionResult.NeedsManualReview
+	submission.UpdatedAt = time.Now()
+
+	return s.submissionRepo.Update(ctx, submission)
 }
