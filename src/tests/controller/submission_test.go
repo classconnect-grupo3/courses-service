@@ -22,8 +22,8 @@ import (
 var (
 	mockSubmissionService      = &MockSubmissionService{}
 	mockSubmissionErrorService = &MockSubmissionServiceWithError{}
-	normalSubmissionController = controller.NewSubmissionController(mockSubmissionService)
-	errorSubmissionController  = controller.NewSubmissionController(mockSubmissionErrorService)
+	normalSubmissionController = controller.NewSubmissionController(mockSubmissionService, nil)
+	errorSubmissionController  = controller.NewSubmissionController(mockSubmissionErrorService, nil)
 	normalSubmissionRouter     = gin.Default()
 	errorSubmissionRouter      = gin.Default()
 )

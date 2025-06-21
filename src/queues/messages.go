@@ -195,7 +195,6 @@ type SubmissionCorrectedMessage struct {
 }
 
 func NewSubmissionCorrectedMessage(
-	courseID string,
 	assignmentID string,
 	submissionID string,
 	studentID string,
@@ -206,7 +205,6 @@ func NewSubmissionCorrectedMessage(
 ) *SubmissionCorrectedMessage {
 	return &SubmissionCorrectedMessage{
 		EventType:         "submission.corrected",
-		CourseID:          courseID,
 		AssignmentID:      assignmentID,
 		SubmissionID:      submissionID,
 		StudentID:         studentID,
@@ -221,7 +219,6 @@ func NewSubmissionCorrectedMessage(
 func (m *SubmissionCorrectedMessage) Encode() (map[string]any, error) {
 	encoded := map[string]any{
 		"event_type":          m.EventType,
-		"course_id":           m.CourseID,
 		"assignment_id":       m.AssignmentID,
 		"submission_id":       m.SubmissionID,
 		"student_id":          m.StudentID,
