@@ -313,6 +313,11 @@ definitions:
     - SubmissionStatusDraft
     - SubmissionStatusSubmitted
     - SubmissionStatusLate
+  schemas.AiSummaryResponse:
+    properties:
+      summary:
+        type: string
+    type: object
   schemas.AnswerResponse:
     properties:
       author_id:
@@ -1335,9 +1340,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Course feedback summary
+          description: OK
           schema:
-            type: string
+            $ref: '#/definitions/schemas.AiSummaryResponse'
       summary: Get course feedback summary
       tags:
       - courses
@@ -1586,9 +1591,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Student feedback summary
+          description: OK
           schema:
-            type: string
+            $ref: '#/definitions/schemas.AiSummaryResponse'
       summary: Get student feedback summary
       tags:
       - enrollments

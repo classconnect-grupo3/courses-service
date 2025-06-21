@@ -1100,9 +1100,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Course feedback summary",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/schemas.AiSummaryResponse"
                         }
                     }
                 }
@@ -1306,9 +1306,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Student feedback summary",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/schemas.AiSummaryResponse"
                         }
                     }
                 }
@@ -2804,6 +2804,14 @@ const docTemplate = `{
                 "SubmissionStatusSubmitted",
                 "SubmissionStatusLate"
             ]
+        },
+        "schemas.AiSummaryResponse": {
+            "type": "object",
+            "properties": {
+                "summary": {
+                    "type": "string"
+                }
+            }
         },
         "schemas.AnswerResponse": {
             "type": "object",

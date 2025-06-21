@@ -2,7 +2,7 @@ package ai
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 
@@ -73,7 +73,7 @@ func (c *AiClient) SummarizeCourseFeedbacks(feedbacks []*model.CourseFeedback) (
 		log.Fatal("Failed to generate content", err)
 		return "", err
 	}
-	return debugString(response), nil
+	return obtainAnswerFromModel(response)
 }
 
 func (c *AiClient) SummarizeStudentFeedbacks(feedbacks []*model.StudentFeedback) (string, error) {
@@ -83,15 +83,19 @@ func (c *AiClient) SummarizeStudentFeedbacks(feedbacks []*model.StudentFeedback)
 		log.Fatal("Failed to generate content", err)
 		return "", err
 	}
-	return debugString(response), nil
+	return obtainAnswerFromModel(response)
 }
 
-func debugString[T any](r *T) string {
-
-	response, err := json.MarshalIndent(*r, "", "  ")
-	if err != nil {
-		log.Fatal(err)
+func obtainAnswerFromModel(result *genai.GenerateContentResponse) (string, error) {
+	if len(result.Candidates) == 0 {
+		return "", errors.New("no answer found")
 	}
+	answer := result.Candidates[0]
 
-	return string(response)
+	for _, part := range answer.Content.Parts {
+		if len(part.Text) > 0 {
+			return part.Text, nil
+		}
+	}
+	return "", errors.New("no answer found")
 }
