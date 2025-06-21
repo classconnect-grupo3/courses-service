@@ -4,6 +4,7 @@ import (
 	"context"
 	"courses-service/src/model"
 	"courses-service/src/schemas"
+	"time"
 )
 
 // CourseServiceInterface define los métodos que debe implementar un servicio de cursos
@@ -87,4 +88,16 @@ type ForumServiceInterface interface {
 
 	// Search and filter operations
 	SearchQuestions(courseID, query string, tags []model.QuestionTag, status model.QuestionStatus) ([]model.ForumQuestion, error)
+}
+
+// StatisticsServiceInterface define los métodos que debe implementar un servicio de estadísticas
+type StatisticsServiceInterface interface {
+
+	// ExportCourseStatsCSV genera un CSV con las estadísticas del curso
+	ExportCourseStatsCSV(ctx context.Context, courseID string, from, to time.Time) ([]byte, string, error)
+
+	// ExportStudentStatsCSV genera un CSV con las estadísticas del estudiante
+	ExportStudentStatsCSV(ctx context.Context, studentID string, courseID string, from, to time.Time) ([]byte, string, error)
+
+	ExportTeacherCoursesStatsCSV(ctx context.Context, teacherID string, from, to time.Time) ([]byte, string, error)
 }

@@ -67,37 +67,41 @@
 				
 				<option value="file5">courses-service/src/controller/module_controller.go (100.0%)</option>
 				
-				<option value="file6">courses-service/src/controller/submission_controller.go (91.2%)</option>
+				<option value="file6">courses-service/src/controller/statistics_controller.go (48.6%)</option>
 				
-				<option value="file7">courses-service/src/database/connection.go (71.4%)</option>
+				<option value="file7">courses-service/src/controller/submission_controller.go (91.2%)</option>
 				
-				<option value="file8">courses-service/src/repository/assignment_repository.go (87.0%)</option>
+				<option value="file8">courses-service/src/database/connection.go (71.4%)</option>
 				
-				<option value="file9">courses-service/src/repository/course_repository.go (82.0%)</option>
+				<option value="file9">courses-service/src/repository/assignment_repository.go (87.0%)</option>
 				
-				<option value="file10">courses-service/src/repository/enrollment_repository.go (81.4%)</option>
+				<option value="file10">courses-service/src/repository/course_repository.go (82.0%)</option>
 				
-				<option value="file11">courses-service/src/repository/forum_repository.go (87.1%)</option>
+				<option value="file11">courses-service/src/repository/enrollment_repository.go (81.4%)</option>
 				
-				<option value="file12">courses-service/src/repository/module_repository.go (90.0%)</option>
+				<option value="file12">courses-service/src/repository/forum_repository.go (87.1%)</option>
 				
-				<option value="file13">courses-service/src/repository/submission_repository.go (83.3%)</option>
+				<option value="file13">courses-service/src/repository/module_repository.go (90.0%)</option>
 				
-				<option value="file14">courses-service/src/router/router.go (96.3%)</option>
+				<option value="file14">courses-service/src/repository/submission_repository.go (83.3%)</option>
 				
-				<option value="file15">courses-service/src/service/assignment_service.go (100.0%)</option>
+				<option value="file15">courses-service/src/router/router.go (96.5%)</option>
 				
-				<option value="file16">courses-service/src/service/course_service.go (93.8%)</option>
+				<option value="file16">courses-service/src/service/assignment_service.go (100.0%)</option>
 				
-				<option value="file17">courses-service/src/service/enrollment_service.go (96.2%)</option>
+				<option value="file17">courses-service/src/service/course_service.go (93.8%)</option>
 				
-				<option value="file18">courses-service/src/service/forum_service.go (87.4%)</option>
+				<option value="file18">courses-service/src/service/enrollment_service.go (96.2%)</option>
 				
-				<option value="file19">courses-service/src/service/module_service.go (100.0%)</option>
+				<option value="file19">courses-service/src/service/forum_service.go (87.4%)</option>
 				
-				<option value="file20">courses-service/src/service/submission_service.go (84.4%)</option>
+				<option value="file20">courses-service/src/service/module_service.go (100.0%)</option>
 				
-				<option value="file21">courses-service/src/tests/testutil/db_setup.go (72.2%)</option>
+				<option value="file21">courses-service/src/service/statistics_service.go (93.7%)</option>
+				
+				<option value="file22">courses-service/src/service/submission_service.go (88.3%)</option>
+				
+				<option value="file23">courses-service/src/tests/testutil/db_setup.go (72.2%)</option>
 				
 				</select>
 			</div>
@@ -767,7 +771,7 @@ func (c *CourseController) GetCourseFeedback(ctx *gin.Context) <span class="cov8
 // @Accept json
 // @Produce json
 // @Param id path string true "Course ID"
-// @Success 200 {string} string "Course feedback summary"
+// @Success 200 {object} schemas.AiSummaryResponse
 // @Router /courses/{id}/feedback/summary [get]
 func (c *CourseController) GetCourseFeedbackSummary(ctx *gin.Context) <span class="cov0" title="0">{
         slog.Debug("Getting course feedback summary")
@@ -799,7 +803,7 @@ func (c *CourseController) GetCourseFeedbackSummary(ctx *gin.Context) <span clas
         }</span>
 
         <span class="cov0" title="0">slog.Debug("Course feedback summary retrieved", "summary", summary)
-        ctx.JSON(http.StatusOK, summary)</span>
+        ctx.JSON(http.StatusOK, schemas.AiSummaryResponse{Summary: summary})</span>
 }
 
 // @Summary Get course members
@@ -1111,7 +1115,7 @@ func (c *EnrollmentController) GetFeedbackByStudentId(ctx *gin.Context) <span cl
 // @Accept json
 // @Produce json
 // @Param id path string true "Student ID"
-// @Success 200 {string} string "Student feedback summary"
+// @Success 200 {object} schemas.AiSummaryResponse
 // @Router /feedback/student/{id}/summary [get]
 func (c *EnrollmentController) GetStudentFeedbackSummary(ctx *gin.Context) <span class="cov0" title="0">{
         slog.Debug("Getting student feedback summary", "studentId", ctx.Param("id"))
@@ -1144,7 +1148,7 @@ func (c *EnrollmentController) GetStudentFeedbackSummary(ctx *gin.Context) <span
         }</span>
 
         <span class="cov0" title="0">slog.Debug("Student feedback summary retrieved", "summary", summary)
-        ctx.JSON(http.StatusOK, summary)</span>
+        ctx.JSON(http.StatusOK, schemas.AiSummaryResponse{Summary: summary})</span>
 }
 </pre>
 		
@@ -1916,6 +1920,154 @@ func (c *ModuleController) DeleteModule(ctx *gin.Context) <span class="cov8" tit
 		<pre class="file" id="file6" style="display: none">package controller
 
 import (
+        "courses-service/src/service"
+        "net/http"
+        "time"
+
+        "github.com/gin-gonic/gin"
+)
+
+// StatisticsController handles requests for statistics data
+type StatisticsController struct {
+        statisticsService service.StatisticsServiceInterface
+}
+
+// NewStatisticsController creates a new statistics controller
+func NewStatisticsController(statisticsService service.StatisticsServiceInterface) *StatisticsController <span class="cov8" title="1">{
+        return &amp;StatisticsController{
+                statisticsService: statisticsService,
+        }
+}</span>
+
+// GetCourseStatistics returns statistics for a specific course
+func (c *StatisticsController) GetCourseStatistics(ctx *gin.Context) <span class="cov8" title="1">{
+        courseID := ctx.Param("courseId")
+        if courseID == "" </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "course_id is required"})
+                return
+        }</span>
+
+        // Parse time range from query parameters (optional)
+        <span class="cov8" title="1">fromStr := ctx.Query("from")
+        toStr := ctx.Query("to")
+
+        var from, to time.Time
+        var err error
+
+        if fromStr != "" </span><span class="cov0" title="0">{
+                from, err = time.Parse("2006-01-02", fromStr)
+                if err != nil </span><span class="cov0" title="0">{
+                        ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid from date format, use YYYY-MM-DD"})
+                        return
+                }</span>
+        }
+
+        <span class="cov8" title="1">if toStr != "" </span><span class="cov0" title="0">{
+                to, err = time.Parse("2006-01-02", toStr)
+                if err != nil </span><span class="cov0" title="0">{
+                        ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid to date format, use YYYY-MM-DD"})
+                        return
+                }</span>
+        }
+
+        <span class="cov8" title="1">data, _, err := c.statisticsService.ExportCourseStatsCSV(ctx, courseID, from, to)
+        if err != nil </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, gin.H{"csv": string(data)})</span>
+}
+
+// Returns statistics for a specific student
+func (c *StatisticsController) GetStudentStatistics(ctx *gin.Context) <span class="cov8" title="1">{
+        studentID := ctx.Param("studentId")
+        if studentID == "" </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "student_id is required"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">courseID := ctx.Query("course_id")
+        if courseID == "" </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "course_id is required"})
+                return
+        }</span>
+
+        // Parse time range from query parameters (optional)
+        <span class="cov8" title="1">fromStr := ctx.Query("from")
+        toStr := ctx.Query("to")
+
+        var from, to time.Time
+        var err error
+
+        if fromStr != "" </span><span class="cov0" title="0">{
+                from, err = time.Parse("2006-01-02", fromStr)
+                if err != nil </span><span class="cov0" title="0">{
+                        ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid from date format, use YYYY-MM-DD"})
+                        return
+                }</span>
+        }
+
+        <span class="cov8" title="1">if toStr != "" </span><span class="cov0" title="0">{
+                to, err = time.Parse("2006-01-02", toStr)
+                if err != nil </span><span class="cov0" title="0">{
+                        ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid to date format, use YYYY-MM-DD"})
+                        return
+                }</span>
+        }
+
+        <span class="cov8" title="1">data, _, err := c.statisticsService.ExportStudentStatsCSV(ctx, studentID, courseID, from, to)
+        if err != nil </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, gin.H{"csv": string(data)})</span>
+}
+
+// GetTeacherCoursesStatistics returns aggregated statistics for all courses of a teacher
+func (c *StatisticsController) GetTeacherCoursesStatistics(ctx *gin.Context) <span class="cov8" title="1">{
+        teacherID := ctx.Param("teacherId")
+        if teacherID == "" </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "teacher_id is required"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">fromStr := ctx.Query("from")
+        toStr := ctx.Query("to")
+
+        var from, to time.Time
+        var err error
+
+        if fromStr != "" </span><span class="cov0" title="0">{
+                from, err = time.Parse("2006-01-02", fromStr)
+                if err != nil </span><span class="cov0" title="0">{
+                        ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid from date format, use YYYY-MM-DD"})
+                        return
+                }</span>
+        }
+
+        <span class="cov8" title="1">if toStr != "" </span><span class="cov0" title="0">{
+                to, err = time.Parse("2006-01-02", toStr)
+                if err != nil </span><span class="cov0" title="0">{
+                        ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid to date format, use YYYY-MM-DD"})
+                        return
+                }</span>
+        }
+
+        <span class="cov8" title="1">data, _, err := c.statisticsService.ExportTeacherCoursesStatsCSV(ctx, teacherID, from, to)
+        if err != nil </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, gin.H{"csv": string(data)})</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package controller
+
+import (
         "fmt"
         "net/http"
         "time"
@@ -2204,7 +2356,7 @@ func (c *SubmissionController) GradeSubmission(ctx *gin.Context) <span class="co
 }
 </pre>
 		
-		<pre class="file" id="file7" style="display: none">package database
+		<pre class="file" id="file8" style="display: none">package database
 
 import (
         "courses-service/src/config"
@@ -2234,7 +2386,7 @@ func NewMongoDBClient(config *config.Config) (*mongo.Client, error) <span class=
 }
 </pre>
 		
-		<pre class="file" id="file8" style="display: none">package repository
+		<pre class="file" id="file9" style="display: none">package repository
 
 import (
         "context"
@@ -2404,7 +2556,7 @@ func (r *AssignmentRepository) DeleteAssignment(id string) error <span class="co
 }
 </pre>
 		
-		<pre class="file" id="file9" style="display: none">package repository
+		<pre class="file" id="file10" style="display: none">package repository
 
 import (
         "context"
@@ -2792,7 +2944,7 @@ func (r *CourseRepository) GetCourseFeedback(courseID string, getCourseFeedbackR
 }
 </pre>
 		
-		<pre class="file" id="file10" style="display: none">package repository
+		<pre class="file" id="file11" style="display: none">package repository
 
 import (
         "context"
@@ -3083,7 +3235,7 @@ func (r *EnrollmentRepository) GetFeedbackByStudentId(studentID string, getFeedb
 }
 </pre>
 		
-		<pre class="file" id="file11" style="display: none">package repository
+		<pre class="file" id="file12" style="display: none">package repository
 
 import (
         "context"
@@ -3540,7 +3692,7 @@ func (r *ForumRepository) SearchQuestions(courseID string, query string, tags []
 }
 </pre>
 		
-		<pre class="file" id="file12" style="display: none">package repository
+		<pre class="file" id="file13" style="display: none">package repository
 
 import (
         "context"
@@ -3898,7 +4050,7 @@ func (r *ModuleRepository) GetModuleByOrder(courseID string, order int) (*model.
 }
 </pre>
 		
-		<pre class="file" id="file13" style="display: none">package repository
+		<pre class="file" id="file14" style="display: none">package repository
 
 import (
         "context"
@@ -3996,7 +4148,7 @@ func (r *MongoSubmissionRepository) GetByStudent(ctx context.Context, studentUUI
 }
 </pre>
 		
-		<pre class="file" id="file14" style="display: none">package router
+		<pre class="file" id="file15" style="display: none">package router
 
 import (
         "courses-service/src/ai"
@@ -4133,6 +4285,25 @@ func InitializeForumRoutes(r *gin.Engine, controller *controller.ForumController
         r.GET("/forum/courses/:courseId/search", controller.SearchQuestions)
 }</span>
 
+// InitializeStatisticsRoutes sets up all statistics-related routes
+func InitializeStatisticsRoutes(r *gin.Engine, controller *controller.StatisticsController) <span class="cov8" title="1">{
+        // Group all statistics routes
+        statisticsGroup := r.Group("/statistics")
+
+        // Apply teacher authentication middleware for all statistics routes
+        // Only teachers should be able to access these analytics
+        statisticsGroup.Use(middleware.TeacherAuth())
+
+        // Course statistics endpoints - supports JSON or CSV via ?format=csv
+        statisticsGroup.GET("/courses/:courseId", controller.GetCourseStatistics)
+
+        // Student statistics endpoints - supports JSON or CSV via ?format=csv
+        statisticsGroup.GET("/students/:studentId", controller.GetStudentStatistics)
+
+        // Teacher's courses statistics endpoint
+        statisticsGroup.GET("/teachers/:teacherId/courses", controller.GetTeacherCoursesStatistics)
+}</span>
+
 func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
         r := createRouterFromConfig(config)
         addNewRelicMiddleware(r)
@@ -4165,6 +4336,7 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
         submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository, courseService)
         moduleService := service.NewModuleService(moduleRepository)
         forumService := service.NewForumService(forumRepository, courseRepo)
+        statisticsService := service.NewStatisticsService(courseRepo, assignmentRepository, enrollmentRepo, submissionRepository, forumRepository)
 
         courseController := controller.NewCourseController(courseService, aiClient)
         enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient)
@@ -4172,8 +4344,9 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
         submissionController := controller.NewSubmissionController(submissionService) // TODO change this when interface is added
         moduleController := controller.NewModuleController(moduleService)
         forumController := controller.NewForumController(forumService)
+        statisticsController := controller.NewStatisticsController(statisticsService)
 
-        InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController, moduleController, forumController)
+        InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController, moduleController, forumController, statisticsController)
         r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler)) // endpoint to consult the swagger documentation
         return r</span>
 }
@@ -4186,6 +4359,7 @@ func InitializeRoutes(
         enrollmentController *controller.EnrollmentController,
         moduleController *controller.ModuleController,
         forumController *controller.ForumController,
+        statisticsController *controller.StatisticsController,
 ) <span class="cov8" title="1">{
         InitializeCoursesRoutes(r, courseController)
         InitializeSubmissionRoutes(r, submissionController)
@@ -4193,10 +4367,11 @@ func InitializeRoutes(
         InitializeEnrollmentsRoutes(r, enrollmentController)
         InitializeModulesRoutes(r, moduleController)
         InitializeForumRoutes(r, forumController)
+        InitializeStatisticsRoutes(r, statisticsController)
 }</span>
 </pre>
 		
-		<pre class="file" id="file15" style="display: none">package service
+		<pre class="file" id="file16" style="display: none">package service
 
 import (
         "context"
@@ -4303,7 +4478,7 @@ func (s *AssignmentService) GetAssignmentsByCourseId(courseId string) ([]*model.
 }
 </pre>
 		
-		<pre class="file" id="file16" style="display: none">package service
+		<pre class="file" id="file17" style="display: none">package service
 
 import (
         "courses-service/src/model"
@@ -4598,7 +4773,7 @@ func (s *CourseService) GetCourseMembers(courseId string) (*schemas.CourseMember
 }
 </pre>
 		
-		<pre class="file" id="file17" style="display: none">package service
+		<pre class="file" id="file18" style="display: none">package service
 
 import (
         "courses-service/src/model"
@@ -4838,7 +5013,7 @@ func (s *EnrollmentService) GetFeedbackByStudentId(studentID string, getFeedback
 }
 </pre>
 		
-		<pre class="file" id="file18" style="display: none">package service
+		<pre class="file" id="file19" style="display: none">package service
 
 import (
         "courses-service/src/model"
@@ -5286,7 +5461,7 @@ func (s *ForumService) isValidStatus(status model.QuestionStatus) bool <span cla
 }</span>
 </pre>
 		
-		<pre class="file" id="file19" style="display: none">package service
+		<pre class="file" id="file20" style="display: none">package service
 
 import (
         "courses-service/src/model"
@@ -5394,7 +5569,506 @@ func (s *ModuleService) DeleteModule(id string) error <span class="cov8" title="
 }
 </pre>
 		
-		<pre class="file" id="file20" style="display: none">package service
+		<pre class="file" id="file21" style="display: none">package service
+
+import (
+        "bytes"
+        "context"
+        "courses-service/src/model"
+        "courses-service/src/repository"
+        "courses-service/src/schemas"
+        "encoding/csv"
+        "log"
+        "strconv"
+        "time"
+)
+
+// StatisticsService implements the StatisticsServiceInterface
+type StatisticsService struct {
+        courseRepo     repository.CourseRepositoryInterface
+        assignmentRepo repository.AssignmentRepositoryInterface
+        enrollmentRepo repository.EnrollmentRepositoryInterface
+        submissionRepo repository.SubmissionRepositoryInterface
+        forumRepo      repository.ForumRepositoryInterface
+}
+
+// NewStatisticsService creates a new instance of StatisticsService
+func NewStatisticsService(
+        courseRepo repository.CourseRepositoryInterface,
+        assignmentRepo repository.AssignmentRepositoryInterface,
+        enrollmentRepo repository.EnrollmentRepositoryInterface,
+        submissionRepo repository.SubmissionRepositoryInterface,
+        forumRepo repository.ForumRepositoryInterface,
+) StatisticsServiceInterface <span class="cov8" title="1">{
+        return &amp;StatisticsService{
+                courseRepo:     courseRepo,
+                assignmentRepo: assignmentRepo,
+                enrollmentRepo: enrollmentRepo,
+                submissionRepo: submissionRepo,
+                forumRepo:      forumRepo,
+        }
+}</span>
+
+// ExportCourseStatsCSV generates a CSV for course statistics and returns the CSV bytes and filename
+func (s *StatisticsService) ExportCourseStatsCSV(
+        ctx context.Context,
+        courseID string,
+        from, to time.Time,
+) ([]byte, string, error) <span class="cov8" title="1">{
+        stats, err := s.GetCourseStatistics(ctx, courseID, from, to)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, "", err
+        }</span>
+
+        <span class="cov8" title="1">buf := new(bytes.Buffer)
+        writer := csv.NewWriter(buf)
+        writer.Comma = ';'
+
+        header := []string{
+                "course_id", "course_name", "period_from", "period_to",
+                "average_score", "assignment_completion_rate", "exam_completion_rate", "homework_completion_rate",
+                "exam_average", "homework_average",
+                "total_students", "total_assignments", "total_amount_of_exams", "total_amount_of_homeworks",
+                "forum_participation_rate", "forum_unique_participants",
+        }
+
+        record := []string{
+                stats.CourseID,
+                stats.CourseName,
+                stats.Period.From.Format("2006-01-02"),
+                stats.Period.To.Format("2006-01-02"),
+                fmtFloat(stats.AverageScore),
+                fmtFloat(stats.AssignmentCompletion),
+                fmtFloat(stats.ExamCompletionRate),
+                fmtFloat(stats.HomeworkCompletionRate),
+                fmtFloat(stats.ExamScoreAverage),
+                fmtFloat(stats.HomeworkScoreAverage),
+                strconv.Itoa(stats.TotalStudents),
+                strconv.Itoa(stats.TotalAssignments),
+                strconv.Itoa(stats.TotalAmountOfExams),
+                strconv.Itoa(stats.TotalAmountOfHomeworks),
+                fmtFloat(stats.ForumParticipationRate),
+                strconv.Itoa(stats.ForumUniqueParticipants),
+        }
+
+        writer.Write(header)
+        writer.Write(record)
+        writer.Flush()
+
+        filename := "course_stats_" + courseID + ".csv"
+        return buf.Bytes(), filename, nil</span>
+}
+
+// ExportStudentStatsCSV generates a CSV for a single student's statistics and returns the CSV bytes and filename
+func (s *StatisticsService) ExportStudentStatsCSV(
+        ctx context.Context,
+        studentID string,
+        courseID string,
+        from, to time.Time,
+) ([]byte, string, error) <span class="cov8" title="1">{
+        // Get course details for date defaults if courseID is provided
+        var filteredAssignments []*model.Assignment
+        var courseTitle string
+
+        course, err := s.courseRepo.GetCourseById(courseID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, "", err
+        }</span>
+        <span class="cov8" title="1">if from.IsZero() </span><span class="cov8" title="1">{
+                from = course.StartDate
+        }</span>
+        <span class="cov8" title="1">if to.IsZero() </span><span class="cov8" title="1">{
+                to = course.EndDate
+        }</span>
+        <span class="cov8" title="1">assignments, err := s.assignmentRepo.GetAssignmentsByCourseId(courseID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, "", err
+        }</span>
+        <span class="cov8" title="1">filteredAssignments, _, _ = s.filterAndSeparateAssignments(assignments, from, to)
+        courseTitle = course.Title
+
+        // Get student statistics
+        studentStats := s.GetStudentStatistics(ctx, studentID, courseID, filteredAssignments)
+
+        buf := new(bytes.Buffer)
+        writer := csv.NewWriter(buf)
+        writer.Comma = ';'
+
+        header := []string{
+                "student_id", "course_id", "course_name", "period_from", "period_to",
+                "average_score", "completion_rate", "participation_rate",
+                "completed_assignments", "exam_score", "exam_completed", "homework_score", "homework_completed",
+                "forum_posts", "forum_participated", "forum_questions", "forum_answers",
+        }
+
+        record := []string{
+                studentID,
+                courseID,
+                courseTitle,
+                from.Format("2006-01-02"),
+                to.Format("2006-01-02"),
+                fmtFloat(studentStats.PerformanceSummary.AverageScore),
+                fmtFloat(studentStats.PerformanceSummary.CompletionRate),
+                fmtFloat(studentStats.PerformanceSummary.ParticipationRate),
+                strconv.Itoa(studentStats.CompletedAssignments),
+                fmtFloat(studentStats.ExamScore),
+                strconv.Itoa(studentStats.ExamCompleted),
+                fmtFloat(studentStats.HomeworkScore),
+                strconv.Itoa(studentStats.HomeworkCompleted),
+                strconv.Itoa(studentStats.ForumPosts),
+                strconv.FormatBool(studentStats.ForumParticipated),
+                strconv.Itoa(studentStats.ForumQuestions),
+                strconv.Itoa(studentStats.ForumAnswers),
+        }
+
+        writer.Write(header)
+        writer.Write(record)
+        writer.Flush()
+
+        filename := "student_stats_" + studentID + ".csv"
+        return buf.Bytes(), filename, nil</span>
+}
+
+// ExportTeacherCoursesStatsCSV generates a CSV with stats for all courses of a teacher
+func (s *StatisticsService) ExportTeacherCoursesStatsCSV(
+        ctx context.Context,
+        teacherID string,
+        from, to time.Time,
+) ([]byte, string, error) <span class="cov8" title="1">{
+        // Get all courses for the teacher
+        courses, err := s.courseRepo.GetCourseByTeacherId(teacherID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, "", err
+        }</span>
+
+        <span class="cov8" title="1">buf := new(bytes.Buffer)
+        writer := csv.NewWriter(buf)
+        writer.Comma = ';'
+
+        header := []string{
+                "course_id", "course_name", "period_from", "period_to",
+                "average_score", "assignment_completion_rate", "exam_completion_rate", "homework_completion_rate",
+                "exam_average", "homework_average",
+                "total_students", "total_assignments", "total_amount_of_exams", "total_amount_of_homeworks",
+                "forum_participation_rate", "forum_unique_participants",
+        }
+        writer.Write(header)
+
+        for _, course := range courses </span><span class="cov8" title="1">{
+                stats, err := s.GetCourseStatistics(ctx, course.ID.Hex(), from, to)
+                if err != nil </span><span class="cov0" title="0">{
+                        // Optionally skip this course or write an error row; here we skip
+                        continue</span>
+                }
+                <span class="cov8" title="1">record := []string{
+                        stats.CourseID,
+                        stats.CourseName,
+                        stats.Period.From.Format("2006-01-02"),
+                        stats.Period.To.Format("2006-01-02"),
+                        fmtFloat(stats.AverageScore),
+                        fmtFloat(stats.AssignmentCompletion),
+                        fmtFloat(stats.ExamCompletionRate),
+                        fmtFloat(stats.HomeworkCompletionRate),
+                        fmtFloat(stats.ExamScoreAverage),
+                        fmtFloat(stats.HomeworkScoreAverage),
+                        strconv.Itoa(stats.TotalStudents),
+                        strconv.Itoa(stats.TotalAssignments),
+                        strconv.Itoa(stats.TotalAmountOfExams),
+                        strconv.Itoa(stats.TotalAmountOfHomeworks),
+                        fmtFloat(stats.ForumParticipationRate),
+                        strconv.Itoa(stats.ForumUniqueParticipants),
+                }
+                writer.Write(record)</span>
+        }
+        <span class="cov8" title="1">writer.Flush()
+
+        filename := "teacher_courses_stats_" + teacherID + ".csv"
+        return buf.Bytes(), filename, nil</span>
+}
+
+//// ------------------------------------------------***********------------------------------------------------ ////
+//// ----------------------------------------------HELPER FUNCTIONS------------------------------------------------ ////
+//// ------------------------------------------------***********------------------------------------------------ ////
+
+// Retrieves statistics for a specific course
+func (s *StatisticsService) GetCourseStatistics(
+        ctx context.Context,
+        courseID string,
+        from, to time.Time,
+) (*schemas.CourseStatisticsResponse, error) <span class="cov8" title="1">{
+        // Get course details first to access start and end dates
+        course, err := s.courseRepo.GetCourseById(courseID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Set default time range if not provided - use course start and end dates
+        <span class="cov8" title="1">if from.IsZero() </span><span class="cov8" title="1">{
+                from = course.StartDate
+        }</span>
+        <span class="cov8" title="1">if to.IsZero() </span><span class="cov8" title="1">{
+                to = course.EndDate
+        }</span>
+
+        // Get all enrollments for the course
+        <span class="cov8" title="1">enrollments, err := s.enrollmentRepo.GetEnrollmentsByCourseId(courseID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Get all assignments for the course
+        <span class="cov8" title="1">assignments, err := s.assignmentRepo.GetAssignmentsByCourseId(courseID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Filter assignments by date and separate by type
+        <span class="cov8" title="1">filteredAssignments, examAssignments, homeworkAssignments := s.filterAndSeparateAssignments(assignments, from, to)
+
+        // Process each enrollment to gather student data
+        allStudentStats := make([]schemas.StudentStats, 0, len(enrollments))
+        for _, enrollment := range enrollments </span><span class="cov8" title="1">{
+                studentStats := s.GetStudentStatistics(ctx, enrollment.StudentID, courseID, filteredAssignments)
+                allStudentStats = append(allStudentStats, studentStats)
+        }</span>
+
+        // Aggregate stats
+        <span class="cov8" title="1">totalScore := 0.0
+        totalItems := 0
+        examScore := 0.0
+        examCompleted := 0
+        homeworkScore := 0.0
+        homeworkCompleted := 0
+        completedCount := 0
+        forumParticipantsCount := 0
+
+        for _, studentStats := range allStudentStats </span><span class="cov8" title="1">{
+                totalScore += studentStats.PerformanceSummary.AverageScore
+                totalItems++
+                examScore += studentStats.ExamScore
+                examCompleted += studentStats.ExamCompleted
+                homeworkScore += studentStats.HomeworkScore
+                homeworkCompleted += studentStats.HomeworkCompleted
+                completedCount += studentStats.CompletedAssignments
+                if studentStats.ForumParticipated </span><span class="cov8" title="1">{
+                        forumParticipantsCount++
+                }</span>
+        }
+
+        // Calculate course average
+        <span class="cov8" title="1">courseAvg := 0.0
+        if totalItems &gt; 0 </span><span class="cov8" title="1">{
+                courseAvg = totalScore / float64(totalItems)
+        }</span>
+
+        // Calculate exam average
+        <span class="cov8" title="1">examAvg := 0.0
+        if examCompleted &gt; 0 </span><span class="cov8" title="1">{
+                examAvg = examScore / float64(examCompleted)
+        }</span>
+
+        // Calculate homework average
+        <span class="cov8" title="1">homeworkAvg := 0.0
+        if homeworkCompleted &gt; 0 </span><span class="cov8" title="1">{
+                homeworkAvg = homeworkScore / float64(homeworkCompleted)
+        }</span>
+
+        // Calculate exam completion rate
+        <span class="cov8" title="1">examCompletionRate := 0.0
+        if len(enrollments)*len(examAssignments) &gt; 0 </span><span class="cov8" title="1">{
+                examCompletionRate = float64(examCompleted) / float64(len(enrollments)*len(examAssignments)) * 100
+        }</span>
+
+        // Calculate homework completion rate
+        <span class="cov8" title="1">homeworkCompletionRate := 0.0
+        if len(enrollments)*len(homeworkAssignments) &gt; 0 </span><span class="cov8" title="1">{
+                homeworkCompletionRate = float64(homeworkCompleted) / float64(len(enrollments)*len(homeworkAssignments)) * 100
+        }</span>
+
+        // Calculate assignment completion rate across all students
+        <span class="cov8" title="1">assignmentCompletionRate := 0.0
+        if len(enrollments)*len(filteredAssignments) &gt; 0 </span><span class="cov8" title="1">{
+                assignmentCompletionRate = float64(completedCount) / float64(len(enrollments)*len(filteredAssignments)) * 100
+        }</span>
+
+        // Calculate forum participation rate
+        <span class="cov8" title="1">forumParticipationRate := 0.0
+        if len(enrollments) &gt; 0 </span><span class="cov8" title="1">{
+                forumParticipationRate = float64(forumParticipantsCount) / float64(len(enrollments)) * 100
+        }</span>
+
+        <span class="cov8" title="1">return &amp;schemas.CourseStatisticsResponse{
+                CourseID:   courseID,
+                CourseName: course.Title,
+                Period: schemas.Period{
+                        From: from,
+                        To:   to,
+                },
+                AverageScore:            courseAvg,
+                AssignmentCompletion:    assignmentCompletionRate,
+                ExamCompletionRate:      examCompletionRate,
+                HomeworkCompletionRate:  homeworkCompletionRate,
+                ExamScoreAverage:        examAvg,
+                HomeworkScoreAverage:    homeworkAvg,
+                TotalStudents:           len(enrollments),
+                TotalAssignments:        len(filteredAssignments),
+                TotalAmountOfExams:      len(examAssignments),
+                TotalAmountOfHomeworks:  len(homeworkAssignments),
+                ForumParticipationRate:  forumParticipationRate,
+                ForumUniqueParticipants: forumParticipantsCount,
+        }, nil</span>
+}
+
+// Helper function to format float with 2 decimals
+func fmtFloat(f float64) string <span class="cov8" title="1">{
+        return strconv.FormatFloat(f, 'f', 2, 64)
+}</span>
+
+// calculateStatsForStudent calculates all statistics for a single student
+func (s *StatisticsService) GetStudentStatistics(
+        ctx context.Context,
+        studentID string,
+        courseID string,
+        filteredAssignments []*model.Assignment,
+) schemas.StudentStats <span class="cov8" title="1">{
+        studentScore := 0.0
+        completedAssignments := 0
+        examScore := 0.0
+        examCompleted := 0
+        homeworkScore := 0.0
+        homeworkCompleted := 0
+
+        // Get submissions for this student
+        submissions, err := s.submissionRepo.GetByStudent(ctx, studentID)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Printf("Error getting submissions for student %s: %v", studentID, err)
+                return schemas.StudentStats{}
+        }</span>
+
+        // Calculate student statistics
+        <span class="cov8" title="1">for _, submission := range submissions </span><span class="cov8" title="1">{
+                // Only count submissions for this course's assignments
+                for _, assignment := range filteredAssignments </span><span class="cov8" title="1">{
+                        if submission.AssignmentID == assignment.ID.Hex() </span><span class="cov8" title="1">{
+                                // Count completion (submitted but not necessarily graded)
+                                if submission.Status != model.SubmissionStatusDraft </span><span class="cov8" title="1">{
+                                        completedAssignments++
+
+                                        // Count type-specific completion
+                                        switch assignment.Type </span>{
+                                        case "exam":<span class="cov8" title="1">
+                                                examCompleted++</span>
+                                        case "homework":<span class="cov8" title="1">
+                                                homeworkCompleted++</span>
+                                        }
+                                }
+
+                                // Calculate scores (only for graded submissions)
+                                <span class="cov8" title="1">if submission.Score != nil </span><span class="cov8" title="1">{
+                                        // Safe handling of nil Score
+                                        studentScore += *submission.Score
+
+                                        // Add to type-specific score totals
+                                        switch assignment.Type </span>{
+                                        case "exam":<span class="cov8" title="1">
+                                                examScore += *submission.Score</span>
+                                        case "homework":<span class="cov8" title="1">
+                                                homeworkScore += *submission.Score</span>
+                                        }
+                                }
+                        }
+                }
+        }
+
+        // Calculate student average
+        <span class="cov8" title="1">studentAvg := 0.0
+        if completedAssignments &gt; 0 </span><span class="cov8" title="1">{
+                studentAvg = studentScore / float64(completedAssignments)
+        }</span>
+
+        // Calculate completion rate
+        <span class="cov8" title="1">completionRate := 0.0
+        if len(filteredAssignments) &gt; 0 </span><span class="cov8" title="1">{
+                completionRate = float64(completedAssignments) / float64(len(filteredAssignments))
+        }</span>
+
+        // Get forum participation for this student
+        <span class="cov8" title="1">forumQuestions := 0
+        forumAnswers := 0
+        questions, _ := s.forumRepo.GetQuestionsByCourseId(courseID)
+        for _, question := range questions </span><span class="cov8" title="1">{
+                if question.AuthorID == studentID </span><span class="cov8" title="1">{
+                        forumQuestions++
+                }</span>
+                <span class="cov8" title="1">for _, answer := range question.Answers </span><span class="cov8" title="1">{
+                        if answer.AuthorID == studentID </span><span class="cov8" title="1">{
+                                forumAnswers++
+                        }</span>
+                }
+        }
+        <span class="cov8" title="1">forumParticipated := forumQuestions &gt; 0 || forumAnswers &gt; 0
+
+        // Calculate participation rate (simplified)
+        participationRate := 0.0
+        if len(filteredAssignments) &gt; 0 </span><span class="cov8" title="1">{
+                participationFactors := float64(completedAssignments + forumQuestions + forumAnswers)
+                totalFactors := float64(len(filteredAssignments) * 3) // Simple weighting
+                participationRate = participationFactors / totalFactors
+                if participationRate &gt; 1.0 </span><span class="cov0" title="0">{
+                        participationRate = 1.0 // Cap at 100%
+                }</span>
+        }
+
+        <span class="cov8" title="1">performanceSummary := schemas.StudentPerformanceSummary{
+                StudentID:         studentID,
+                AverageScore:      studentAvg,
+                CompletionRate:    completionRate * 100,    // Convert to percentage
+                ParticipationRate: participationRate * 100, // Convert to percentage
+        }
+
+        forumPosts := forumQuestions + forumAnswers
+
+        return schemas.StudentStats{
+                PerformanceSummary:   performanceSummary,
+                StudentScore:         studentScore,
+                CompletedAssignments: completedAssignments,
+                ExamScore:            examScore,
+                ExamCompleted:        examCompleted,
+                HomeworkScore:        homeworkScore,
+                HomeworkCompleted:    homeworkCompleted,
+                ForumPosts:           forumPosts,
+                ForumParticipated:    forumParticipated,
+                ForumQuestions:       forumQuestions,
+                ForumAnswers:         forumAnswers,
+        }</span>
+}
+
+// filterAndSeparateAssignments filters assignments by date range and separates them by type
+func (s *StatisticsService) filterAndSeparateAssignments(assignments []*model.Assignment, from, to time.Time) ([]*model.Assignment, []*model.Assignment, []*model.Assignment) <span class="cov8" title="1">{
+        filteredAssignments := []*model.Assignment{}
+        examAssignments := []*model.Assignment{}
+        homeworkAssignments := []*model.Assignment{}
+
+        for _, assignment := range assignments </span><span class="cov8" title="1">{
+                // Check if assignment is within the date range
+                if (assignment.DueDate.After(from) || assignment.DueDate.Equal(from)) &amp;&amp;
+                        (assignment.DueDate.Before(to) || assignment.DueDate.Equal(to)) </span><span class="cov8" title="1">{
+                        filteredAssignments = append(filteredAssignments, assignment)
+
+                        // Separate by type
+                        switch assignment.Type </span>{
+                        case "exam":<span class="cov8" title="1">
+                                examAssignments = append(examAssignments, assignment)</span>
+                        case "homework":<span class="cov8" title="1">
+                                homeworkAssignments = append(homeworkAssignments, assignment)</span>
+                        }
+                }
+        }
+        <span class="cov8" title="1">return filteredAssignments, examAssignments, homeworkAssignments</span>
+}
+</pre>
+		
+		<pre class="file" id="file22" style="display: none">package service
 
 import (
         "context"
@@ -5472,9 +6146,9 @@ func (s *SubmissionService) SubmitSubmission(ctx context.Context, submissionID s
         submission.UpdatedAt = now
 
         // Check if submission is late
-        if now.After(assignment.DueDate) </span><span class="cov0" title="0">{
+        if now.After(assignment.DueDate) </span><span class="cov8" title="1">{
                 gracePeriodEnd := assignment.DueDate.Add(time.Duration(assignment.GracePeriod) * time.Minute)
-                if now.After(gracePeriodEnd) </span><span class="cov0" title="0">{
+                if now.After(gracePeriodEnd) </span><span class="cov8" title="1">{
                         submission.Status = model.SubmissionStatusLate
                 }</span>
         } else<span class="cov8" title="1"> {
@@ -5583,7 +6257,7 @@ func (s *SubmissionService) ValidateTeacherPermissions(ctx context.Context, assi
 }
 </pre>
 		
-		<pre class="file" id="file21" style="display: none">package testutil
+		<pre class="file" id="file23" style="display: none">package testutil
 
 import (
         "context"
