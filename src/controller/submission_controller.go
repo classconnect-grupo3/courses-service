@@ -287,3 +287,50 @@ func (c *SubmissionController) GradeSubmission(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gradedSubmission)
 }
+
+// @Summary Generate feedback summary
+// @Description Generate an AI summary of the feedback for a submission
+// @Tags submissions
+// @Accept json
+// @Produce json
+// @Param assignmentId path string true "Assignment ID"
+// @Param id path string true "Submission ID"
+// @Success 200 {object} schemas.AiSummaryResponse
+// @Router /assignments/{assignmentId}/submissions/{id}/feedback-summary [get]
+func (c *SubmissionController) GenerateFeedbackSummary(ctx *gin.Context) {
+	assignmentID := ctx.Param("assignmentId")
+	id := ctx.Param("id")
+
+	// Get teacher info from context
+	teacherUUID := ctx.GetString("teacher_uuid")
+
+	// Validate teacher permissions for this assignment
+	if err := c.submissionService.ValidateTeacherPermissions(ctx, assignmentID, teacherUUID); err != nil {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Validate submission belongs to the assignment
+	submission, err := c.submissionService.GetSubmission(ctx, id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if submission == nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "submission not found"})
+		return
+	}
+	if submission.AssignmentID != assignmentID {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "submission not found"})
+		return
+	}
+
+	// Generate feedback summary
+	summary, err := c.submissionService.GenerateFeedbackSummary(ctx, id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, summary)
+}

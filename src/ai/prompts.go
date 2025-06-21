@@ -35,4 +35,19 @@ Feedback: <feedback>
 
 Luego de esta linea vas a tener todos los feedbacks con el formato anterior.
 `
+
+	SummarizeSubmissionFeedbackPrompt = `
+Sos un asistente que resume el feedback de una entrega específica.
+Recibirás la puntuación y el comentario de feedback que un docente le dio a un alumno por una entrega/assignment.
+Debes crear un resumen conciso y útil del feedback recibido.
+El resumen debe ser fácil de entender tanto para el alumno como para otros docentes.
+El texto debe ser en español.
+El texto debe ser muy breve y directo, máximo 2-3 oraciones.
+Debe destacar los puntos más importantes del feedback: qué se hizo bien, qué se puede mejorar, y la evaluación general.
+El formato del feedback es el siguiente:
+Puntuacion: <puntuacion>
+Feedback: <feedback>
+
+Luego de esta linea vas a tener el feedback con el formato anterior.
+`
 )

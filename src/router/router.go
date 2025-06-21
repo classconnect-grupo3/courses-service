@@ -95,6 +95,7 @@ func InitializeSubmissionRoutes(r *gin.Engine, controller *controller.Submission
 	teacherAuthGroup := r.Group("")
 	teacherAuthGroup.Use(middleware.TeacherAuth())
 	teacherAuthGroup.PUT("/assignments/:assignmentId/submissions/:id/grade", controller.GradeSubmission)
+	teacherAuthGroup.GET("/assignments/:assignmentId/submissions/:id/feedback-summary", controller.GenerateFeedbackSummary)
 
 	// Esta ruta no requiere autenticación de estudiante
 	r.GET("/assignments/:assignmentId/submissions", controller.GetSubmissionsByAssignment)
@@ -183,7 +184,7 @@ func NewRouter(config *config.Config) *gin.Engine {
 	courseService := service.NewCourseService(courseRepo, enrollmentRepo)
 	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
 	assignmentService := service.NewAssignmentService(assignmentRepository, courseService)
-	submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository, courseService)
+	submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository, courseService, aiClient)
 	moduleService := service.NewModuleService(moduleRepository)
 	forumService := service.NewForumService(forumRepository, courseRepo)
 	statisticsService := service.NewStatisticsService(courseRepo, assignmentRepository, enrollmentRepo, submissionRepository, forumRepository)

@@ -276,7 +276,7 @@ func TestCreateSubmission(t *testing.T) {
 	submissionRepo := &SubmissionMockRepository{}
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	submission := &model.Submission{
 		AssignmentID: "assignment123",
@@ -303,7 +303,7 @@ func TestCreateSubmissionWithNonexistentAssignment(t *testing.T) {
 	submissionRepo := &SubmissionMockRepository{}
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	submission := &model.Submission{
 		AssignmentID: "nonexistent-assignment",
@@ -320,7 +320,7 @@ func TestCreateSubmissionWithRepositoryError(t *testing.T) {
 	submissionRepo := &SubmissionMockRepositoryWithError{}
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	submission := &model.Submission{
 		AssignmentID: "assignment123",
@@ -338,7 +338,7 @@ func TestGetSubmission(t *testing.T) {
 	submissionRepo := &SubmissionMockRepository{}
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	submission, err := submissionService.GetSubmission(context.TODO(), "valid-submission-id")
 	assert.NoError(t, err)
@@ -351,7 +351,7 @@ func TestGetSubmissionWithNonexistentID(t *testing.T) {
 	submissionRepo := &SubmissionMockRepository{}
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	submission, err := submissionService.GetSubmission(context.TODO(), "nonexistent")
 	assert.NoError(t, err)
@@ -363,7 +363,7 @@ func TestGetOrCreateSubmissionExisting(t *testing.T) {
 	submissionRepo := &SubmissionMockRepository{}
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	submission, err := submissionService.GetOrCreateSubmission(context.TODO(), "existing-assignment", "existing-student", "Existing Student")
 	assert.NoError(t, err)
@@ -377,7 +377,7 @@ func TestGetOrCreateSubmissionNew(t *testing.T) {
 	submissionRepo := &SubmissionMockRepository{}
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	submission, err := submissionService.GetOrCreateSubmission(context.TODO(), "new-assignment", "new-student", "New Student")
 	assert.NoError(t, err)
@@ -394,7 +394,7 @@ func TestGradeSubmission(t *testing.T) {
 	submissionRepo := &SubmissionMockRepository{}
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	score := 85.5
 	feedback := "Great work!"
@@ -411,7 +411,7 @@ func TestGradeSubmissionWithNonexistentSubmission(t *testing.T) {
 	submissionRepo := &SubmissionMockRepository{}
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	score := 85.5
 	feedback := "Great work!"
@@ -427,7 +427,7 @@ func TestValidateTeacherPermissionsMainTeacher(t *testing.T) {
 	submissionRepo := &SubmissionMockRepository{}
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	err := submissionService.ValidateTeacherPermissions(context.TODO(), "assignment123", "teacher123")
 	assert.NoError(t, err)
@@ -437,7 +437,7 @@ func TestValidateTeacherPermissionsAuxTeacher(t *testing.T) {
 	submissionRepo := &SubmissionMockRepository{}
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	err := submissionService.ValidateTeacherPermissions(context.TODO(), "assignment123", "aux-teacher1")
 	assert.NoError(t, err)
@@ -447,7 +447,7 @@ func TestValidateTeacherPermissionsUnauthorized(t *testing.T) {
 	submissionRepo := &SubmissionMockRepository{}
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	err := submissionService.ValidateTeacherPermissions(context.TODO(), "assignment123", "unauthorized-teacher")
 	assert.Error(t, err)
@@ -459,7 +459,7 @@ func TestValidateTeacherPermissionsWithNonexistentAssignment(t *testing.T) {
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
 
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	err := submissionService.ValidateTeacherPermissions(context.Background(), "nonexistent-assignment", "teacher123")
 	assert.Error(t, err)
@@ -472,7 +472,7 @@ func TestUpdateSubmission(t *testing.T) {
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
 
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	submission := &model.Submission{
 		ID:           mustParseSubmissionObjectID("valid-submission-id"),
@@ -499,7 +499,7 @@ func TestUpdateSubmissionWithNonexistentSubmission(t *testing.T) {
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
 
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	submission := &model.Submission{
 		ID:           mustParseSubmissionObjectID("nonexistent"),
@@ -519,7 +519,7 @@ func TestUpdateSubmissionWithRepositoryError(t *testing.T) {
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
 
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	submission := &model.Submission{
 		ID:           mustParseSubmissionObjectID("valid-submission-id"),
@@ -540,7 +540,7 @@ func TestSubmitSubmission(t *testing.T) {
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
 
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	err := submissionService.SubmitSubmission(context.Background(), "valid-submission-id")
 	assert.NoError(t, err)
@@ -551,7 +551,7 @@ func TestSubmitSubmissionWithNonexistentSubmission(t *testing.T) {
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
 
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	err := submissionService.SubmitSubmission(context.Background(), "nonexistent")
 	assert.Error(t, err)
@@ -564,7 +564,7 @@ func TestSubmitSubmissionWithNonexistentAssignment(t *testing.T) {
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
 
-	submissionService := service.NewSubmissionService(submissionRepoCustom, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepoCustom, assignmentRepo, courseService, nil)
 
 	err := submissionService.SubmitSubmission(context.Background(), "submission-with-bad-assignment")
 	assert.Error(t, err)
@@ -623,7 +623,7 @@ func TestSubmitSubmissionWithRepositoryError(t *testing.T) {
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
 
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	err := submissionService.SubmitSubmission(context.Background(), "valid-submission-id")
 	assert.Error(t, err)
@@ -636,7 +636,7 @@ func TestGetSubmissionsByAssignment(t *testing.T) {
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
 
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	submissions, err := submissionService.GetSubmissionsByAssignment(context.Background(), "assignment123")
 	assert.NoError(t, err)
@@ -651,7 +651,7 @@ func TestGetSubmissionsByAssignmentWithRepositoryError(t *testing.T) {
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
 
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	submissions, err := submissionService.GetSubmissionsByAssignment(context.Background(), "assignment123")
 	assert.Error(t, err)
@@ -665,7 +665,7 @@ func TestGetSubmissionsByStudent(t *testing.T) {
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
 
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	submissions, err := submissionService.GetSubmissionsByStudent(context.Background(), "student123")
 	assert.NoError(t, err)
@@ -680,7 +680,7 @@ func TestGetSubmissionsByStudentWithRepositoryError(t *testing.T) {
 	assignmentRepo := &AssignmentMockRepository{}
 	courseService := &CourseMockService{}
 
-	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService)
+	submissionService := service.NewSubmissionService(submissionRepo, assignmentRepo, courseService, nil)
 
 	submissions, err := submissionService.GetSubmissionsByStudent(context.Background(), "student123")
 	assert.Error(t, err)
