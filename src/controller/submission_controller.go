@@ -214,6 +214,8 @@ func (c *SubmissionController) sendCorrectionNotification(submission *model.Subm
 		submission.StudentUUID,
 		submission.Score,
 		submission.Feedback,
+		submission.AIScore,
+		submission.AIFeedback,
 		correctionType,
 		needsManualReview,
 	)

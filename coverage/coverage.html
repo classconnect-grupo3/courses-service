@@ -2323,6 +2323,8 @@ func (c *SubmissionController) sendCorrectionNotification(submission *model.Subm
                 submission.StudentUUID,
                 submission.Score,
                 submission.Feedback,
+                submission.AIScore,
+                submission.AIFeedback,
                 correctionType,
                 needsManualReview,
         )
@@ -6576,8 +6578,8 @@ func (s *SubmissionService) AutoCorrectSubmission(ctx context.Context, submissio
         }</span>
 
         // Update submission with AI results
-        <span class="cov8" title="1">submission.Score = &amp;correctionResult.Score
-        submission.Feedback = correctionResult.Feedback
+        <span class="cov8" title="1">submission.AIScore = &amp;correctionResult.AIScore
+        submission.AIFeedback = correctionResult.AIFeedback
         submission.NeedsManualReview = &amp;correctionResult.NeedsManualReview
         submission.UpdatedAt = time.Now()
 

@@ -8,7 +8,7 @@ type GradeSubmissionRequest struct {
 
 // AiCorrectionResponse represents the response from AI correction
 type AiCorrectionResponse struct {
-	Score             float64 `json:"score"`
-	Feedback          string  `json:"feedback"`
+	AIScore           float64 `json:"ai_score"`
+	AIFeedback        string  `json:"ai_feedback"`
 	NeedsManualReview bool    `json:"needs_manual_review"`
 }

@@ -156,8 +156,8 @@ func (c *AiClient) CorrectSubmission(assignment *model.Assignment, submission *m
 	if c.Client == nil {
 		// Return a mock response for test environment
 		return &schemas.AiCorrectionResponse{
-			Score:             assignment.TotalPoints * 0.8, // Mock score
-			Feedback:          "Corrección automática realizada en entorno de test",
+			AIScore:           assignment.TotalPoints * 0.8, // Mock score
+			AIFeedback:        "Corrección automática realizada en entorno de test",
 			NeedsManualReview: false,
 		}, nil
 	}
@@ -189,8 +189,8 @@ func (c *AiClient) CorrectSubmission(assignment *model.Assignment, submission *m
 				log.Printf("Failed to parse AI correction response: %v", err)
 				// Return a fallback response
 				return &schemas.AiCorrectionResponse{
-					Score:             0,
-					Feedback:          "Error al procesar la corrección automática. Requiere revisión manual.",
+					AIScore:           0,
+					AIFeedback:        "Error al procesar la corrección automática. Requiere revisión manual.",
 					NeedsManualReview: true,
 				}, nil
 			}

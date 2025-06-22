@@ -189,6 +189,8 @@ type SubmissionCorrectedMessage struct {
 	StudentID         string    `json:"student_id"`
 	Score             *float64  `json:"score,omitempty"`
 	Feedback          string    `json:"feedback"`
+	AIScore           *float64  `json:"ai_score,omitempty"`
+	AIFeedback        string    `json:"ai_feedback"`
 	CorrectionType    string    `json:"correction_type"` // "automatic", "needs_manual_review"
 	NeedsManualReview bool      `json:"needs_manual_review"`
 	CorrectedAt       time.Time `json:"corrected_at"`
@@ -200,6 +202,8 @@ func NewSubmissionCorrectedMessage(
 	studentID string,
 	score *float64,
 	feedback string,
+	aiScore *float64,
+	aiFeedback string,
 	correctionType string,
 	needsManualReview bool,
 ) *SubmissionCorrectedMessage {
@@ -210,6 +214,8 @@ func NewSubmissionCorrectedMessage(
 		StudentID:         studentID,
 		Score:             score,
 		Feedback:          feedback,
+		AIScore:           aiScore,
+		AIFeedback:        aiFeedback,
 		CorrectionType:    correctionType,
 		NeedsManualReview: needsManualReview,
 		CorrectedAt:       time.Now(),
