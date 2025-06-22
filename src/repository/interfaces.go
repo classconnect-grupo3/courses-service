@@ -43,6 +43,7 @@ type EnrollmentRepositoryInterface interface {
 	GetEnrollmentByStudentIdAndCourseId(studentID, courseID string) (*model.Enrollment, error)
 	CreateStudentFeedback(feedbackRequest model.StudentFeedback, enrollmentID string) error
 	GetFeedbackByStudentId(studentID string, getFeedbackByStudentIdRequest schemas.GetFeedbackByStudentIdRequest) ([]*model.StudentFeedback, error)
+	ApproveStudent(studentID, courseID string) error
 }
 
 type ModuleRepositoryInterface interface {

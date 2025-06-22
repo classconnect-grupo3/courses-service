@@ -16,7 +16,7 @@ RUN mkdir -p /app/coverage
 
 # Variable para definir los paquetes a testear (ej: "./src/..." o "./src/domain/...")
 ENV TEST_PACKAGES="./src/..."
-# ENV TEST_PACKAGES="./src/tests/service/"
+# ENV TEST_PACKAGES="./src/tests/controller/"
 
 # Comando para ejecutar pruebas con cobertura
 CMD ["sh", "-c", "go test -p 1 -covermode=set -coverprofile=/app/coverage/coverage.out -coverpkg=${TEST_PACKAGES} -v ${TEST_PACKAGES} && \

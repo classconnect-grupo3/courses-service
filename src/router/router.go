@@ -110,6 +110,11 @@ func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.Enrollmen
 	r.POST("/courses/:id/student-feedback", controller.CreateFeedback)
 	r.PUT("/feedback/student/:id", controller.GetFeedbackByStudentId)
 	r.GET("/feedback/student/:id/summary", controller.GetStudentFeedbackSummary)
+
+	// Aplicar el middleware de autenticación de docentes para aprobar estudiantes
+	teacherAuthGroup := r.Group("")
+	teacherAuthGroup.Use(middleware.TeacherAuth())
+	teacherAuthGroup.PUT("/courses/:id/students/:studentId/approve", controller.ApproveStudent)
 }
 
 func InitializeForumRoutes(r *gin.Engine, controller *controller.ForumController) {

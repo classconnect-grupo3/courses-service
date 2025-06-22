@@ -6,6 +6,7 @@ import (
 	"courses-service/src/schemas"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -286,4 +287,32 @@ func (r *EnrollmentRepository) GetFeedbackByStudentId(studentID string, getFeedb
 	}
 
 	return allFeedbacks, nil
+}
+
+// ApproveStudent updates an enrollment status to completed and sets completion date
+func (r *EnrollmentRepository) ApproveStudent(studentID, courseID string) error {
+	filter := bson.M{
+		"student_id": studentID,
+		"course_id":  courseID,
+		"status":     model.EnrollmentStatusActive, // Only approve active enrollments
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"status":         model.EnrollmentStatusCompleted,
+			"completed_date": time.Now(),
+			"updated_at":     time.Now(),
+		},
+	}
+
+	result, err := r.enrollmentCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return fmt.Errorf("error updating enrollment: %v", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("enrollment not found or student is not active in course %s", courseID)
+	}
+
+	return nil
 }

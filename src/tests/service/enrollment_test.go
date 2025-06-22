@@ -23,6 +23,9 @@ func (m *MockEnrollmentRepositoryForEnrollmentService) GetEnrollmentsByCourseId(
 	if courseID == "error-course" {
 		return nil, errors.New("Error getting enrollments from repository")
 	}
+	if courseID == "enrollment-repo-error-course" {
+		return nil, errors.New("Error getting enrollments from repository")
+	}
 	if courseID == "valid-course" {
 		return []*model.Enrollment{
 			{
@@ -153,6 +156,17 @@ func (m *MockEnrollmentRepositoryForEnrollmentService) GetFeedbackByStudentId(st
 	return []*model.StudentFeedback{}, nil
 }
 
+// ApproveStudent implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepositoryForEnrollmentService) ApproveStudent(studentID, courseID string) error {
+	if studentID == "error-student" {
+		return errors.New("error approving student")
+	}
+	if courseID == "error-course-repo" {
+		return errors.New("error approving student")
+	}
+	return nil
+}
+
 type MockCourseRepositoryForEnrollment struct{}
 
 // GetCourseFeedback implements repository.CourseRepositoryInterface.
@@ -168,6 +182,18 @@ func (m *MockCourseRepositoryForEnrollment) CreateCourseFeedback(courseID string
 func (m *MockCourseRepositoryForEnrollment) GetCourseById(id string) (*model.Course, error) {
 	if id == "non-existent-course" {
 		return nil, errors.New("Course not found")
+	}
+	if id == "error-course" {
+		return nil, errors.New("Course not found")
+	}
+	if id == "enrollment-repo-error-course" {
+		return &model.Course{
+			ID:             primitive.NewObjectID(),
+			Title:          "Enrollment Repo Error Course",
+			Capacity:       10,
+			StudentsAmount: 1,
+			TeacherUUID:    "teacher-123",
+		}, nil
 	}
 	if id == "full-course" {
 		return &model.Course{
@@ -390,7 +416,7 @@ func TestGetEnrollmentsByCourseIdWithEmptyCourse(t *testing.T) {
 func TestGetEnrollmentsByCourseIdWithRepositoryError(t *testing.T) {
 	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
 
-	enrollments, err := enrollmentService.GetEnrollmentsByCourseId("error-course")
+	enrollments, err := enrollmentService.GetEnrollmentsByCourseId("enrollment-repo-error-course")
 	assert.Error(t, err)
 	assert.Nil(t, enrollments)
 	assert.Contains(t, err.Error(), "error getting enrollments by course ID")
@@ -888,4 +914,221 @@ func TestGetFeedbackByStudentIdWithFilters(t *testing.T) {
 			assert.Equal(t, tc.expectedResults, len(feedback))
 		})
 	}
+}
+
+// Tests for ApproveStudent
+func TestApproveStudent(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	err := enrollmentService.ApproveStudent("valid-student", "valid-course")
+	assert.NoError(t, err)
+}
+
+func TestApproveStudentWithEmptyStudentID(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	err := enrollmentService.ApproveStudent("", "valid-course")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "student ID is required")
+}
+
+func TestApproveStudentWithEmptyCourseID(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	err := enrollmentService.ApproveStudent("valid-student", "")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "course ID is required")
+}
+
+func TestApproveStudentWithBothEmptyIDs(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	err := enrollmentService.ApproveStudent("", "")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "student ID is required")
+}
+
+func TestApproveStudentWithWhitespaceStudentID(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	err := enrollmentService.ApproveStudent("   ", "valid-course")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "student ID is required")
+}
+
+func TestApproveStudentWithWhitespaceCourseID(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	err := enrollmentService.ApproveStudent("valid-student", "   ")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "course ID is required")
+}
+
+func TestApproveStudentWithNonExistentCourse(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	err := enrollmentService.ApproveStudent("valid-student", "non-existent-course")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "course not found")
+}
+
+func TestApproveStudentWithCourseRepositoryError(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	err := enrollmentService.ApproveStudent("valid-student", "error-course")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "course not found")
+}
+
+func TestApproveStudentWithRepositoryError(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	err := enrollmentService.ApproveStudent("error-student", "valid-course")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "error approving student")
+}
+
+func TestApproveStudentWithRepositoryErrorFromCourseID(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	err := enrollmentService.ApproveStudent("valid-student", "error-course-repo")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "error approving student")
+}
+
+func TestApproveStudentWithValidUUIDs(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	testCases := []struct {
+		name      string
+		studentID string
+		courseID  string
+		shouldErr bool
+	}{
+		{
+			name:      "Valid UUID format student and course",
+			studentID: "123e4567-e89b-12d3-a456-426614174000",
+			courseID:  "987fcdeb-51c2-43d4-b567-531028391849",
+			shouldErr: false,
+		},
+		{
+			name:      "Valid standard string IDs",
+			studentID: "student-123",
+			courseID:  "course-456",
+			shouldErr: false,
+		},
+		{
+			name:      "Mixed valid formats",
+			studentID: "123e4567-e89b-12d3-a456-426614174000",
+			courseID:  "course-456",
+			shouldErr: false,
+		},
+		{
+			name:      "Very long valid IDs",
+			studentID: "very-long-student-id-with-many-characters-that-should-still-work",
+			courseID:  "very-long-course-id-with-many-characters-that-should-still-work",
+			shouldErr: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := enrollmentService.ApproveStudent(tc.studentID, tc.courseID)
+			if tc.shouldErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestApproveStudentWithSpecialCharacters(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	testCases := []struct {
+		name      string
+		studentID string
+		courseID  string
+		shouldErr bool
+	}{
+		{
+			name:      "IDs with underscores",
+			studentID: "student_123",
+			courseID:  "course_456",
+			shouldErr: false,
+		},
+		{
+			name:      "IDs with hyphens",
+			studentID: "student-123",
+			courseID:  "course-456",
+			shouldErr: false,
+		},
+		{
+			name:      "IDs with dots",
+			studentID: "student.123",
+			courseID:  "course.456",
+			shouldErr: false,
+		},
+		{
+			name:      "IDs with numbers",
+			studentID: "123456",
+			courseID:  "789012",
+			shouldErr: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := enrollmentService.ApproveStudent(tc.studentID, tc.courseID)
+			if tc.shouldErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestApproveStudentCourseValidation(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	// Test that course validation happens before repository call
+	err := enrollmentService.ApproveStudent("valid-student", "non-existent-course")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "course not found")
+}
+
+func TestApproveStudentErrorPropagation(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	// Test that repository errors are properly wrapped
+	err := enrollmentService.ApproveStudent("error-student", "valid-course")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "error approving student")
+	assert.Contains(t, err.Error(), "error approving student") // Repository error should be wrapped
+}
+
+func TestApproveStudentServiceLayerValidation(t *testing.T) {
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, &MockCourseRepositoryForEnrollment{})
+
+	// Test input sanitization - trimming whitespace
+	err := enrollmentService.ApproveStudent("  valid-student  ", "  valid-course  ")
+	assert.NoError(t, err) // Should succeed since our implementation now trims whitespace
+}
+
+func TestApproveStudentNilService(t *testing.T) {
+	// Test graceful handling when service dependencies are nil
+	enrollmentService := service.NewEnrollmentService(nil, &MockCourseRepositoryForEnrollment{})
+
+	err := enrollmentService.ApproveStudent("valid-student", "valid-course")
+	assert.Error(t, err) // Should handle nil repository gracefully
+}
+
+func TestApproveStudentNilCourseRepo(t *testing.T) {
+	// Test graceful handling when course repository is nil
+	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, nil)
+
+	err := enrollmentService.ApproveStudent("valid-student", "valid-course")
+	assert.Error(t, err) // Should handle nil repository gracefully
 }

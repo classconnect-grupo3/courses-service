@@ -61,7 +61,7 @@
 				
 				<option value="file2">courses-service/src/controller/courses_controller.go (88.0%)</option>
 				
-				<option value="file3">courses-service/src/controller/enrollment_controller.go (82.5%)</option>
+				<option value="file3">courses-service/src/controller/enrollment_controller.go (84.5%)</option>
 				
 				<option value="file4">courses-service/src/controller/forum_controller.go (98.6%)</option>
 				
@@ -69,7 +69,7 @@
 				
 				<option value="file6">courses-service/src/controller/statistics_controller.go (48.6%)</option>
 				
-				<option value="file7">courses-service/src/controller/submission_controller.go (76.6%)</option>
+				<option value="file7">courses-service/src/controller/submission_controller.go (77.1%)</option>
 				
 				<option value="file8">courses-service/src/database/connection.go (71.4%)</option>
 				
@@ -77,7 +77,7 @@
 				
 				<option value="file10">courses-service/src/repository/course_repository.go (82.0%)</option>
 				
-				<option value="file11">courses-service/src/repository/enrollment_repository.go (81.4%)</option>
+				<option value="file11">courses-service/src/repository/enrollment_repository.go (76.2%)</option>
 				
 				<option value="file12">courses-service/src/repository/forum_repository.go (87.1%)</option>
 				
@@ -91,7 +91,7 @@
 				
 				<option value="file17">courses-service/src/service/course_service.go (93.8%)</option>
 				
-				<option value="file18">courses-service/src/service/enrollment_service.go (96.2%)</option>
+				<option value="file18">courses-service/src/service/enrollment_service.go (96.6%)</option>
 				
 				<option value="file19">courses-service/src/service/forum_service.go (87.4%)</option>
 				
@@ -99,7 +99,7 @@
 				
 				<option value="file21">courses-service/src/service/statistics_service.go (93.7%)</option>
 				
-				<option value="file22">courses-service/src/service/submission_service.go (72.3%)</option>
+				<option value="file22">courses-service/src/service/submission_service.go (72.7%)</option>
 				
 				<option value="file23">courses-service/src/tests/testutil/db_setup.go (72.2%)</option>
 				
@@ -1149,6 +1149,48 @@ func (c *EnrollmentController) GetStudentFeedbackSummary(ctx *gin.Context) <span
 
         <span class="cov0" title="0">slog.Debug("Student feedback summary retrieved", "summary", summary)
         ctx.JSON(http.StatusOK, schemas.AiSummaryResponse{Summary: summary})</span>
+}
+
+// @Summary Approve a student in a course
+// @Description Approve a student by changing their enrollment status to completed
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param studentId path string true "Student ID"
+// @Success 200 {object} schemas.ApproveStudentResponse
+// @Router /courses/{id}/students/{studentId}/approve [put]
+func (c *EnrollmentController) ApproveStudent(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Approving student", "courseId", ctx.Param("courseId"), "studentId", ctx.Param("studentId"))
+
+        courseID := ctx.Param("id")
+        studentID := ctx.Param("studentId")
+
+        if courseID == "" </span><span class="cov8" title="1">{
+                slog.Error("Invalid course ID")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">if studentID == "" </span><span class="cov8" title="1">{
+                slog.Error("Invalid student ID")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Student ID is required"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">err := c.enrollmentService.ApproveStudent(studentID, courseID)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error approving student", "error", err, "studentId", studentID, "courseId", courseID)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">slog.Debug("Student approved successfully", "studentId", studentID, "courseId", courseID)
+        ctx.JSON(http.StatusOK, schemas.ApproveStudentResponse{
+                Message:   "Student approved successfully",
+                StudentID: studentID,
+                CourseID:  courseID,
+        })</span>
 }
 </pre>
 		
@@ -2285,10 +2327,11 @@ func (c *SubmissionController) sendCorrectionNotification(submission *model.Subm
                 needsManualReview,
         )
 
-        if err := c.notificationsQueue.Publish(queueMessage); err != nil </span><span class="cov0" title="0">{
-                // Log the error but don't fail the response
-                fmt.Printf("Error publishing correction notification: %v\n", err)
-        }</span>
+        // if err := c.notificationsQueue.Publish(queueMessage); err != nil {
+        //         // Log the error but don't fail the response
+        //         fmt.Printf("Error publishing correction notification: %v\n", err)
+        // } TODO: Uncomment this when the notifications queue is implemented
+        fmt.Println("queueMessage: ", queueMessage)</span>
 }
 
 // @Summary Get submissions by assignment ID
@@ -3036,6 +3079,7 @@ import (
         "courses-service/src/schemas"
         "fmt"
         "log/slog"
+        "time"
 
         "go.mongodb.org/mongo-driver/bson"
         "go.mongodb.org/mongo-driver/bson/primitive"
@@ -3316,6 +3360,34 @@ func (r *EnrollmentRepository) GetFeedbackByStudentId(studentID string, getFeedb
         }</span>
 
         <span class="cov8" title="1">return allFeedbacks, nil</span>
+}
+
+// ApproveStudent updates an enrollment status to completed and sets completion date
+func (r *EnrollmentRepository) ApproveStudent(studentID, courseID string) error <span class="cov0" title="0">{
+        filter := bson.M{
+                "student_id": studentID,
+                "course_id":  courseID,
+                "status":     model.EnrollmentStatusActive, // Only approve active enrollments
+        }
+
+        update := bson.M{
+                "$set": bson.M{
+                        "status":         model.EnrollmentStatusCompleted,
+                        "completed_date": time.Now(),
+                        "updated_at":     time.Now(),
+                },
+        }
+
+        result, err := r.enrollmentCollection.UpdateOne(context.TODO(), filter, update)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("error updating enrollment: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">if result.MatchedCount == 0 </span><span class="cov0" title="0">{
+                return fmt.Errorf("enrollment not found or student is not active in course %s", courseID)
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
 }
 </pre>
 		
@@ -4344,6 +4416,11 @@ func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.Enrollmen
         r.POST("/courses/:id/student-feedback", controller.CreateFeedback)
         r.PUT("/feedback/student/:id", controller.GetFeedbackByStudentId)
         r.GET("/feedback/student/:id/summary", controller.GetStudentFeedbackSummary)
+
+        // Aplicar el middleware de autenticación de docentes para aprobar estudiantes
+        teacherAuthGroup := r.Group("")
+        teacherAuthGroup.Use(middleware.TeacherAuth())
+        teacherAuthGroup.PUT("/courses/:id/students/:studentId/approve", controller.ApproveStudent)
 }</span>
 
 func InitializeForumRoutes(r *gin.Engine, controller *controller.ForumController) <span class="cov8" title="1">{
@@ -4866,6 +4943,7 @@ import (
         "courses-service/src/schemas"
         "fmt"
         "slices"
+        "strings"
         "time"
 
         "go.mongodb.org/mongo-driver/mongo"
@@ -4976,7 +5054,7 @@ func (s *EnrollmentService) UnenrollStudent(studentID, courseID string) error <s
 }
 
 func (s *EnrollmentService) SetFavouriteCourse(studentID, courseID string) error <span class="cov8" title="1">{
-        if studentID == "" || courseID == "" </span><span class="cov8" title="1">{
+        if strings.TrimSpace(studentID) == "" || strings.TrimSpace(courseID) == "" </span><span class="cov8" title="1">{
                 return fmt.Errorf("student ID and course ID are required")
         }</span>
 
@@ -5006,7 +5084,7 @@ func (s *EnrollmentService) SetFavouriteCourse(studentID, courseID string) error
 }
 
 func (s *EnrollmentService) UnsetFavouriteCourse(studentID, courseID string) error <span class="cov8" title="1">{
-        if studentID == "" || courseID == "" </span><span class="cov8" title="1">{
+        if strings.TrimSpace(studentID) == "" || strings.TrimSpace(courseID) == "" </span><span class="cov8" title="1">{
                 return fmt.Errorf("student ID and course ID are required")
         }</span>
 
@@ -5036,7 +5114,7 @@ func (s *EnrollmentService) UnsetFavouriteCourse(studentID, courseID string) err
 }
 
 func (s *EnrollmentService) GetEnrollmentByStudentIdAndCourseId(studentID, courseID string) (*model.Enrollment, error) <span class="cov8" title="1">{
-        if studentID == "" || courseID == "" </span><span class="cov8" title="1">{
+        if strings.TrimSpace(studentID) == "" || strings.TrimSpace(courseID) == "" </span><span class="cov8" title="1">{
                 return nil, fmt.Errorf("student ID and course ID are required")
         }</span>
 
@@ -5086,7 +5164,7 @@ func (s *EnrollmentService) CreateStudentFeedback(feedbackRequest schemas.Create
 }
 
 func (s *EnrollmentService) GetFeedbackByStudentId(studentID string, getFeedbackByStudentIdRequest schemas.GetFeedbackByStudentIdRequest) ([]*model.StudentFeedback, error) <span class="cov8" title="1">{
-        if studentID == "" </span><span class="cov8" title="1">{
+        if strings.TrimSpace(studentID) == "" </span><span class="cov8" title="1">{
                 return nil, fmt.Errorf("student ID is required")
         }</span>
 
@@ -5096,6 +5174,38 @@ func (s *EnrollmentService) GetFeedbackByStudentId(studentID string, getFeedback
         }</span>
 
         <span class="cov8" title="1">return feedback, nil</span>
+}
+
+// ApproveStudent approves a student by changing their enrollment status to completed
+func (s *EnrollmentService) ApproveStudent(studentID, courseID string) error <span class="cov8" title="1">{
+        if strings.TrimSpace(studentID) == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf("student ID is required")
+        }</span>
+        <span class="cov8" title="1">if strings.TrimSpace(courseID) == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf("course ID is required")
+        }</span>
+
+        // Check for nil dependencies
+        <span class="cov8" title="1">if s.courseRepository == nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("course repository is not available")
+        }</span>
+        <span class="cov8" title="1">if s.enrollmentRepository == nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("enrollment repository is not available")
+        }</span>
+
+        // Validate that the course exists
+        <span class="cov8" title="1">_, err := s.courseRepository.GetCourseById(courseID)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("course not found: %v", err)
+        }</span>
+
+        // Approve the student in the repository
+        <span class="cov8" title="1">err = s.enrollmentRepository.ApproveStudent(studentID, courseID)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("error approving student: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
 }
 </pre>
 		
@@ -6321,6 +6431,10 @@ func (s *SubmissionService) GradeSubmission(ctx context.Context, submissionID st
         <span class="cov8" title="1">submission.Score = score
         submission.Feedback = feedback
         submission.UpdatedAt = time.Now()
+
+        // Mark as reviewed by teacher (no longer needs manual review)
+        needsReview := false
+        submission.NeedsManualReview = &amp;needsReview
 
         err = s.submissionRepo.Update(ctx, submission)
         if err != nil </span><span class="cov0" title="0">{
