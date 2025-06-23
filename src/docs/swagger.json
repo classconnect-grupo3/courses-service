@@ -2864,6 +2864,20 @@
                 "SubmissionStatusLate"
             ]
         },
+        "model.Vote": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "vote_type": {
+                    "type": "integer"
+                }
+            }
+        },
         "schemas.AiSummaryResponse": {
             "type": "object",
             "properties": {
@@ -2895,6 +2909,12 @@
                 },
                 "vote_count": {
                     "type": "integer"
+                },
+                "votes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Vote"
+                    }
                 }
             }
         },
@@ -3271,6 +3291,12 @@
                 },
                 "vote_count": {
                     "type": "integer"
+                },
+                "votes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Vote"
+                    }
                 }
             }
         },
@@ -3315,6 +3341,12 @@
                 },
                 "vote_count": {
                     "type": "integer"
+                },
+                "votes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Vote"
+                    }
                 }
             }
         },
