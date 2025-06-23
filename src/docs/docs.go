@@ -2872,6 +2872,20 @@ const docTemplate = `{
                 "SubmissionStatusLate"
             ]
         },
+        "model.Vote": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "vote_type": {
+                    "type": "integer"
+                }
+            }
+        },
         "schemas.AiSummaryResponse": {
             "type": "object",
             "properties": {
@@ -2903,6 +2917,12 @@ const docTemplate = `{
                 },
                 "vote_count": {
                     "type": "integer"
+                },
+                "votes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Vote"
+                    }
                 }
             }
         },
@@ -3279,6 +3299,12 @@ const docTemplate = `{
                 },
                 "vote_count": {
                     "type": "integer"
+                },
+                "votes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Vote"
+                    }
                 }
             }
         },
@@ -3323,6 +3349,12 @@ const docTemplate = `{
                 },
                 "vote_count": {
                     "type": "integer"
+                },
+                "votes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Vote"
+                    }
                 }
             }
         },

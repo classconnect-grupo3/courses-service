@@ -306,6 +306,15 @@ definitions:
     - SubmissionStatusDraft
     - SubmissionStatusSubmitted
     - SubmissionStatusLate
+  model.Vote:
+    properties:
+      created_at:
+        type: string
+      user_id:
+        type: string
+      vote_type:
+        type: integer
+    type: object
   schemas.AiSummaryResponse:
     properties:
       summary:
@@ -327,6 +336,10 @@ definitions:
         type: string
       vote_count:
         type: integer
+      votes:
+        items:
+          $ref: '#/definitions/model.Vote'
+        type: array
     type: object
   schemas.ApproveStudentResponse:
     properties:
@@ -583,6 +596,10 @@ definitions:
         type: string
       vote_count:
         type: integer
+      votes:
+        items:
+          $ref: '#/definitions/model.Vote'
+        type: array
     type: object
   schemas.QuestionResponse:
     properties:
@@ -612,6 +629,10 @@ definitions:
         type: string
       vote_count:
         type: integer
+      votes:
+        items:
+          $ref: '#/definitions/model.Vote'
+        type: array
     type: object
   schemas.SearchQuestionsResponse:
     properties:
