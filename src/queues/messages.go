@@ -93,7 +93,7 @@ func (m *RemoveAuxTeacherFromCourseMessage) Encode() (map[string]any, error) {
 
 type FeedbackCreatedMessage struct {
 	EventType         string    `json:"event_type"`
-	StudentId         string    `json:"student_id"`
+	UserId            string    `json:"user_id"` // student in case of student feedback, teacher in case of teacher feedback
 	CourseID          string    `json:"course_id"`
 	FeedbackID        string    `json:"feedback_id"`
 	FeedbackText      string    `json:"feedback_text"`
@@ -101,10 +101,10 @@ type FeedbackCreatedMessage struct {
 	FeedbackCreatedAt time.Time `json:"feedback_created_at"`
 }
 
-func NewFeedbackCreatedMessage(studentId string, courseID string, feedbackID string, feedbackText string, feedbackRating int, feedbackCreatedAt time.Time) *FeedbackCreatedMessage {
+func NewFeedbackCreatedMessage(userId string, courseID string, feedbackID string, feedbackText string, feedbackRating int, feedbackCreatedAt time.Time) *FeedbackCreatedMessage {
 	return &FeedbackCreatedMessage{
 		EventType:         "feedback.created",
-		StudentId:         studentId,
+		UserId:            userId,
 		CourseID:          courseID,
 		FeedbackID:        feedbackID,
 		FeedbackText:      feedbackText,
@@ -116,7 +116,7 @@ func NewFeedbackCreatedMessage(studentId string, courseID string, feedbackID str
 func (m *FeedbackCreatedMessage) Encode() (map[string]any, error) {
 	return map[string]any{
 		"event_type":          m.EventType,
-		"student_id":          m.StudentId,
+		"user_id":             m.UserId,
 		"course_id":           m.CourseID,
 		"feedback_id":         m.FeedbackID,
 		"feedback_text":       m.FeedbackText,
