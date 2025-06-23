@@ -23,3 +23,13 @@ type SetFavouriteCourseResponse struct {
 type UnsetFavouriteCourseResponse struct {
 	Message string `json:"message"`
 }
+
+type ApproveStudentRequest struct {
+	StudentID string `json:"student_id" binding:"required"`
+}
+
+type ApproveStudentResponse struct {
+	Message   string `json:"message"`
+	StudentID string `json:"student_id"`
+	CourseID  string `json:"course_id"`
+}

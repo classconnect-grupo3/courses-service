@@ -310,8 +310,8 @@ func (s *SubmissionService) AutoCorrectSubmission(ctx context.Context, submissio
 	}
 
 	// Update submission with AI results
-	submission.Score = &correctionResult.Score
-	submission.Feedback = correctionResult.Feedback
+	submission.AIScore = &correctionResult.AIScore
+	submission.AIFeedback = correctionResult.AIFeedback
 	submission.NeedsManualReview = &correctionResult.NeedsManualReview
 	submission.UpdatedAt = time.Now()
 

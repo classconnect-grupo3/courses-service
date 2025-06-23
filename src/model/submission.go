@@ -29,6 +29,8 @@ type Submission struct {
 	Answers           []Answer           `json:"answers" bson:"answers"`
 	Score             *float64           `json:"score,omitempty" bson:"score,omitempty"`
 	Feedback          string             `json:"feedback,omitempty" bson:"feedback,omitempty"`
+	AIScore           *float64           `json:"ai_score,omitempty" bson:"ai_score,omitempty"`
+	AIFeedback        string             `json:"ai_feedback,omitempty" bson:"ai_feedback,omitempty"`
 	NeedsManualReview *bool              `json:"needs_manual_review,omitempty" bson:"needs_manual_review,omitempty"`
 	SubmittedAt       *time.Time         `json:"submitted_at,omitempty" bson:"submitted_at,omitempty"`
 	CreatedAt         time.Time          `json:"created_at" bson:"created_at"`

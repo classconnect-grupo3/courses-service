@@ -83,6 +83,14 @@ func (m *MockEnrollmentService) UnsetFavouriteCourse(studentID, courseID string)
 	return nil
 }
 
+// ApproveStudent implements service.EnrollmentServiceInterface.
+func (m *MockEnrollmentService) ApproveStudent(studentID, courseID string) error {
+	if studentID == "error-student" || courseID == "error-course" {
+		return errors.New("error approving student")
+	}
+	return nil
+}
+
 type MockEnrollmentServiceWithError struct{}
 
 // CreateStudentFeedback implements service.EnrollmentServiceInterface.
@@ -114,6 +122,11 @@ func (m *MockEnrollmentServiceWithError) SetFavouriteCourse(studentID, courseID 
 
 func (m *MockEnrollmentServiceWithError) UnsetFavouriteCourse(studentID, courseID string) error {
 	return errors.New("Error unsetting favourite course")
+}
+
+// ApproveStudent implements service.EnrollmentServiceInterface.
+func (m *MockEnrollmentServiceWithError) ApproveStudent(studentID, courseID string) error {
+	return errors.New("Error approving student")
 }
 
 func TestEnrollStudent(t *testing.T) {
@@ -617,4 +630,209 @@ func TestGetFeedbackByStudentIdWithDifferentFilters(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Tests for ApproveStudent endpoint
+func TestApproveStudent(t *testing.T) {
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("PUT", "/courses/course-123/students/student-456/approve", nil)
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	req.Header.Set("X-Teacher-Name", "Test Teacher")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Verify response structure
+	responseBody := w.Body.String()
+	assert.Contains(t, responseBody, "Student approved successfully")
+	assert.Contains(t, responseBody, "student-456")
+	assert.Contains(t, responseBody, "course-123")
+}
+
+func TestApproveStudentWithEmptyCourseId(t *testing.T) {
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("PUT", "/courses//students/student-456/approve", nil)
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	req.Header.Set("X-Teacher-Name", "Test Teacher")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Course ID is required")
+}
+
+func TestApproveStudentWithEmptyStudentId(t *testing.T) {
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("PUT", "/courses/course-123/students//approve", nil)
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	req.Header.Set("X-Teacher-Name", "Test Teacher")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Student ID is required")
+}
+
+func TestApproveStudentWithBothEmptyIds(t *testing.T) {
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("PUT", "/courses//students//approve", nil)
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	req.Header.Set("X-Teacher-Name", "Test Teacher")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Course ID is required")
+}
+
+func TestApproveStudentWithServiceError(t *testing.T) {
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("PUT", "/courses/course-123/students/student-456/approve", nil)
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	req.Header.Set("X-Teacher-Name", "Test Teacher")
+	errorEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "Error approving student")
+}
+
+func TestApproveStudentWithErrorStudentId(t *testing.T) {
+	w := httptest.NewRecorder()
+
+	// Using "error-student" which triggers an error in our mock
+	req, _ := http.NewRequest("PUT", "/courses/course-123/students/error-student/approve", nil)
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	req.Header.Set("X-Teacher-Name", "Test Teacher")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "error approving student")
+}
+
+func TestApproveStudentWithErrorCourseId(t *testing.T) {
+	w := httptest.NewRecorder()
+
+	// Using "error-course" which triggers an error in our mock
+	req, _ := http.NewRequest("PUT", "/courses/error-course/students/student-456/approve", nil)
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	req.Header.Set("X-Teacher-Name", "Test Teacher")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "error approving student")
+}
+
+func TestApproveStudentWithoutTeacherHeaders(t *testing.T) {
+	w := httptest.NewRecorder()
+
+	// No teacher headers - should fail authorization
+	req, _ := http.NewRequest("PUT", "/courses/course-123/students/student-456/approve", nil)
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Contains(t, w.Body.String(), "X-Teacher-UUID header is required")
+}
+
+func TestApproveStudentWithEmptyTeacherUUID(t *testing.T) {
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("PUT", "/courses/course-123/students/student-456/approve", nil)
+	req.Header.Set("X-Teacher-UUID", "") // Empty UUID
+	req.Header.Set("X-Teacher-Name", "Test Teacher")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Contains(t, w.Body.String(), "X-Teacher-UUID header is required")
+}
+
+func TestApproveStudentWithOnlyTeacherUUID(t *testing.T) {
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("PUT", "/courses/course-123/students/student-456/approve", nil)
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	// No X-Teacher-Name header - should still work as it's optional
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	responseBody := w.Body.String()
+	assert.Contains(t, responseBody, "Student approved successfully")
+	assert.Contains(t, responseBody, "student-456")
+	assert.Contains(t, responseBody, "course-123")
+}
+
+func TestApproveStudentWithValidUUIDs(t *testing.T) {
+	testCases := []struct {
+		name      string
+		courseId  string
+		studentId string
+		expected  int
+	}{
+		{
+			name:      "Valid standard IDs",
+			courseId:  "course-123",
+			studentId: "student-456",
+			expected:  http.StatusOK,
+		},
+		{
+			name:      "Valid UUID format course",
+			courseId:  "123e4567-e89b-12d3-a456-426614174000",
+			studentId: "student-456",
+			expected:  http.StatusOK,
+		},
+		{
+			name:      "Valid UUID format student",
+			courseId:  "course-123",
+			studentId: "123e4567-e89b-12d3-a456-426614174000",
+			expected:  http.StatusOK,
+		},
+		{
+			name:      "Both UUID format",
+			courseId:  "123e4567-e89b-12d3-a456-426614174000",
+			studentId: "987fcdeb-51c2-43d4-b567-531028391849",
+			expected:  http.StatusOK,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+
+			url := fmt.Sprintf("/courses/%s/students/%s/approve", tc.courseId, tc.studentId)
+			req, _ := http.NewRequest("PUT", url, nil)
+			req.Header.Set("X-Teacher-UUID", "teacher-123")
+			req.Header.Set("X-Teacher-Name", "Test Teacher")
+			normalEnrollmentRouter.ServeHTTP(w, req)
+
+			assert.Equal(t, tc.expected, w.Code)
+			if tc.expected == http.StatusOK {
+				responseBody := w.Body.String()
+				assert.Contains(t, responseBody, "Student approved successfully")
+				assert.Contains(t, responseBody, tc.studentId)
+				assert.Contains(t, responseBody, tc.courseId)
+			}
+		})
+	}
+}
+
+func TestApproveStudentResponseStructure(t *testing.T) {
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("PUT", "/courses/test-course-789/students/test-student-321/approve", nil)
+	req.Header.Set("X-Teacher-UUID", "teacher-789")
+	req.Header.Set("X-Teacher-Name", "Response Test Teacher")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Verify all required fields are in response
+	responseBody := w.Body.String()
+	assert.Contains(t, responseBody, `"message"`)
+	assert.Contains(t, responseBody, `"student_id"`)
+	assert.Contains(t, responseBody, `"course_id"`)
+	assert.Contains(t, responseBody, "Student approved successfully")
+	assert.Contains(t, responseBody, "test-student-321")
+	assert.Contains(t, responseBody, "test-course-789")
 }

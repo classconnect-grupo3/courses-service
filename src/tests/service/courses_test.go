@@ -125,6 +125,14 @@ func (m *MockEnrollmentRepository) DeleteEnrollment(studentID string, course *mo
 	return nil
 }
 
+// ApproveStudent implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepository) ApproveStudent(studentID, courseID string) error {
+	if studentID == "error-student" || courseID == "error-course" {
+		return errors.New("error approving student")
+	}
+	return nil
+}
+
 type MockCourseRepository struct{}
 
 // RemoveAuxTeacherFromCourse implements repository.CourseRepositoryInterface.
@@ -1246,7 +1254,12 @@ func (m *MockEnrollmentRepositoryWithError) GetEnrollmentsByCourseID(courseID st
 }
 
 func (m *MockEnrollmentRepositoryWithError) GetStudentFavouriteCourses(studentUUID string) ([]*model.Enrollment, error) {
-	return nil, errors.New("error getting favourite courses")
+	return nil, errors.New("Error getting student favourite courses")
+}
+
+// ApproveStudent implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepositoryWithError) ApproveStudent(studentID, courseID string) error {
+	return errors.New("error approving student")
 }
 
 // Mock course repository with errors for testing error scenarios

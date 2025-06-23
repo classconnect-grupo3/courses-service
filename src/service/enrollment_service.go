@@ -6,6 +6,7 @@ import (
 	"courses-service/src/schemas"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -116,7 +117,7 @@ func (s *EnrollmentService) UnenrollStudent(studentID, courseID string) error {
 }
 
 func (s *EnrollmentService) SetFavouriteCourse(studentID, courseID string) error {
-	if studentID == "" || courseID == "" {
+	if strings.TrimSpace(studentID) == "" || strings.TrimSpace(courseID) == "" {
 		return fmt.Errorf("student ID and course ID are required")
 	}
 
@@ -146,7 +147,7 @@ func (s *EnrollmentService) SetFavouriteCourse(studentID, courseID string) error
 }
 
 func (s *EnrollmentService) UnsetFavouriteCourse(studentID, courseID string) error {
-	if studentID == "" || courseID == "" {
+	if strings.TrimSpace(studentID) == "" || strings.TrimSpace(courseID) == "" {
 		return fmt.Errorf("student ID and course ID are required")
 	}
 
@@ -176,7 +177,7 @@ func (s *EnrollmentService) UnsetFavouriteCourse(studentID, courseID string) err
 }
 
 func (s *EnrollmentService) GetEnrollmentByStudentIdAndCourseId(studentID, courseID string) (*model.Enrollment, error) {
-	if studentID == "" || courseID == "" {
+	if strings.TrimSpace(studentID) == "" || strings.TrimSpace(courseID) == "" {
 		return nil, fmt.Errorf("student ID and course ID are required")
 	}
 
@@ -226,7 +227,7 @@ func (s *EnrollmentService) CreateStudentFeedback(feedbackRequest schemas.Create
 }
 
 func (s *EnrollmentService) GetFeedbackByStudentId(studentID string, getFeedbackByStudentIdRequest schemas.GetFeedbackByStudentIdRequest) ([]*model.StudentFeedback, error) {
-	if studentID == "" {
+	if strings.TrimSpace(studentID) == "" {
 		return nil, fmt.Errorf("student ID is required")
 	}
 
@@ -236,4 +237,36 @@ func (s *EnrollmentService) GetFeedbackByStudentId(studentID string, getFeedback
 	}
 
 	return feedback, nil
+}
+
+// ApproveStudent approves a student by changing their enrollment status to completed
+func (s *EnrollmentService) ApproveStudent(studentID, courseID string) error {
+	if strings.TrimSpace(studentID) == "" {
+		return fmt.Errorf("student ID is required")
+	}
+	if strings.TrimSpace(courseID) == "" {
+		return fmt.Errorf("course ID is required")
+	}
+
+	// Check for nil dependencies
+	if s.courseRepository == nil {
+		return fmt.Errorf("course repository is not available")
+	}
+	if s.enrollmentRepository == nil {
+		return fmt.Errorf("enrollment repository is not available")
+	}
+
+	// Validate that the course exists
+	_, err := s.courseRepository.GetCourseById(courseID)
+	if err != nil {
+		return fmt.Errorf("course not found: %v", err)
+	}
+
+	// Approve the student in the repository
+	err = s.enrollmentRepository.ApproveStudent(studentID, courseID)
+	if err != nil {
+		return fmt.Errorf("error approving student: %v", err)
+	}
+
+	return nil
 }

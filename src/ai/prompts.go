@@ -74,8 +74,8 @@ Respuesta del Estudiante: <student_answer>
 
 Tu respuesta debe ser EXACTAMENTE en este formato JSON:
 {
-  "score": <puntaje_numerico_total>,
-  "feedback": "<feedback_consolidado_en_español_de_toda_la_entrega>",
+  "ai_score": <puntaje_numerico_total>,
+  "ai_feedback": "<feedback_consolidado_en_español_de_toda_la_entrega>",
   "needs_manual_review": <true_o_false>
 }
 

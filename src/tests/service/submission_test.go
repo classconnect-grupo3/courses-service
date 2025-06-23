@@ -270,8 +270,8 @@ func (m *MockAiClient) CorrectSubmission(assignment *model.Assignment, submissio
 		return nil, errors.New("AI correction failed")
 	}
 	return &schemas.AiCorrectionResponse{
-		Score:             85.0,
-		Feedback:          "Good work! Most answers are correct.",
+		AIScore:           85.0,
+		AIFeedback:        "Good work! Most answers are correct.",
 		NeedsManualReview: false,
 	}, nil
 }

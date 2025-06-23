@@ -310,3 +310,45 @@ func (c *EnrollmentController) GetStudentFeedbackSummary(ctx *gin.Context) {
 	slog.Debug("Student feedback summary retrieved", "summary", summary)
 	ctx.JSON(http.StatusOK, schemas.AiSummaryResponse{Summary: summary})
 }
+
+// @Summary Approve a student in a course
+// @Description Approve a student by changing their enrollment status to completed
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param studentId path string true "Student ID"
+// @Success 200 {object} schemas.ApproveStudentResponse
+// @Router /courses/{id}/students/{studentId}/approve [put]
+func (c *EnrollmentController) ApproveStudent(ctx *gin.Context) {
+	slog.Debug("Approving student", "courseId", ctx.Param("courseId"), "studentId", ctx.Param("studentId"))
+
+	courseID := ctx.Param("id")
+	studentID := ctx.Param("studentId")
+
+	if courseID == "" {
+		slog.Error("Invalid course ID")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+		return
+	}
+
+	if studentID == "" {
+		slog.Error("Invalid student ID")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Student ID is required"})
+		return
+	}
+
+	err := c.enrollmentService.ApproveStudent(studentID, courseID)
+	if err != nil {
+		slog.Error("Error approving student", "error", err, "studentId", studentID, "courseId", courseID)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	slog.Debug("Student approved successfully", "studentId", studentID, "courseId", courseID)
+	ctx.JSON(http.StatusOK, schemas.ApproveStudentResponse{
+		Message:   "Student approved successfully",
+		StudentID: studentID,
+		CourseID:  courseID,
+	})
+}

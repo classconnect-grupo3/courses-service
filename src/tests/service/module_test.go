@@ -33,11 +33,12 @@ func (m *MockModuleRepository) GetNextModuleOrder(courseID string) (int, error) 
 
 // CreateModule implements repository.ModuleRepositoryInterface.
 func (m *MockModuleRepository) CreateModule(courseID string, module model.Module) (*model.Module, error) {
-	if courseID == "valid-course-id" || courseID == "empty-course" {
+	switch courseID {
+	case "valid-course-id", "empty-course":
 		module.ID = primitive.NewObjectID()
-	} else if courseID == "error-creating-course" {
+	case "error-creating-course":
 		return nil, errors.New("Error creating module")
-	} else {
+	default:
 		return nil, errors.New("Course not found")
 	}
 
