@@ -246,6 +246,8 @@ definitions:
     - QuestionTypeFile
   model.StudentFeedback:
     properties:
+      course_id:
+        type: string
       created_at:
         type: string
       feedback:
@@ -263,6 +265,10 @@ definitions:
     type: object
   model.Submission:
     properties:
+      ai_feedback:
+        type: string
+      ai_score:
+        type: number
       answers:
         items:
           $ref: '#/definitions/model.Answer'
@@ -275,6 +281,8 @@ definitions:
         type: string
       id:
         type: string
+      needs_manual_review:
+        type: boolean
       score:
         type: number
       status:
@@ -319,6 +327,15 @@ definitions:
         type: string
       vote_count:
         type: integer
+    type: object
+  schemas.ApproveStudentResponse:
+    properties:
+      course_id:
+        type: string
+      message:
+        type: string
+      student_id:
+        type: string
     type: object
   schemas.CourseMembersResponse:
     properties:
@@ -935,6 +952,32 @@ paths:
       summary: Update a submission
       tags:
       - submissions
+  /assignments/{assignmentId}/submissions/{id}/feedback-summary:
+    get:
+      consumes:
+      - application/json
+      description: Generate an AI summary of the feedback for a submission
+      parameters:
+      - description: Assignment ID
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      - description: Submission ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.AiSummaryResponse'
+      summary: Generate feedback summary
+      tags:
+      - submissions
   /assignments/{assignmentId}/submissions/{id}/grade:
     put:
       consumes:
@@ -1389,6 +1432,32 @@ paths:
           schema:
             $ref: '#/definitions/model.StudentFeedback'
       summary: Create a feedback for a course
+      tags:
+      - enrollments
+  /courses/{id}/students/{studentId}/approve:
+    put:
+      consumes:
+      - application/json
+      description: Approve a student by changing their enrollment status to completed
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Student ID
+        in: path
+        name: studentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.ApproveStudentResponse'
+      summary: Approve a student in a course
       tags:
       - enrollments
   /courses/{id}/unenroll:

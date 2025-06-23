@@ -372,6 +372,45 @@ const docTemplate = `{
                 }
             }
         },
+        "/assignments/{assignmentId}/submissions/{id}/feedback-summary": {
+            "get": {
+                "description": "Generate an AI summary of the feedback for a submission",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submissions"
+                ],
+                "summary": "Generate feedback summary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Assignment ID",
+                        "name": "assignmentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Submission ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.AiSummaryResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/assignments/{assignmentId}/submissions/{id}/grade": {
             "put": {
                 "description": "Grade a submission by ID (for teachers)",
@@ -1194,6 +1233,45 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/model.StudentFeedback"
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/{id}/students/{studentId}/approve": {
+            "put": {
+                "description": "Approve a student by changing their enrollment status to completed",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Approve a student in a course",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Student ID",
+                        "name": "studentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ApproveStudentResponse"
                         }
                     }
                 }
@@ -2705,6 +2783,9 @@ const docTemplate = `{
         "model.StudentFeedback": {
             "type": "object",
             "properties": {
+                "course_id": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -2731,6 +2812,12 @@ const docTemplate = `{
         "model.Submission": {
             "type": "object",
             "properties": {
+                "ai_feedback": {
+                    "type": "string"
+                },
+                "ai_score": {
+                    "type": "number"
+                },
                 "answers": {
                     "type": "array",
                     "items": {
@@ -2748,6 +2835,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
+                },
+                "needs_manual_review": {
+                    "type": "boolean"
                 },
                 "score": {
                     "type": "number"
@@ -2813,6 +2903,20 @@ const docTemplate = `{
                 },
                 "vote_count": {
                     "type": "integer"
+                }
+            }
+        },
+        "schemas.ApproveStudentResponse": {
+            "type": "object",
+            "properties": {
+                "course_id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "student_id": {
+                    "type": "string"
                 }
             }
         },
