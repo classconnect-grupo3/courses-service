@@ -94,3 +94,32 @@ func (r *MongoSubmissionRepository) GetByStudent(ctx context.Context, studentUUI
 	}
 	return submissions, nil
 }
+
+func (r *MongoSubmissionRepository) DeleteByStudentAndCourse(ctx context.Context, studentUUID, courseID string) error {
+	// First, get all assignments for the course
+	assignmentsCursor, err := r.collection.Database().Collection("assignments").Find(ctx, bson.M{"course_id": courseID})
+	if err != nil {
+		return err
+	}
+	defer assignmentsCursor.Close(ctx)
+
+	var assignmentIDs []string
+	for assignmentsCursor.Next(ctx) {
+		var assignment struct {
+			ID string `bson:"_id"`
+		}
+		if err := assignmentsCursor.Decode(&assignment); err != nil {
+			continue
+		}
+		assignmentIDs = append(assignmentIDs, assignment.ID)
+	}
+
+	// Delete all submissions for this student in any assignment of this course
+	filter := bson.M{
+		"student_uuid":  studentUUID,
+		"assignment_id": bson.M{"$in": assignmentIDs},
+	}
+
+	_, err = r.collection.DeleteMany(ctx, filter)
+	return err
+}

@@ -316,3 +316,61 @@ func (r *EnrollmentRepository) ApproveStudent(studentID, courseID string) error 
 
 	return nil
 }
+
+// DisapproveStudent updates an enrollment status to dropped and sets the reason for unenrollment
+func (r *EnrollmentRepository) DisapproveStudent(studentID, courseID, reason string) error {
+	filter := bson.M{
+		"student_id": studentID,
+		"course_id":  courseID,
+		"status":     model.EnrollmentStatusActive, // Only disapprove active enrollments
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"status":                  model.EnrollmentStatusDropped,
+			"reason_for_unenrollment": reason,
+			"updated_at":              time.Now(),
+		},
+	}
+
+	result, err := r.enrollmentCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return fmt.Errorf("error updating enrollment: %v", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("enrollment not found or student is not active in course %s", courseID)
+	}
+
+	return nil
+}
+
+// ReactivateDroppedEnrollment reactivates a dropped enrollment and clears the reason
+func (r *EnrollmentRepository) ReactivateDroppedEnrollment(studentID, courseID string) error {
+	filter := bson.M{
+		"student_id": studentID,
+		"course_id":  courseID,
+		"status":     model.EnrollmentStatusDropped, // Only reactivate dropped enrollments
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"status":     model.EnrollmentStatusActive,
+			"updated_at": time.Now(),
+		},
+		"$unset": bson.M{
+			"reason_for_unenrollment": "", // Clear the reason when reactivating
+		},
+	}
+
+	result, err := r.enrollmentCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return fmt.Errorf("error reactivating enrollment: %v", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("dropped enrollment not found for student %s in course %s", studentID, courseID)
+	}
+
+	return nil
+}
