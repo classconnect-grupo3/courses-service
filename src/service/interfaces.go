@@ -91,6 +91,9 @@ type ForumServiceInterface interface {
 
 	// Search and filter operations
 	SearchQuestions(courseID, query string, tags []model.QuestionTag, status model.QuestionStatus) ([]model.ForumQuestion, error)
+
+	// Forum participants operations
+	GetForumParticipants(courseID string) ([]string, error)
 }
 
 // StatisticsServiceInterface define los métodos que debe implementar un servicio de estadísticas
