@@ -359,7 +359,7 @@ func (r *EnrollmentRepository) ReactivateDroppedEnrollment(studentID, courseID s
 			"updated_at": time.Now(),
 		},
 		"$unset": bson.M{
-			"reason_for_unenrollment": "", // Clear the reason when reactivating
+			"reason_for_unenrollment": "", // Remove the field completely
 		},
 	}
 

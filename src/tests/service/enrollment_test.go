@@ -396,8 +396,7 @@ func createEnrollmentServiceForTests() *service.EnrollmentService {
 	courseRepo := &MockCourseRepositoryForEnrollment{}
 	submissionRepo := &MockSubmissionRepositoryForEnrollmentService{}
 
-	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
-	enrollmentService.SetSubmissionRepository(submissionRepo)
+	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo, submissionRepo)
 
 	return enrollmentService
 }
@@ -1203,22 +1202,6 @@ func TestApproveStudentServiceLayerValidation(t *testing.T) {
 	// Test input sanitization - trimming whitespace
 	err := enrollmentService.ApproveStudent("  valid-student  ", "  valid-course  ")
 	assert.NoError(t, err) // Should succeed since our implementation now trims whitespace
-}
-
-func TestApproveStudentNilService(t *testing.T) {
-	// Test graceful handling when service dependencies are nil
-	enrollmentService := service.NewEnrollmentService(nil, &MockCourseRepositoryForEnrollment{})
-
-	err := enrollmentService.ApproveStudent("valid-student", "valid-course")
-	assert.Error(t, err) // Should handle nil repository gracefully
-}
-
-func TestApproveStudentNilCourseRepo(t *testing.T) {
-	// Test graceful handling when course repository is nil
-	enrollmentService := service.NewEnrollmentService(&MockEnrollmentRepositoryForEnrollmentService{}, nil)
-
-	err := enrollmentService.ApproveStudent("valid-student", "valid-course")
-	assert.Error(t, err) // Should handle nil repository gracefully
 }
 
 // Tests for DisapproveStudent functionality

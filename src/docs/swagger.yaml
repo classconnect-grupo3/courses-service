@@ -126,6 +126,8 @@ definitions:
         type: array
       id:
         type: string
+      reason_for_unenrollment:
+        type: string
       status:
         $ref: '#/definitions/model.EnrollmentStatus'
       student_id:
@@ -512,6 +514,24 @@ definitions:
   schemas.DeleteCourseResponse:
     properties:
       message:
+        type: string
+    type: object
+  schemas.DisapproveStudentRequest:
+    properties:
+      reason:
+        type: string
+    required:
+    - reason
+    type: object
+  schemas.DisapproveStudentResponse:
+    properties:
+      course_id:
+        type: string
+      message:
+        type: string
+      reason:
+        type: string
+      student_id:
         type: string
     type: object
   schemas.EnrollStudentRequest:
@@ -1479,6 +1499,39 @@ paths:
           schema:
             $ref: '#/definitions/schemas.ApproveStudentResponse'
       summary: Approve a student in a course
+      tags:
+      - enrollments
+  /courses/{id}/students/{studentId}/disapprove:
+    put:
+      consumes:
+      - application/json
+      description: Disapprove a student by changing their enrollment status to dropped
+        with a reason
+      parameters:
+      - description: Course ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Student ID
+        in: path
+        name: studentId
+        required: true
+        type: string
+      - description: Disapprove request
+        in: body
+        name: disapproveRequest
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.DisapproveStudentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.DisapproveStudentResponse'
+      summary: Disapprove a student in a course
       tags:
       - enrollments
   /courses/{id}/unenroll:

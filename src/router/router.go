@@ -188,8 +188,7 @@ func NewRouter(config *config.Config) *gin.Engine {
 	forumRepository := repository.NewForumRepository(dbClient, config.DBName)
 
 	courseService := service.NewCourseService(courseRepo, enrollmentRepo)
-	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
-	enrollmentService.SetSubmissionRepository(submissionRepository)
+	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo, submissionRepository)
 	assignmentService := service.NewAssignmentService(assignmentRepository, courseService)
 	submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository, courseService, aiClient)
 	moduleService := service.NewModuleService(moduleRepository)

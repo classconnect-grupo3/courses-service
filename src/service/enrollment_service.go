@@ -19,17 +19,16 @@ type EnrollmentService struct {
 	submissionRepository repository.SubmissionRepositoryInterface
 }
 
-func NewEnrollmentService(enrollmentRepository repository.EnrollmentRepositoryInterface, courseRepository repository.CourseRepositoryInterface) *EnrollmentService {
+func NewEnrollmentService(
+	enrollmentRepository repository.EnrollmentRepositoryInterface,
+	courseRepository repository.CourseRepositoryInterface,
+	submissionRepository repository.SubmissionRepositoryInterface,
+) *EnrollmentService {
 	return &EnrollmentService{
 		enrollmentRepository: enrollmentRepository,
 		courseRepository:     courseRepository,
-		submissionRepository: nil, // We'll inject this when needed
+		submissionRepository: submissionRepository,
 	}
-}
-
-// SetSubmissionRepository allows injecting the submission repository for managing submissions during re-enrollment
-func (s *EnrollmentService) SetSubmissionRepository(submissionRepository repository.SubmissionRepositoryInterface) {
-	s.submissionRepository = submissionRepository
 }
 
 func (s *EnrollmentService) GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error) {
@@ -74,11 +73,9 @@ func (s *EnrollmentService) EnrollStudent(studentID, courseID string) error {
 	// If student was previously dropped, reactivate their enrollment
 	if existingEnrollment != nil && existingEnrollment.Status == model.EnrollmentStatusDropped {
 		// Delete all previous submissions from when they were dropped
-		if s.submissionRepository != nil {
-			err = s.submissionRepository.DeleteByStudentAndCourse(context.TODO(), studentID, courseID)
-			if err != nil {
-				return fmt.Errorf("error deleting previous submissions for student %s in course %s: %v", studentID, courseID, err)
-			}
+		err = s.submissionRepository.DeleteByStudentAndCourse(context.TODO(), studentID, courseID)
+		if err != nil {
+			return fmt.Errorf("error deleting previous submissions for student %s in course %s: %v", studentID, courseID, err)
 		}
 
 		// Reactivate the enrollment
