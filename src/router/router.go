@@ -115,6 +115,7 @@ func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.Enrollmen
 	teacherAuthGroup := r.Group("")
 	teacherAuthGroup.Use(middleware.TeacherAuth())
 	teacherAuthGroup.PUT("/courses/:id/students/:studentId/approve", controller.ApproveStudent)
+	teacherAuthGroup.PUT("/courses/:id/students/:studentId/disapprove", controller.DisapproveStudent)
 }
 
 func InitializeForumRoutes(r *gin.Engine, controller *controller.ForumController) {

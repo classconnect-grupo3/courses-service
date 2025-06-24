@@ -33,3 +33,14 @@ type ApproveStudentResponse struct {
 	StudentID string `json:"student_id"`
 	CourseID  string `json:"course_id"`
 }
+
+type DisapproveStudentRequest struct {
+	Reason string `json:"reason" binding:"required"`
+}
+
+type DisapproveStudentResponse struct {
+	Message   string `json:"message"`
+	StudentID string `json:"student_id"`
+	CourseID  string `json:"course_id"`
+	Reason    string `json:"reason"`
+}

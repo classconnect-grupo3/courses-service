@@ -270,3 +270,10 @@ func (s *EnrollmentService) ApproveStudent(studentID, courseID string) error {
 
 	return nil
 }
+
+// DisapproveStudent disapproves a student by changing their enrollment status to dropped with a reason
+func (s *EnrollmentService) DisapproveStudent(studentID, courseID, reason string) error {
+	// TODO: Implement this method properly in the next step
+	// For now, return nil as placeholder
+	return nil
+}
