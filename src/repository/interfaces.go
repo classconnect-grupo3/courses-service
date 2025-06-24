@@ -44,6 +44,8 @@ type EnrollmentRepositoryInterface interface {
 	CreateStudentFeedback(feedbackRequest model.StudentFeedback, enrollmentID string) error
 	GetFeedbackByStudentId(studentID string, getFeedbackByStudentIdRequest schemas.GetFeedbackByStudentIdRequest) ([]*model.StudentFeedback, error)
 	ApproveStudent(studentID, courseID string) error
+	DisapproveStudent(studentID, courseID, reason string) error
+	ReactivateDroppedEnrollment(studentID, courseID string) error
 }
 
 type ModuleRepositoryInterface interface {
@@ -64,6 +66,7 @@ type SubmissionRepositoryInterface interface {
 	GetByAssignmentAndStudent(ctx context.Context, assignmentID, studentUUID string) (*model.Submission, error)
 	GetByAssignment(ctx context.Context, assignmentID string) ([]model.Submission, error)
 	GetByStudent(ctx context.Context, studentUUID string) ([]model.Submission, error)
+	DeleteByStudentAndCourse(ctx context.Context, studentUUID, courseID string) error
 }
 
 type ForumRepositoryInterface interface {

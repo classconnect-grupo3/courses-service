@@ -44,6 +44,7 @@ type EnrollmentServiceInterface interface {
 	CreateStudentFeedback(feedbackRequest schemas.CreateStudentFeedbackRequest) error
 	GetFeedbackByStudentId(studentID string, getFeedbackByStudentIdRequest schemas.GetFeedbackByStudentIdRequest) ([]*model.StudentFeedback, error)
 	ApproveStudent(studentID, courseID string) error
+	DisapproveStudent(studentID, courseID, reason string) error
 }
 
 type AssignmentServiceInterface interface {

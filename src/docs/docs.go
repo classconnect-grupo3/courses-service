@@ -1277,6 +1277,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/courses/{id}/students/{studentId}/disapprove": {
+            "put": {
+                "description": "Disapprove a student by changing their enrollment status to dropped with a reason",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Disapprove a student in a course",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Student ID",
+                        "name": "studentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Disapprove request",
+                        "name": "disapproveRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.DisapproveStudentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.DisapproveStudentResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/courses/{id}/unenroll": {
             "delete": {
                 "description": "Unenroll a student from a course",
@@ -2616,6 +2664,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "reason_for_unenrollment": {
+                    "type": "string"
+                },
                 "status": {
                     "$ref": "#/definitions/model.EnrollmentStatus"
                 },
@@ -3170,6 +3221,34 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.DisapproveStudentRequest": {
+            "type": "object",
+            "required": [
+                "reason"
+            ],
+            "properties": {
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.DisapproveStudentResponse": {
+            "type": "object",
+            "properties": {
+                "course_id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "student_id": {
                     "type": "string"
                 }
             }

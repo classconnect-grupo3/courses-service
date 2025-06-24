@@ -61,7 +61,7 @@
 				
 				<option value="file2">courses-service/src/controller/courses_controller.go (88.0%)</option>
 				
-				<option value="file3">courses-service/src/controller/enrollment_controller.go (84.5%)</option>
+				<option value="file3">courses-service/src/controller/enrollment_controller.go (86.4%)</option>
 				
 				<option value="file4">courses-service/src/controller/forum_controller.go (98.6%)</option>
 				
@@ -77,21 +77,21 @@
 				
 				<option value="file10">courses-service/src/repository/course_repository.go (82.0%)</option>
 				
-				<option value="file11">courses-service/src/repository/enrollment_repository.go (76.2%)</option>
+				<option value="file11">courses-service/src/repository/enrollment_repository.go (80.3%)</option>
 				
 				<option value="file12">courses-service/src/repository/forum_repository.go (87.1%)</option>
 				
 				<option value="file13">courses-service/src/repository/module_repository.go (90.0%)</option>
 				
-				<option value="file14">courses-service/src/repository/submission_repository.go (83.3%)</option>
+				<option value="file14">courses-service/src/repository/submission_repository.go (83.6%)</option>
 				
-				<option value="file15">courses-service/src/router/router.go (96.6%)</option>
+				<option value="file15">courses-service/src/router/router.go (96.7%)</option>
 				
 				<option value="file16">courses-service/src/service/assignment_service.go (100.0%)</option>
 				
 				<option value="file17">courses-service/src/service/course_service.go (93.8%)</option>
 				
-				<option value="file18">courses-service/src/service/enrollment_service.go (96.6%)</option>
+				<option value="file18">courses-service/src/service/enrollment_service.go (92.1%)</option>
 				
 				<option value="file19">courses-service/src/service/forum_service.go (87.4%)</option>
 				
@@ -1190,6 +1190,57 @@ func (c *EnrollmentController) ApproveStudent(ctx *gin.Context) <span class="cov
                 Message:   "Student approved successfully",
                 StudentID: studentID,
                 CourseID:  courseID,
+        })</span>
+}
+
+// @Summary Disapprove a student in a course
+// @Description Disapprove a student by changing their enrollment status to dropped with a reason
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param studentId path string true "Student ID"
+// @Param disapproveRequest body schemas.DisapproveStudentRequest true "Disapprove request"
+// @Success 200 {object} schemas.DisapproveStudentResponse
+// @Router /courses/{id}/students/{studentId}/disapprove [put]
+func (c *EnrollmentController) DisapproveStudent(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Disapproving student", "courseId", ctx.Param("id"), "studentId", ctx.Param("studentId"))
+
+        courseID := ctx.Param("id")
+        studentID := ctx.Param("studentId")
+
+        if courseID == "" </span><span class="cov8" title="1">{
+                slog.Error("Invalid course ID")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">if studentID == "" </span><span class="cov8" title="1">{
+                slog.Error("Invalid student ID")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Student ID is required"})
+                return
+        }</span>
+
+        <span class="cov8" title="1">var disapproveRequest schemas.DisapproveStudentRequest
+        if err := ctx.ShouldBindJSON(&amp;disapproveRequest); err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error binding disapprove request", "error", err)
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">err := c.enrollmentService.DisapproveStudent(studentID, courseID, disapproveRequest.Reason)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error disapproving student", "error", err, "studentId", studentID, "courseId", courseID)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">slog.Debug("Student disapproved successfully", "studentId", studentID, "courseId", courseID, "reason", disapproveRequest.Reason)
+        ctx.JSON(http.StatusOK, schemas.DisapproveStudentResponse{
+                Message:   "Student disapproved successfully",
+                StudentID: studentID,
+                CourseID:  courseID,
+                Reason:    disapproveRequest.Reason,
         })</span>
 }
 </pre>
@@ -3368,7 +3419,7 @@ func (r *EnrollmentRepository) GetFeedbackByStudentId(studentID string, getFeedb
 }
 
 // ApproveStudent updates an enrollment status to completed and sets completion date
-func (r *EnrollmentRepository) ApproveStudent(studentID, courseID string) error <span class="cov0" title="0">{
+func (r *EnrollmentRepository) ApproveStudent(studentID, courseID string) error <span class="cov8" title="1">{
         filter := bson.M{
                 "student_id": studentID,
                 "course_id":  courseID,
@@ -3388,11 +3439,69 @@ func (r *EnrollmentRepository) ApproveStudent(studentID, courseID string) error 
                 return fmt.Errorf("error updating enrollment: %v", err)
         }</span>
 
-        <span class="cov0" title="0">if result.MatchedCount == 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if result.MatchedCount == 0 </span><span class="cov0" title="0">{
                 return fmt.Errorf("enrollment not found or student is not active in course %s", courseID)
         }</span>
 
-        <span class="cov0" title="0">return nil</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+// DisapproveStudent updates an enrollment status to dropped and sets the reason for unenrollment
+func (r *EnrollmentRepository) DisapproveStudent(studentID, courseID, reason string) error <span class="cov8" title="1">{
+        filter := bson.M{
+                "student_id": studentID,
+                "course_id":  courseID,
+                "status":     model.EnrollmentStatusActive, // Only disapprove active enrollments
+        }
+
+        update := bson.M{
+                "$set": bson.M{
+                        "status":                  model.EnrollmentStatusDropped,
+                        "reason_for_unenrollment": reason,
+                        "updated_at":              time.Now(),
+                },
+        }
+
+        result, err := r.enrollmentCollection.UpdateOne(context.TODO(), filter, update)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("error updating enrollment: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">if result.MatchedCount == 0 </span><span class="cov0" title="0">{
+                return fmt.Errorf("enrollment not found or student is not active in course %s", courseID)
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// ReactivateDroppedEnrollment reactivates a dropped enrollment and clears the reason
+func (r *EnrollmentRepository) ReactivateDroppedEnrollment(studentID, courseID string) error <span class="cov8" title="1">{
+        filter := bson.M{
+                "student_id": studentID,
+                "course_id":  courseID,
+                "status":     model.EnrollmentStatusDropped, // Only reactivate dropped enrollments
+        }
+
+        update := bson.M{
+                "$set": bson.M{
+                        "status":     model.EnrollmentStatusActive,
+                        "updated_at": time.Now(),
+                },
+                "$unset": bson.M{
+                        "reason_for_unenrollment": "", // Remove the field completely
+                },
+        }
+
+        result, err := r.enrollmentCollection.UpdateOne(context.TODO(), filter, update)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("error reactivating enrollment: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">if result.MatchedCount == 0 </span><span class="cov0" title="0">{
+                return fmt.Errorf("dropped enrollment not found for student %s in course %s", studentID, courseID)
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
 }
 </pre>
 		
@@ -4307,6 +4416,35 @@ func (r *MongoSubmissionRepository) GetByStudent(ctx context.Context, studentUUI
         }</span>
         <span class="cov8" title="1">return submissions, nil</span>
 }
+
+func (r *MongoSubmissionRepository) DeleteByStudentAndCourse(ctx context.Context, studentUUID, courseID string) error <span class="cov8" title="1">{
+        // First, get all assignments for the course
+        assignmentsCursor, err := r.collection.Database().Collection("assignments").Find(ctx, bson.M{"course_id": courseID})
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">defer assignmentsCursor.Close(ctx)
+
+        var assignmentIDs []string
+        for assignmentsCursor.Next(ctx) </span><span class="cov8" title="1">{
+                var assignment struct {
+                        ID string `bson:"_id"`
+                }
+                if err := assignmentsCursor.Decode(&amp;assignment); err != nil </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+                <span class="cov8" title="1">assignmentIDs = append(assignmentIDs, assignment.ID)</span>
+        }
+
+        // Delete all submissions for this student in any assignment of this course
+        <span class="cov8" title="1">filter := bson.M{
+                "student_uuid":  studentUUID,
+                "assignment_id": bson.M{"$in": assignmentIDs},
+        }
+
+        _, err = r.collection.DeleteMany(ctx, filter)
+        return err</span>
+}
 </pre>
 		
 		<pre class="file" id="file15" style="display: none">package router
@@ -4426,6 +4564,7 @@ func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.Enrollmen
         teacherAuthGroup := r.Group("")
         teacherAuthGroup.Use(middleware.TeacherAuth())
         teacherAuthGroup.PUT("/courses/:id/students/:studentId/approve", controller.ApproveStudent)
+        teacherAuthGroup.PUT("/courses/:id/students/:studentId/disapprove", controller.DisapproveStudent)
 }</span>
 
 func InitializeForumRoutes(r *gin.Engine, controller *controller.ForumController) <span class="cov8" title="1">{
@@ -4498,7 +4637,7 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
         forumRepository := repository.NewForumRepository(dbClient, config.DBName)
 
         courseService := service.NewCourseService(courseRepo, enrollmentRepo)
-        enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
+        enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo, submissionRepository)
         assignmentService := service.NewAssignmentService(assignmentRepository, courseService)
         submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository, courseService, aiClient)
         moduleService := service.NewModuleService(moduleRepository)
@@ -4943,6 +5082,7 @@ func (s *CourseService) GetCourseMembers(courseId string) (*schemas.CourseMember
 		<pre class="file" id="file18" style="display: none">package service
 
 import (
+        "context"
         "courses-service/src/model"
         "courses-service/src/repository"
         "courses-service/src/schemas"
@@ -4957,10 +5097,19 @@ import (
 type EnrollmentService struct {
         enrollmentRepository repository.EnrollmentRepositoryInterface
         courseRepository     repository.CourseRepositoryInterface
+        submissionRepository repository.SubmissionRepositoryInterface
 }
 
-func NewEnrollmentService(enrollmentRepository repository.EnrollmentRepositoryInterface, courseRepository repository.CourseRepositoryInterface) *EnrollmentService <span class="cov8" title="1">{
-        return &amp;EnrollmentService{enrollmentRepository: enrollmentRepository, courseRepository: courseRepository}
+func NewEnrollmentService(
+        enrollmentRepository repository.EnrollmentRepositoryInterface,
+        courseRepository repository.CourseRepositoryInterface,
+        submissionRepository repository.SubmissionRepositoryInterface,
+) *EnrollmentService <span class="cov8" title="1">{
+        return &amp;EnrollmentService{
+                enrollmentRepository: enrollmentRepository,
+                courseRepository:     courseRepository,
+                submissionRepository: submissionRepository,
+        }
 }</span>
 
 func (s *EnrollmentService) GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error) <span class="cov8" title="1">{
@@ -4992,25 +5141,49 @@ func (s *EnrollmentService) EnrollStudent(studentID, courseID string) error <spa
                 return fmt.Errorf("course %s not found for enrollment", courseID)
         }</span>
 
-        // Then check if the course has the capacity to enroll more students
-        <span class="cov8" title="1">if course.StudentsAmount &gt;= course.Capacity </span><span class="cov8" title="1">{
-                return fmt.Errorf("course %s is full", courseID)
-        }</span>
-
         <span class="cov8" title="1">if course.TeacherUUID == studentID </span><span class="cov8" title="1">{
                 return fmt.Errorf("teacher %s cannot enroll in course %s", studentID, courseID)
         }</span>
 
-        // Then check if the student is already enrolled in the course
-        <span class="cov8" title="1">enrolled, err := s.enrollmentRepository.IsEnrolled(studentID, courseID)
-        if err != nil </span><span class="cov8" title="1">{
-                return fmt.Errorf("error checking if student %s is enrolled in course %s", studentID, courseID)
+        // Check if student has an existing enrollment (active or dropped)
+        <span class="cov8" title="1">existingEnrollment, err := s.enrollmentRepository.GetEnrollmentByStudentIdAndCourseId(studentID, courseID)
+        if err != nil &amp;&amp; err != mongo.ErrNoDocuments </span><span class="cov8" title="1">{
+                return fmt.Errorf("error checking existing enrollment for student %s in course %s: %v", studentID, courseID, err)
         }</span>
-        <span class="cov8" title="1">if enrolled </span><span class="cov8" title="1">{
+
+        // If student was previously dropped, reactivate their enrollment
+        <span class="cov8" title="1">if existingEnrollment != nil &amp;&amp; existingEnrollment.Status == model.EnrollmentStatusDropped </span><span class="cov8" title="1">{
+                // Delete all previous submissions from when they were dropped
+                err = s.submissionRepository.DeleteByStudentAndCourse(context.TODO(), studentID, courseID)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("error deleting previous submissions for student %s in course %s: %v", studentID, courseID, err)
+                }</span>
+
+                // Reactivate the enrollment
+                <span class="cov8" title="1">err = s.enrollmentRepository.ReactivateDroppedEnrollment(studentID, courseID)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("error reactivating enrollment for student %s in course %s: %v", studentID, courseID, err)
+                }</span>
+
+                <span class="cov8" title="1">return nil</span>
+        }
+
+        // If student is already actively enrolled
+        <span class="cov8" title="1">if existingEnrollment != nil &amp;&amp; existingEnrollment.Status == model.EnrollmentStatusActive </span><span class="cov8" title="1">{
                 return fmt.Errorf("student %s is already enrolled in course %s", studentID, courseID)
         }</span>
 
-        // Then create the enrollment
+        // If student completed the course
+        <span class="cov8" title="1">if existingEnrollment != nil &amp;&amp; existingEnrollment.Status == model.EnrollmentStatusCompleted </span><span class="cov8" title="1">{
+                return fmt.Errorf("student %s has already completed course %s", studentID, courseID)
+        }</span>
+
+        // Check if the course has capacity for new students
+        <span class="cov8" title="1">if course.StudentsAmount &gt;= course.Capacity </span><span class="cov8" title="1">{
+                return fmt.Errorf("course %s is full", courseID)
+        }</span>
+
+        // Create new enrollment
         <span class="cov8" title="1">enrollment := model.Enrollment{
                 StudentID:  studentID,
                 CourseID:   courseID,
@@ -5050,9 +5223,11 @@ func (s *EnrollmentService) UnenrollStudent(studentID, courseID string) error <s
                 return fmt.Errorf("student %s is not enrolled in course %s", studentID, courseID)
         }</span>
 
-        <span class="cov8" title="1">err = s.enrollmentRepository.DeleteEnrollment(studentID, course)
+        // Use DisapproveStudent with the default reason for self-unenrollment
+        <span class="cov8" title="1">defaultReason := "Te diste de baja del curso"
+        err = s.DisapproveStudent(studentID, courseID, defaultReason)
         if err != nil </span><span class="cov8" title="1">{
-                return fmt.Errorf("error deleting enrollment for student %s in course %s", studentID, courseID)
+                return fmt.Errorf("error unenrolling student %s from course %s: %v", studentID, courseID, err)
         }</span>
 
         <span class="cov8" title="1">return nil</span>
@@ -5191,10 +5366,10 @@ func (s *EnrollmentService) ApproveStudent(studentID, courseID string) error <sp
         }</span>
 
         // Check for nil dependencies
-        <span class="cov8" title="1">if s.courseRepository == nil </span><span class="cov8" title="1">{
+        <span class="cov8" title="1">if s.courseRepository == nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("course repository is not available")
         }</span>
-        <span class="cov8" title="1">if s.enrollmentRepository == nil </span><span class="cov8" title="1">{
+        <span class="cov8" title="1">if s.enrollmentRepository == nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("enrollment repository is not available")
         }</span>
 
@@ -5208,6 +5383,52 @@ func (s *EnrollmentService) ApproveStudent(studentID, courseID string) error <sp
         <span class="cov8" title="1">err = s.enrollmentRepository.ApproveStudent(studentID, courseID)
         if err != nil </span><span class="cov8" title="1">{
                 return fmt.Errorf("error approving student: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// DisapproveStudent disapproves a student by changing their enrollment status to dropped with a reason
+func (s *EnrollmentService) DisapproveStudent(studentID, courseID, reason string) error <span class="cov8" title="1">{
+        if strings.TrimSpace(studentID) == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf("student ID is required")
+        }</span>
+        <span class="cov8" title="1">if strings.TrimSpace(courseID) == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf("course ID is required")
+        }</span>
+        <span class="cov8" title="1">if strings.TrimSpace(reason) == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf("reason is required")
+        }</span>
+
+        // Check for nil dependencies
+        <span class="cov8" title="1">if s.courseRepository == nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("course repository is not available")
+        }</span>
+        <span class="cov8" title="1">if s.enrollmentRepository == nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("enrollment repository is not available")
+        }</span>
+
+        // Validate that the course exists
+        <span class="cov8" title="1">_, err := s.courseRepository.GetCourseById(courseID)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("course not found: %v", err)
+        }</span>
+
+        // Check if student is enrolled
+        <span class="cov8" title="1">enrollment, err := s.enrollmentRepository.GetEnrollmentByStudentIdAndCourseId(studentID, courseID)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("enrollment not found: %v", err)
+        }</span>
+
+        // Check if student is in active status (can only disapprove active students)
+        <span class="cov8" title="1">if enrollment.Status != model.EnrollmentStatusActive </span><span class="cov0" title="0">{
+                return fmt.Errorf("student %s is not in active status in course %s (current status: %s)", studentID, courseID, enrollment.Status)
+        }</span>
+
+        // Disapprove the student in the repository
+        <span class="cov8" title="1">err = s.enrollmentRepository.DisapproveStudent(studentID, courseID, reason)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("error disapproving student: %v", err)
         }</span>
 
         <span class="cov8" title="1">return nil</span>

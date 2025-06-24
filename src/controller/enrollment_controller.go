@@ -352,3 +352,54 @@ func (c *EnrollmentController) ApproveStudent(ctx *gin.Context) {
 		CourseID:  courseID,
 	})
 }
+
+// @Summary Disapprove a student in a course
+// @Description Disapprove a student by changing their enrollment status to dropped with a reason
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param studentId path string true "Student ID"
+// @Param disapproveRequest body schemas.DisapproveStudentRequest true "Disapprove request"
+// @Success 200 {object} schemas.DisapproveStudentResponse
+// @Router /courses/{id}/students/{studentId}/disapprove [put]
+func (c *EnrollmentController) DisapproveStudent(ctx *gin.Context) {
+	slog.Debug("Disapproving student", "courseId", ctx.Param("id"), "studentId", ctx.Param("studentId"))
+
+	courseID := ctx.Param("id")
+	studentID := ctx.Param("studentId")
+
+	if courseID == "" {
+		slog.Error("Invalid course ID")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+		return
+	}
+
+	if studentID == "" {
+		slog.Error("Invalid student ID")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Student ID is required"})
+		return
+	}
+
+	var disapproveRequest schemas.DisapproveStudentRequest
+	if err := ctx.ShouldBindJSON(&disapproveRequest); err != nil {
+		slog.Error("Error binding disapprove request", "error", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := c.enrollmentService.DisapproveStudent(studentID, courseID, disapproveRequest.Reason)
+	if err != nil {
+		slog.Error("Error disapproving student", "error", err, "studentId", studentID, "courseId", courseID)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	slog.Debug("Student disapproved successfully", "studentId", studentID, "courseId", courseID, "reason", disapproveRequest.Reason)
+	ctx.JSON(http.StatusOK, schemas.DisapproveStudentResponse{
+		Message:   "Student disapproved successfully",
+		StudentID: studentID,
+		CourseID:  courseID,
+		Reason:    disapproveRequest.Reason,
+	})
+}

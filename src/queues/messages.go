@@ -153,6 +153,22 @@ type UnenrolledStudentFromCourseMessage struct {
 	StudentID string `json:"student_id"`
 }
 
+func NewUnenrolledStudentFromCourseMessage(courseID string, studentID string, teacherID string) *UnenrolledStudentFromCourseMessage {
+	return &UnenrolledStudentFromCourseMessage{
+		EventType: "student.unenrolled",
+		CourseID:  courseID,
+		StudentID: studentID,
+	}
+}
+
+func (m *UnenrolledStudentFromCourseMessage) Encode() (map[string]any, error) {
+	return map[string]any{
+		"event_type": m.EventType,
+		"course_id":  m.CourseID,
+		"student_id": m.StudentID,
+	}, nil
+}
+
 type ForumActivityMessage struct {
 	EventType     string    `json:"event_type"`
 	CourseID      string    `json:"course_id"`

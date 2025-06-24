@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"courses-service/src/model"
 	"courses-service/src/repository"
 	"courses-service/src/schemas"
@@ -15,10 +16,19 @@ import (
 type EnrollmentService struct {
 	enrollmentRepository repository.EnrollmentRepositoryInterface
 	courseRepository     repository.CourseRepositoryInterface
+	submissionRepository repository.SubmissionRepositoryInterface
 }
 
-func NewEnrollmentService(enrollmentRepository repository.EnrollmentRepositoryInterface, courseRepository repository.CourseRepositoryInterface) *EnrollmentService {
-	return &EnrollmentService{enrollmentRepository: enrollmentRepository, courseRepository: courseRepository}
+func NewEnrollmentService(
+	enrollmentRepository repository.EnrollmentRepositoryInterface,
+	courseRepository repository.CourseRepositoryInterface,
+	submissionRepository repository.SubmissionRepositoryInterface,
+) *EnrollmentService {
+	return &EnrollmentService{
+		enrollmentRepository: enrollmentRepository,
+		courseRepository:     courseRepository,
+		submissionRepository: submissionRepository,
+	}
 }
 
 func (s *EnrollmentService) GetEnrollmentsByCourseId(courseID string) ([]*model.Enrollment, error) {
@@ -50,25 +60,49 @@ func (s *EnrollmentService) EnrollStudent(studentID, courseID string) error {
 		return fmt.Errorf("course %s not found for enrollment", courseID)
 	}
 
-	// Then check if the course has the capacity to enroll more students
-	if course.StudentsAmount >= course.Capacity {
-		return fmt.Errorf("course %s is full", courseID)
-	}
-
 	if course.TeacherUUID == studentID {
 		return fmt.Errorf("teacher %s cannot enroll in course %s", studentID, courseID)
 	}
 
-	// Then check if the student is already enrolled in the course
-	enrolled, err := s.enrollmentRepository.IsEnrolled(studentID, courseID)
-	if err != nil {
-		return fmt.Errorf("error checking if student %s is enrolled in course %s", studentID, courseID)
+	// Check if student has an existing enrollment (active or dropped)
+	existingEnrollment, err := s.enrollmentRepository.GetEnrollmentByStudentIdAndCourseId(studentID, courseID)
+	if err != nil && err != mongo.ErrNoDocuments {
+		return fmt.Errorf("error checking existing enrollment for student %s in course %s: %v", studentID, courseID, err)
 	}
-	if enrolled {
+
+	// If student was previously dropped, reactivate their enrollment
+	if existingEnrollment != nil && existingEnrollment.Status == model.EnrollmentStatusDropped {
+		// Delete all previous submissions from when they were dropped
+		err = s.submissionRepository.DeleteByStudentAndCourse(context.TODO(), studentID, courseID)
+		if err != nil {
+			return fmt.Errorf("error deleting previous submissions for student %s in course %s: %v", studentID, courseID, err)
+		}
+
+		// Reactivate the enrollment
+		err = s.enrollmentRepository.ReactivateDroppedEnrollment(studentID, courseID)
+		if err != nil {
+			return fmt.Errorf("error reactivating enrollment for student %s in course %s: %v", studentID, courseID, err)
+		}
+
+		return nil
+	}
+
+	// If student is already actively enrolled
+	if existingEnrollment != nil && existingEnrollment.Status == model.EnrollmentStatusActive {
 		return fmt.Errorf("student %s is already enrolled in course %s", studentID, courseID)
 	}
 
-	// Then create the enrollment
+	// If student completed the course
+	if existingEnrollment != nil && existingEnrollment.Status == model.EnrollmentStatusCompleted {
+		return fmt.Errorf("student %s has already completed course %s", studentID, courseID)
+	}
+
+	// Check if the course has capacity for new students
+	if course.StudentsAmount >= course.Capacity {
+		return fmt.Errorf("course %s is full", courseID)
+	}
+
+	// Create new enrollment
 	enrollment := model.Enrollment{
 		StudentID:  studentID,
 		CourseID:   courseID,
@@ -108,9 +142,11 @@ func (s *EnrollmentService) UnenrollStudent(studentID, courseID string) error {
 		return fmt.Errorf("student %s is not enrolled in course %s", studentID, courseID)
 	}
 
-	err = s.enrollmentRepository.DeleteEnrollment(studentID, course)
+	// Use DisapproveStudent with the default reason for self-unenrollment
+	defaultReason := "Te diste de baja del curso"
+	err = s.DisapproveStudent(studentID, courseID, defaultReason)
 	if err != nil {
-		return fmt.Errorf("error deleting enrollment for student %s in course %s", studentID, courseID)
+		return fmt.Errorf("error unenrolling student %s from course %s: %v", studentID, courseID, err)
 	}
 
 	return nil
@@ -266,6 +302,52 @@ func (s *EnrollmentService) ApproveStudent(studentID, courseID string) error {
 	err = s.enrollmentRepository.ApproveStudent(studentID, courseID)
 	if err != nil {
 		return fmt.Errorf("error approving student: %v", err)
+	}
+
+	return nil
+}
+
+// DisapproveStudent disapproves a student by changing their enrollment status to dropped with a reason
+func (s *EnrollmentService) DisapproveStudent(studentID, courseID, reason string) error {
+	if strings.TrimSpace(studentID) == "" {
+		return fmt.Errorf("student ID is required")
+	}
+	if strings.TrimSpace(courseID) == "" {
+		return fmt.Errorf("course ID is required")
+	}
+	if strings.TrimSpace(reason) == "" {
+		return fmt.Errorf("reason is required")
+	}
+
+	// Check for nil dependencies
+	if s.courseRepository == nil {
+		return fmt.Errorf("course repository is not available")
+	}
+	if s.enrollmentRepository == nil {
+		return fmt.Errorf("enrollment repository is not available")
+	}
+
+	// Validate that the course exists
+	_, err := s.courseRepository.GetCourseById(courseID)
+	if err != nil {
+		return fmt.Errorf("course not found: %v", err)
+	}
+
+	// Check if student is enrolled
+	enrollment, err := s.enrollmentRepository.GetEnrollmentByStudentIdAndCourseId(studentID, courseID)
+	if err != nil {
+		return fmt.Errorf("enrollment not found: %v", err)
+	}
+
+	// Check if student is in active status (can only disapprove active students)
+	if enrollment.Status != model.EnrollmentStatusActive {
+		return fmt.Errorf("student %s is not in active status in course %s (current status: %s)", studentID, courseID, enrollment.Status)
+	}
+
+	// Disapprove the student in the repository
+	err = s.enrollmentRepository.DisapproveStudent(studentID, courseID, reason)
+	if err != nil {
+		return fmt.Errorf("error disapproving student: %v", err)
 	}
 
 	return nil

@@ -102,6 +102,13 @@ func (m *SubmissionMockRepository) GetByStudent(ctx context.Context, studentUUID
 	return nil, errors.New("repository error")
 }
 
+func (m *SubmissionMockRepository) DeleteByStudentAndCourse(ctx context.Context, studentUUID, courseID string) error {
+	if studentUUID == "error-student" || courseID == "error-course" {
+		return errors.New("error deleting submissions")
+	}
+	return nil
+}
+
 type SubmissionMockRepositoryWithError struct{}
 
 func (m *SubmissionMockRepositoryWithError) Create(ctx context.Context, submission *model.Submission) error {
@@ -126,6 +133,10 @@ func (m *SubmissionMockRepositoryWithError) GetByAssignment(ctx context.Context,
 
 func (m *SubmissionMockRepositoryWithError) GetByStudent(ctx context.Context, studentUUID string) ([]model.Submission, error) {
 	return nil, errors.New("repository get error")
+}
+
+func (m *SubmissionMockRepositoryWithError) DeleteByStudentAndCourse(ctx context.Context, studentUUID, courseID string) error {
+	return errors.New("repository delete error")
 }
 
 type AssignmentMockRepository struct{}
@@ -319,6 +330,10 @@ func (m *SubmissionMockRepositoryWithFileAnswers) GetByStudent(ctx context.Conte
 	return nil, nil
 }
 
+func (m *SubmissionMockRepositoryWithFileAnswers) DeleteByStudentAndCourse(ctx context.Context, studentUUID, courseID string) error {
+	return nil
+}
+
 // SubmissionMockRepositoryWithURLAnswers for testing URL submissions
 type SubmissionMockRepositoryWithURLAnswers struct{}
 
@@ -360,6 +375,60 @@ func (m *SubmissionMockRepositoryWithURLAnswers) GetByAssignment(ctx context.Con
 
 func (m *SubmissionMockRepositoryWithURLAnswers) GetByStudent(ctx context.Context, studentUUID string) ([]model.Submission, error) {
 	return nil, nil
+}
+
+func (m *SubmissionMockRepositoryWithURLAnswers) DeleteByStudentAndCourse(ctx context.Context, studentUUID, courseID string) error {
+	return nil
+}
+
+// SubmissionMockRepositoryCustom for testing custom submission repositories
+type SubmissionMockRepositoryCustom struct {
+	*SubmissionMockRepository
+}
+
+func (m *SubmissionMockRepositoryCustom) GetByID(ctx context.Context, id string) (*model.Submission, error) {
+	if id == "submission-with-bad-assignment" {
+		return &model.Submission{
+			ID:           mustParseSubmissionObjectID("submission-with-bad-assignment"),
+			AssignmentID: "nonexistent-assignment",
+			StudentUUID:  "student123",
+			StudentName:  "Test Student",
+			Status:       model.SubmissionStatusDraft,
+			CreatedAt:    time.Now(),
+			UpdatedAt:    time.Now(),
+		}, nil
+	}
+	// Delegate to the original mock for other cases
+	originalMock := &SubmissionMockRepository{}
+	return originalMock.GetByID(ctx, id)
+}
+
+func (m *SubmissionMockRepositoryCustom) Create(ctx context.Context, submission *model.Submission) error {
+	originalMock := &SubmissionMockRepository{}
+	return originalMock.Create(ctx, submission)
+}
+
+func (m *SubmissionMockRepositoryCustom) Update(ctx context.Context, submission *model.Submission) error {
+	originalMock := &SubmissionMockRepository{}
+	return originalMock.Update(ctx, submission)
+}
+
+func (m *SubmissionMockRepositoryCustom) GetByAssignmentAndStudent(ctx context.Context, assignmentID, studentUUID string) (*model.Submission, error) {
+	originalMock := &SubmissionMockRepository{}
+	return originalMock.GetByAssignmentAndStudent(ctx, assignmentID, studentUUID)
+}
+
+func (m *SubmissionMockRepositoryCustom) GetByAssignment(ctx context.Context, assignmentID string) ([]model.Submission, error) {
+	originalMock := &SubmissionMockRepository{}
+	return originalMock.GetByAssignment(ctx, assignmentID)
+}
+
+func (m *SubmissionMockRepositoryCustom) GetByStudent(ctx context.Context, studentUUID string) ([]model.Submission, error) {
+	return m.SubmissionMockRepository.GetByStudent(ctx, studentUUID)
+}
+
+func (m *SubmissionMockRepositoryCustom) DeleteByStudentAndCourse(ctx context.Context, studentUUID, courseID string) error {
+	return m.SubmissionMockRepository.DeleteByStudentAndCourse(ctx, studentUUID, courseID)
 }
 
 // Helper function to create consistent ObjectIDs for testing
@@ -683,53 +752,6 @@ func TestSubmitSubmissionWithNonexistentAssignment(t *testing.T) {
 	err := submissionService.SubmitSubmission(context.Background(), "submission-with-bad-assignment")
 	assert.Error(t, err)
 	assert.Equal(t, service.ErrAssignmentNotFound, err)
-}
-
-// Custom mock repository for the specific test case
-type SubmissionMockRepositoryCustom struct {
-	*SubmissionMockRepository
-}
-
-func (m *SubmissionMockRepositoryCustom) GetByID(ctx context.Context, id string) (*model.Submission, error) {
-	if id == "submission-with-bad-assignment" {
-		return &model.Submission{
-			ID:           mustParseSubmissionObjectID("submission-with-bad-assignment"),
-			AssignmentID: "nonexistent-assignment",
-			StudentUUID:  "student123",
-			StudentName:  "Test Student",
-			Status:       model.SubmissionStatusDraft,
-			CreatedAt:    time.Now(),
-			UpdatedAt:    time.Now(),
-		}, nil
-	}
-	// Delegate to the original mock for other cases
-	originalMock := &SubmissionMockRepository{}
-	return originalMock.GetByID(ctx, id)
-}
-
-func (m *SubmissionMockRepositoryCustom) Create(ctx context.Context, submission *model.Submission) error {
-	originalMock := &SubmissionMockRepository{}
-	return originalMock.Create(ctx, submission)
-}
-
-func (m *SubmissionMockRepositoryCustom) Update(ctx context.Context, submission *model.Submission) error {
-	originalMock := &SubmissionMockRepository{}
-	return originalMock.Update(ctx, submission)
-}
-
-func (m *SubmissionMockRepositoryCustom) GetByAssignmentAndStudent(ctx context.Context, assignmentID, studentUUID string) (*model.Submission, error) {
-	originalMock := &SubmissionMockRepository{}
-	return originalMock.GetByAssignmentAndStudent(ctx, assignmentID, studentUUID)
-}
-
-func (m *SubmissionMockRepositoryCustom) GetByAssignment(ctx context.Context, assignmentID string) ([]model.Submission, error) {
-	originalMock := &SubmissionMockRepository{}
-	return originalMock.GetByAssignment(ctx, assignmentID)
-}
-
-func (m *SubmissionMockRepositoryCustom) GetByStudent(ctx context.Context, studentUUID string) ([]model.Submission, error) {
-	originalMock := &SubmissionMockRepository{}
-	return originalMock.GetByStudent(ctx, studentUUID)
 }
 
 func TestSubmitSubmissionWithRepositoryError(t *testing.T) {

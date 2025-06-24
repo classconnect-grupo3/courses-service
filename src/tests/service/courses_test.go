@@ -133,6 +133,22 @@ func (m *MockEnrollmentRepository) ApproveStudent(studentID, courseID string) er
 	return nil
 }
 
+// DisapproveStudent implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepository) DisapproveStudent(studentID, courseID, reason string) error {
+	if studentID == "error-student" || courseID == "error-course" {
+		return errors.New("error disapproving student")
+	}
+	return nil
+}
+
+// ReactivateDroppedEnrollment implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepository) ReactivateDroppedEnrollment(studentID, courseID string) error {
+	if studentID == "error-student" || courseID == "error-course" {
+		return errors.New("error reactivating enrollment")
+	}
+	return nil
+}
+
 type MockCourseRepository struct{}
 
 // RemoveAuxTeacherFromCourse implements repository.CourseRepositoryInterface.
@@ -1259,7 +1275,17 @@ func (m *MockEnrollmentRepositoryWithError) GetStudentFavouriteCourses(studentUU
 
 // ApproveStudent implements repository.EnrollmentRepositoryInterface.
 func (m *MockEnrollmentRepositoryWithError) ApproveStudent(studentID, courseID string) error {
-	return errors.New("error approving student")
+	return errors.New("Error approving student")
+}
+
+// DisapproveStudent implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepositoryWithError) DisapproveStudent(studentID, courseID, reason string) error {
+	return errors.New("Error disapproving student")
+}
+
+// ReactivateDroppedEnrollment implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepositoryWithError) ReactivateDroppedEnrollment(studentID, courseID string) error {
+	return errors.New("Error reactivating enrollment")
 }
 
 // Mock course repository with errors for testing error scenarios

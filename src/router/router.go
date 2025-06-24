@@ -115,6 +115,7 @@ func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.Enrollmen
 	teacherAuthGroup := r.Group("")
 	teacherAuthGroup.Use(middleware.TeacherAuth())
 	teacherAuthGroup.PUT("/courses/:id/students/:studentId/approve", controller.ApproveStudent)
+	teacherAuthGroup.PUT("/courses/:id/students/:studentId/disapprove", controller.DisapproveStudent)
 }
 
 func InitializeForumRoutes(r *gin.Engine, controller *controller.ForumController) {
@@ -187,7 +188,7 @@ func NewRouter(config *config.Config) *gin.Engine {
 	forumRepository := repository.NewForumRepository(dbClient, config.DBName)
 
 	courseService := service.NewCourseService(courseRepo, enrollmentRepo)
-	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
+	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo, submissionRepository)
 	assignmentService := service.NewAssignmentService(assignmentRepository, courseService)
 	submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository, courseService, aiClient)
 	moduleService := service.NewModuleService(moduleRepository)

@@ -91,6 +91,14 @@ func (m *MockEnrollmentService) ApproveStudent(studentID, courseID string) error
 	return nil
 }
 
+// DisapproveStudent implements service.EnrollmentServiceInterface.
+func (m *MockEnrollmentService) DisapproveStudent(studentID, courseID, reason string) error {
+	if studentID == "error-student" || courseID == "error-course" {
+		return errors.New("error disapproving student")
+	}
+	return nil
+}
+
 type MockEnrollmentServiceWithError struct{}
 
 // CreateStudentFeedback implements service.EnrollmentServiceInterface.
@@ -127,6 +135,11 @@ func (m *MockEnrollmentServiceWithError) UnsetFavouriteCourse(studentID, courseI
 // ApproveStudent implements service.EnrollmentServiceInterface.
 func (m *MockEnrollmentServiceWithError) ApproveStudent(studentID, courseID string) error {
 	return errors.New("Error approving student")
+}
+
+// DisapproveStudent implements service.EnrollmentServiceInterface.
+func (m *MockEnrollmentServiceWithError) DisapproveStudent(studentID, courseID, reason string) error {
+	return errors.New("Error disapproving student")
 }
 
 func TestEnrollStudent(t *testing.T) {
@@ -820,19 +833,246 @@ func TestApproveStudentWithValidUUIDs(t *testing.T) {
 func TestApproveStudentResponseStructure(t *testing.T) {
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("PUT", "/courses/test-course-789/students/test-student-321/approve", nil)
-	req.Header.Set("X-Teacher-UUID", "teacher-789")
-	req.Header.Set("X-Teacher-Name", "Response Test Teacher")
+	req, _ := http.NewRequest("PUT", "/courses/course-123/students/student-123/approve", nil)
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	req.Header.Set("X-Teacher-Name", "Teacher Name")
 	normalEnrollmentRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	// Verify all required fields are in response
-	responseBody := w.Body.String()
-	assert.Contains(t, responseBody, `"message"`)
-	assert.Contains(t, responseBody, `"student_id"`)
-	assert.Contains(t, responseBody, `"course_id"`)
-	assert.Contains(t, responseBody, "Student approved successfully")
-	assert.Contains(t, responseBody, "test-student-321")
-	assert.Contains(t, responseBody, "test-course-789")
+	// Verify response structure
+	expected := `{"message":"Student approved successfully","student_id":"student-123","course_id":"course-123"}`
+	assert.JSONEq(t, expected, w.Body.String())
+}
+
+// Tests for DisapproveStudent endpoint
+
+func TestDisapproveStudent(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"reason": "Student did not meet the requirements"}`
+
+	req, _ := http.NewRequest("PUT", "/courses/course-123/students/student-123/disapprove", strings.NewReader(body))
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	req.Header.Set("X-Teacher-Name", "Teacher Name")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "Student disapproved successfully")
+	assert.Contains(t, w.Body.String(), "Student did not meet the requirements")
+}
+
+func TestDisapproveStudentWithEmptyCourseId(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"reason": "Some reason"}`
+
+	req, _ := http.NewRequest("PUT", "/courses//students/student-123/disapprove", strings.NewReader(body))
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	req.Header.Set("X-Teacher-Name", "Teacher Name")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Course ID is required")
+}
+
+func TestDisapproveStudentWithEmptyStudentId(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"reason": "Some reason"}`
+
+	req, _ := http.NewRequest("PUT", "/courses/course-123/students//disapprove", strings.NewReader(body))
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	req.Header.Set("X-Teacher-Name", "Teacher Name")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Student ID is required")
+}
+
+func TestDisapproveStudentWithBothEmptyIds(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"reason": "Some reason"}`
+
+	req, _ := http.NewRequest("PUT", "/courses//students//disapprove", strings.NewReader(body))
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	req.Header.Set("X-Teacher-Name", "Teacher Name")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Course ID is required")
+}
+
+func TestDisapproveStudentWithInvalidJSON(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"invalid": json}`
+
+	req, _ := http.NewRequest("PUT", "/courses/course-123/students/student-123/disapprove", strings.NewReader(body))
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	req.Header.Set("X-Teacher-Name", "Teacher Name")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "error")
+}
+
+func TestDisapproveStudentWithMissingReason(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{}`
+
+	req, _ := http.NewRequest("PUT", "/courses/course-123/students/student-123/disapprove", strings.NewReader(body))
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	req.Header.Set("X-Teacher-Name", "Teacher Name")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Error:Field validation")
+}
+
+func TestDisapproveStudentWithEmptyReason(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"reason": ""}`
+
+	req, _ := http.NewRequest("PUT", "/courses/course-123/students/student-123/disapprove", strings.NewReader(body))
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	req.Header.Set("X-Teacher-Name", "Teacher Name")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Error:Field validation")
+}
+
+func TestDisapproveStudentWithServiceError(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"reason": "Some reason"}`
+
+	req, _ := http.NewRequest("PUT", "/courses/course-123/students/student-123/disapprove", strings.NewReader(body))
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	req.Header.Set("X-Teacher-Name", "Teacher Name")
+	errorEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "Error disapproving student")
+}
+
+func TestDisapproveStudentWithErrorStudentId(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"reason": "Some reason"}`
+
+	req, _ := http.NewRequest("PUT", "/courses/course-123/students/error-student/disapprove", strings.NewReader(body))
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	req.Header.Set("X-Teacher-Name", "Teacher Name")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "error disapproving student")
+}
+
+func TestDisapproveStudentWithErrorCourseId(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"reason": "Some reason"}`
+
+	req, _ := http.NewRequest("PUT", "/courses/error-course/students/student-123/disapprove", strings.NewReader(body))
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	req.Header.Set("X-Teacher-Name", "Teacher Name")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "error disapproving student")
+}
+
+func TestDisapproveStudentWithLongReason(t *testing.T) {
+	w := httptest.NewRecorder()
+	longReason := strings.Repeat("This is a very long reason. ", 50)
+	body := fmt.Sprintf(`{"reason": "%s"}`, longReason)
+
+	req, _ := http.NewRequest("PUT", "/courses/course-123/students/student-123/disapprove", strings.NewReader(body))
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	req.Header.Set("X-Teacher-Name", "Teacher Name")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "Student disapproved successfully")
+	assert.Contains(t, w.Body.String(), longReason)
+}
+
+func TestDisapproveStudentWithSpecialCharactersInReason(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"reason": "Student failed due to: 1) Poor attendance, 2) Low grades, 3) Missed deadlines & assignments"}`
+
+	req, _ := http.NewRequest("PUT", "/courses/course-123/students/student-123/disapprove", strings.NewReader(body))
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	req.Header.Set("X-Teacher-Name", "Teacher Name")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "Student disapproved successfully")
+	assert.Contains(t, w.Body.String(), "Poor attendance")
+}
+
+func TestDisapproveStudentResponseStructure(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"reason": "Academic performance below standards"}`
+
+	req, _ := http.NewRequest("PUT", "/courses/course-123/students/student-123/disapprove", strings.NewReader(body))
+	req.Header.Set("X-Teacher-UUID", "teacher-123")
+	req.Header.Set("X-Teacher-Name", "Teacher Name")
+	normalEnrollmentRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Verify response structure
+	expected := `{"message":"Student disapproved successfully","student_id":"student-123","course_id":"course-123","reason":"Academic performance below standards"}`
+	assert.JSONEq(t, expected, w.Body.String())
+}
+
+func TestDisapproveStudentWithoutTeacherHeaders(t *testing.T) {
+	w := httptest.NewRecorder()
+	body := `{"reason": "Some reason"}`
+
+	req, _ := http.NewRequest("PUT", "/courses/course-123/students/student-123/disapprove", strings.NewReader(body))
+	// No teacher headers set
+	normalEnrollmentRouter.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+func TestDisapproveStudentWithDifferentReasonTypes(t *testing.T) {
+	testCases := []struct {
+		name     string
+		reason   string
+		expected string
+	}{
+		{
+			name:     "Academic failure",
+			reason:   "Failed to meet academic requirements",
+			expected: "Failed to meet academic requirements",
+		},
+		{
+			name:     "Behavioral issues",
+			reason:   "Inappropriate behavior in class",
+			expected: "Inappropriate behavior in class",
+		},
+		{
+			name:     "Attendance problems",
+			reason:   "Excessive absences",
+			expected: "Excessive absences",
+		},
+		{
+			name:     "Short reason",
+			reason:   "Failed",
+			expected: "Failed",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			body := fmt.Sprintf(`{"reason": "%s"}`, tc.reason)
+
+			req, _ := http.NewRequest("PUT", "/courses/course-123/students/student-123/disapprove", strings.NewReader(body))
+			req.Header.Set("X-Teacher-UUID", "teacher-123")
+			req.Header.Set("X-Teacher-Name", "Teacher Name")
+			normalEnrollmentRouter.ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusOK, w.Code)
+			assert.Contains(t, w.Body.String(), tc.expected)
+		})
+	}
 }
