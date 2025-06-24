@@ -540,6 +540,40 @@ func (c *ForumController) SearchQuestions(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
+// @Summary Get forum participants
+// @Description Get all unique participants (authors, answerers, voters) for a specific course forum
+// @Tags forum
+// @Accept json
+// @Produce json
+// @Param courseId path string true "Course ID"
+// @Success 200 {object} schemas.ForumParticipantsResponse
+// @Failure 400 {object} schemas.ErrorResponse
+// @Failure 404 {object} schemas.ErrorResponse
+// @Failure 500 {object} schemas.ErrorResponse
+// @Router /forum/courses/{courseId}/participants [get]
+func (c *ForumController) GetForumParticipants(ctx *gin.Context) {
+	slog.Debug("Getting forum participants")
+
+	courseID := ctx.Param("courseId")
+	participants, err := c.service.GetForumParticipants(courseID)
+	if err != nil {
+		slog.Error("Error getting forum participants", "error", err)
+		if err.Error() == "course not found" {
+			ctx.JSON(http.StatusNotFound, schemas.ErrorResponse{Error: err.Error()})
+		} else {
+			ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
+		}
+		return
+	}
+
+	response := schemas.ForumParticipantsResponse{
+		Participants: participants,
+	}
+
+	slog.Debug("Forum participants retrieved", "course_id", courseID, "total", len(participants))
+	ctx.JSON(http.StatusOK, response)
+}
+
 // Helper methods for mapping models to responses
 
 func (c *ForumController) mapQuestionToResponse(question *model.ForumQuestion) schemas.QuestionResponse {
