@@ -401,14 +401,7 @@ func (m *MockCourseRepositoryForEnrollment) CountUniqueTeachers() (int64, error)
 }
 
 func (m *MockCourseRepositoryForEnrollment) CountUniqueAuxTeachers() (int64, error) {
-	return 3, nil
-}
-
-func (m *MockCourseRepositoryForEnrollment) GetTopTeachersByCourseCount(limit int) ([]schemas.CourseDistributionByTeacher, error) {
-	return []schemas.CourseDistributionByTeacher{
-		{TeacherID: "teacher-1", TeacherName: "Teacher One", CourseCount: 2},
-		{TeacherID: "teacher-2", TeacherName: "Teacher Two", CourseCount: 1},
-	}, nil
+	return 0, nil
 }
 
 func (m *MockCourseRepositoryForEnrollment) GetRecentCourses(limit int) ([]schemas.CourseBasicInfo, error) {

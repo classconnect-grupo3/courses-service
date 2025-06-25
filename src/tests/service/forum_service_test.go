@@ -386,14 +386,7 @@ func (m *MockForumCourseRepository) CountUniqueTeachers() (int64, error) {
 }
 
 func (m *MockForumCourseRepository) CountUniqueAuxTeachers() (int64, error) {
-	return 3, nil
-}
-
-func (m *MockForumCourseRepository) GetTopTeachersByCourseCount(limit int) ([]schemas.CourseDistributionByTeacher, error) {
-	return []schemas.CourseDistributionByTeacher{
-		{TeacherID: "teacher-1", TeacherName: "Teacher One", CourseCount: 2},
-		{TeacherID: "teacher-2", TeacherName: "Teacher Two", CourseCount: 1},
-	}, nil
+	return 0, nil
 }
 
 func (m *MockForumCourseRepository) GetRecentCourses(limit int) ([]schemas.CourseBasicInfo, error) {
