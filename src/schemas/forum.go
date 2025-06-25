@@ -99,6 +99,12 @@ type SearchQuestionsResponse struct {
 	Total     int                `json:"total"`
 }
 
+// Forum participants schemas
+
+type ForumParticipantsResponse struct {
+	Participants []string `json:"participants"`
+}
+
 // Generic response schemas
 
 type MessageResponse struct {

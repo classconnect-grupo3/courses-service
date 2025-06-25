@@ -140,6 +140,9 @@ func InitializeForumRoutes(r *gin.Engine, controller *controller.ForumController
 
 	// Search endpoints
 	r.GET("/forum/courses/:courseId/search", controller.SearchQuestions)
+
+	// Forum participants endpoints
+	r.GET("/forum/courses/:courseId/participants", controller.GetForumParticipants)
 }
 
 // InitializeStatisticsRoutes sets up all statistics-related routes
