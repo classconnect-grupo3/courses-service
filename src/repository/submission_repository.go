@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"courses-service/src/model"
 
@@ -122,4 +123,43 @@ func (r *MongoSubmissionRepository) DeleteByStudentAndCourse(ctx context.Context
 
 	_, err = r.collection.DeleteMany(ctx, filter)
 	return err
+}
+
+// CountSubmissions returns the total number of submissions
+func (r *MongoSubmissionRepository) CountSubmissions(ctx context.Context) (int64, error) {
+	count, err := r.collection.CountDocuments(ctx, bson.M{})
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// CountSubmissionsByStatus returns the number of submissions by status
+func (r *MongoSubmissionRepository) CountSubmissionsByStatus(ctx context.Context, status model.SubmissionStatus) (int64, error) {
+	filter := bson.M{"status": status}
+	count, err := r.collection.CountDocuments(ctx, filter)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// CountSubmissionsThisMonth returns the number of submissions created this month
+func (r *MongoSubmissionRepository) CountSubmissionsThisMonth(ctx context.Context) (int64, error) {
+	now := time.Now()
+	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	endOfMonth := startOfMonth.AddDate(0, 1, 0)
+
+	filter := bson.M{
+		"created_at": bson.M{
+			"$gte": startOfMonth,
+			"$lt":  endOfMonth,
+		},
+	}
+
+	count, err := r.collection.CountDocuments(ctx, filter)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
 }

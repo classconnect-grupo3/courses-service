@@ -453,3 +453,52 @@ func (r *ForumRepository) SearchQuestions(courseID string, query string, tags []
 
 	return questions, nil
 }
+
+// CountQuestions returns the total number of questions
+func (r *ForumRepository) CountQuestions() (int64, error) {
+	count, err := r.questionCollection.CountDocuments(context.TODO(), bson.M{})
+	if err != nil {
+		return 0, fmt.Errorf("failed to count questions: %v", err)
+	}
+	return count, nil
+}
+
+// CountQuestionsByStatus returns the number of questions by status
+func (r *ForumRepository) CountQuestionsByStatus(status model.QuestionStatus) (int64, error) {
+	filter := bson.M{"status": status}
+	count, err := r.questionCollection.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count questions by status: %v", err)
+	}
+	return count, nil
+}
+
+// CountAnswers returns the total number of answers across all questions
+func (r *ForumRepository) CountAnswers() (int64, error) {
+	pipeline := []bson.M{
+		{"$unwind": "$answers"},
+		{"$count": "total_answers"},
+	}
+
+	cursor, err := r.questionCollection.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count answers: %v", err)
+	}
+	defer cursor.Close(context.TODO())
+
+	var result []bson.M
+	if err = cursor.All(context.TODO(), &result); err != nil {
+		return 0, fmt.Errorf("failed to decode answers count: %v", err)
+	}
+
+	if len(result) == 0 {
+		return 0, nil
+	}
+
+	count, ok := result[0]["total_answers"].(int32)
+	if !ok {
+		return 0, fmt.Errorf("unexpected result format for answers count")
+	}
+
+	return int64(count), nil
+}

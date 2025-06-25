@@ -109,6 +109,26 @@ func (m *SubmissionMockRepository) DeleteByStudentAndCourse(ctx context.Context,
 	return nil
 }
 
+// Backoffice statistics methods for SubmissionMockRepository
+func (m *SubmissionMockRepository) CountSubmissions(ctx context.Context) (int64, error) {
+	return 1, nil
+}
+
+func (m *SubmissionMockRepository) CountSubmissionsByStatus(ctx context.Context, status model.SubmissionStatus) (int64, error) {
+	if status == model.SubmissionStatusSubmitted {
+		return 1, nil
+	}
+	return 0, nil
+}
+
+func (m *SubmissionMockRepository) CountLateSubmissions(ctx context.Context) (int64, error) {
+	return 0, nil
+}
+
+func (m *SubmissionMockRepository) CountSubmissionsThisMonth(ctx context.Context) (int64, error) {
+	return 1, nil
+}
+
 type SubmissionMockRepositoryWithError struct{}
 
 func (m *SubmissionMockRepositoryWithError) Create(ctx context.Context, submission *model.Submission) error {
@@ -137,6 +157,23 @@ func (m *SubmissionMockRepositoryWithError) GetByStudent(ctx context.Context, st
 
 func (m *SubmissionMockRepositoryWithError) DeleteByStudentAndCourse(ctx context.Context, studentUUID, courseID string) error {
 	return errors.New("repository delete error")
+}
+
+// Backoffice statistics methods for SubmissionMockRepositoryWithError
+func (m *SubmissionMockRepositoryWithError) CountSubmissions(ctx context.Context) (int64, error) {
+	return 0, errors.New("error counting submissions")
+}
+
+func (m *SubmissionMockRepositoryWithError) CountSubmissionsByStatus(ctx context.Context, status model.SubmissionStatus) (int64, error) {
+	return 0, errors.New("error counting submissions by status")
+}
+
+func (m *SubmissionMockRepositoryWithError) CountLateSubmissions(ctx context.Context) (int64, error) {
+	return 0, errors.New("error counting late submissions")
+}
+
+func (m *SubmissionMockRepositoryWithError) CountSubmissionsThisMonth(ctx context.Context) (int64, error) {
+	return 0, errors.New("error counting submissions this month")
 }
 
 type AssignmentMockRepository struct{}
@@ -179,6 +216,50 @@ func (m *AssignmentMockRepository) UpdateAssignment(id string, updateAssignment 
 
 func (m *AssignmentMockRepository) DeleteAssignment(id string) error {
 	return nil
+}
+
+// Backoffice statistics methods for AssignmentMockRepository
+func (m *AssignmentMockRepository) CountAssignments() (int64, error) {
+	return 1, nil
+}
+
+func (m *AssignmentMockRepository) CountAssignmentsByType(assignmentType string) (int64, error) {
+	if assignmentType == "exam" {
+		return 1, nil
+	}
+	return 0, nil
+}
+
+func (m *AssignmentMockRepository) CountAssignmentsByStatus(status string) (int64, error) {
+	if status == "published" {
+		return 1, nil
+	}
+	return 0, nil
+}
+
+func (m *AssignmentMockRepository) CountAssignmentsByTypeAndStatus(assignmentType, status string) (int64, error) {
+	if assignmentType == "exam" && status == "published" {
+		return 1, nil
+	}
+	return 0, nil
+}
+
+func (m *AssignmentMockRepository) GetRecentAssignments(limit int) ([]schemas.AssignmentBasicInfo, error) {
+	return []schemas.AssignmentBasicInfo{}, nil
+}
+
+func (m *AssignmentMockRepository) CountAssignmentsCreatedThisMonth() (int64, error) {
+	return 1, nil
+}
+
+func (m *AssignmentMockRepository) GetAssignmentDistribution() ([]schemas.AssignmentDistribution, error) {
+	return []schemas.AssignmentDistribution{
+		{
+			Type:   "exam",
+			Status: "published",
+			Count:  1,
+		},
+	}, nil
 }
 
 type CourseMockService struct{}
@@ -334,6 +415,23 @@ func (m *SubmissionMockRepositoryWithFileAnswers) DeleteByStudentAndCourse(ctx c
 	return nil
 }
 
+// Backoffice statistics methods for SubmissionMockRepositoryWithFileAnswers
+func (m *SubmissionMockRepositoryWithFileAnswers) CountSubmissions(ctx context.Context) (int64, error) {
+	return 1, nil
+}
+
+func (m *SubmissionMockRepositoryWithFileAnswers) CountSubmissionsByStatus(ctx context.Context, status model.SubmissionStatus) (int64, error) {
+	return 0, nil
+}
+
+func (m *SubmissionMockRepositoryWithFileAnswers) CountLateSubmissions(ctx context.Context) (int64, error) {
+	return 0, nil
+}
+
+func (m *SubmissionMockRepositoryWithFileAnswers) CountSubmissionsThisMonth(ctx context.Context) (int64, error) {
+	return 1, nil
+}
+
 // SubmissionMockRepositoryWithURLAnswers for testing URL submissions
 type SubmissionMockRepositoryWithURLAnswers struct{}
 
@@ -379,6 +477,23 @@ func (m *SubmissionMockRepositoryWithURLAnswers) GetByStudent(ctx context.Contex
 
 func (m *SubmissionMockRepositoryWithURLAnswers) DeleteByStudentAndCourse(ctx context.Context, studentUUID, courseID string) error {
 	return nil
+}
+
+// Backoffice statistics methods for SubmissionMockRepositoryWithURLAnswers
+func (m *SubmissionMockRepositoryWithURLAnswers) CountSubmissions(ctx context.Context) (int64, error) {
+	return 1, nil
+}
+
+func (m *SubmissionMockRepositoryWithURLAnswers) CountSubmissionsByStatus(ctx context.Context, status model.SubmissionStatus) (int64, error) {
+	return 0, nil
+}
+
+func (m *SubmissionMockRepositoryWithURLAnswers) CountLateSubmissions(ctx context.Context) (int64, error) {
+	return 0, nil
+}
+
+func (m *SubmissionMockRepositoryWithURLAnswers) CountSubmissionsThisMonth(ctx context.Context) (int64, error) {
+	return 1, nil
 }
 
 // SubmissionMockRepositoryCustom for testing custom submission repositories
@@ -429,6 +544,23 @@ func (m *SubmissionMockRepositoryCustom) GetByStudent(ctx context.Context, stude
 
 func (m *SubmissionMockRepositoryCustom) DeleteByStudentAndCourse(ctx context.Context, studentUUID, courseID string) error {
 	return m.SubmissionMockRepository.DeleteByStudentAndCourse(ctx, studentUUID, courseID)
+}
+
+// Backoffice statistics methods for SubmissionMockRepositoryCustom
+func (m *SubmissionMockRepositoryCustom) CountSubmissions(ctx context.Context) (int64, error) {
+	return m.SubmissionMockRepository.CountSubmissions(ctx)
+}
+
+func (m *SubmissionMockRepositoryCustom) CountSubmissionsByStatus(ctx context.Context, status model.SubmissionStatus) (int64, error) {
+	return m.SubmissionMockRepository.CountSubmissionsByStatus(ctx, status)
+}
+
+func (m *SubmissionMockRepositoryCustom) CountLateSubmissions(ctx context.Context) (int64, error) {
+	return m.SubmissionMockRepository.CountLateSubmissions(ctx)
+}
+
+func (m *SubmissionMockRepositoryCustom) CountSubmissionsThisMonth(ctx context.Context) (int64, error) {
+	return m.SubmissionMockRepository.CountSubmissionsThisMonth(ctx)
 }
 
 // Helper function to create consistent ObjectIDs for testing

@@ -495,3 +495,300 @@ func (s *StatisticsService) filterAndSeparateAssignments(assignments []*model.As
 	}
 	return filteredAssignments, examAssignments, homeworkAssignments
 }
+
+// GetBackofficeStatistics returns general system statistics for backoffice
+func (s *StatisticsService) GetBackofficeStatistics(ctx context.Context) (*schemas.BackofficeStatisticsResponse, error) {
+	// Get general counts
+	totalCourses, err := s.courseRepo.CountCourses()
+	if err != nil {
+		return nil, err
+	}
+
+	totalAssignments, err := s.assignmentRepo.CountAssignments()
+	if err != nil {
+		return nil, err
+	}
+
+	totalSubmissions, err := s.submissionRepo.CountSubmissions(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	totalEnrollments, err := s.enrollmentRepo.CountEnrollments()
+	if err != nil {
+		return nil, err
+	}
+
+	totalForumQuestions, err := s.forumRepo.CountQuestions()
+	if err != nil {
+		return nil, err
+	}
+
+	totalForumAnswers, err := s.forumRepo.CountAnswers()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get course statistics by status
+	activeCourses, err := s.courseRepo.CountActiveCourses()
+	if err != nil {
+		return nil, err
+	}
+
+	finishedCourses, err := s.courseRepo.CountFinishedCourses()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get assignment statistics by type
+	totalExams, err := s.assignmentRepo.CountAssignmentsByType("exam")
+	if err != nil {
+		return nil, err
+	}
+
+	totalHomeworks, err := s.assignmentRepo.CountAssignmentsByType("homework")
+	if err != nil {
+		return nil, err
+	}
+
+	totalQuizzes, err := s.assignmentRepo.CountAssignmentsByType("quiz")
+	if err != nil {
+		return nil, err
+	}
+
+	// Get submission statistics by status
+	draftSubmissions, err := s.submissionRepo.CountSubmissionsByStatus(ctx, model.SubmissionStatusDraft)
+	if err != nil {
+		return nil, err
+	}
+
+	submittedSubmissions, err := s.submissionRepo.CountSubmissionsByStatus(ctx, model.SubmissionStatusSubmitted)
+	if err != nil {
+		return nil, err
+	}
+
+	lateSubmissions, err := s.submissionRepo.CountSubmissionsByStatus(ctx, model.SubmissionStatusLate)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get enrollment statistics by status
+	activeEnrollments, err := s.enrollmentRepo.CountEnrollmentsByStatus(model.EnrollmentStatusActive)
+	if err != nil {
+		return nil, err
+	}
+
+	droppedEnrollments, err := s.enrollmentRepo.CountEnrollmentsByStatus(model.EnrollmentStatusDropped)
+	if err != nil {
+		return nil, err
+	}
+
+	completedEnrollments, err := s.enrollmentRepo.CountEnrollmentsByStatus(model.EnrollmentStatusCompleted)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get forum statistics by status
+	openForumQuestions, err := s.forumRepo.CountQuestionsByStatus(model.QuestionStatusOpen)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvedForumQuestions, err := s.forumRepo.CountQuestionsByStatus(model.QuestionStatusResolved)
+	if err != nil {
+		return nil, err
+	}
+
+	closedForumQuestions, err := s.forumRepo.CountQuestionsByStatus(model.QuestionStatusClosed)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get teacher and student statistics
+	totalUniqueTeachers, err := s.courseRepo.CountUniqueTeachers()
+	if err != nil {
+		return nil, err
+	}
+
+	totalUniqueAuxTeachers, err := s.courseRepo.CountUniqueAuxTeachers()
+	if err != nil {
+		return nil, err
+	}
+
+	totalUniqueStudents, err := s.enrollmentRepo.CountUniqueStudents()
+	if err != nil {
+		return nil, err
+	}
+
+	// Calculate averages
+	averageStudentsPerCourse := float64(0)
+	if totalCourses > 0 {
+		averageStudentsPerCourse = float64(totalEnrollments) / float64(totalCourses)
+	}
+
+	averageAssignmentsPerCourse := float64(0)
+	if totalCourses > 0 {
+		averageAssignmentsPerCourse = float64(totalAssignments) / float64(totalCourses)
+	}
+
+	averageSubmissionsPerAssignment := float64(0)
+	if totalAssignments > 0 {
+		averageSubmissionsPerAssignment = float64(totalSubmissions) / float64(totalAssignments)
+	}
+
+	// Get monthly statistics
+	coursesCreatedThisMonth, err := s.courseRepo.CountCoursesCreatedThisMonth()
+	if err != nil {
+		return nil, err
+	}
+
+	assignmentsCreatedThisMonth, err := s.assignmentRepo.CountAssignmentsCreatedThisMonth()
+	if err != nil {
+		return nil, err
+	}
+
+	submissionsThisMonth, err := s.submissionRepo.CountSubmissionsThisMonth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	enrollmentsThisMonth, err := s.enrollmentRepo.CountEnrollmentsThisMonth()
+	if err != nil {
+		return nil, err
+	}
+
+	return &schemas.BackofficeStatisticsResponse{
+		TotalCourses:                    int(totalCourses),
+		TotalAssignments:                int(totalAssignments),
+		TotalSubmissions:                int(totalSubmissions),
+		TotalEnrollments:                int(totalEnrollments),
+		TotalForumQuestions:             int(totalForumQuestions),
+		TotalForumAnswers:               int(totalForumAnswers),
+		ActiveCourses:                   int(activeCourses),
+		FinishedCourses:                 int(finishedCourses),
+		TotalExams:                      int(totalExams),
+		TotalHomeworks:                  int(totalHomeworks),
+		TotalQuizzes:                    int(totalQuizzes),
+		DraftSubmissions:                int(draftSubmissions),
+		SubmittedSubmissions:            int(submittedSubmissions),
+		LateSubmissions:                 int(lateSubmissions),
+		ActiveEnrollments:               int(activeEnrollments),
+		DroppedEnrollments:              int(droppedEnrollments),
+		CompletedEnrollments:            int(completedEnrollments),
+		OpenForumQuestions:              int(openForumQuestions),
+		ResolvedForumQuestions:          int(resolvedForumQuestions),
+		ClosedForumQuestions:            int(closedForumQuestions),
+		TotalUniqueTeachers:             int(totalUniqueTeachers),
+		TotalUniqueAuxTeachers:          int(totalUniqueAuxTeachers),
+		TotalUniqueStudents:             int(totalUniqueStudents),
+		AverageStudentsPerCourse:        averageStudentsPerCourse,
+		AverageAssignmentsPerCourse:     averageAssignmentsPerCourse,
+		AverageSubmissionsPerAssignment: averageSubmissionsPerAssignment,
+		CoursesCreatedThisMonth:         int(coursesCreatedThisMonth),
+		AssignmentsCreatedThisMonth:     int(assignmentsCreatedThisMonth),
+		SubmissionsThisMonth:            int(submissionsThisMonth),
+		EnrollmentsThisMonth:            int(enrollmentsThisMonth),
+	}, nil
+}
+
+// GetBackofficeCoursesStats returns detailed course statistics for backoffice
+func (s *StatisticsService) GetBackofficeCoursesStats(ctx context.Context) (*schemas.BackofficeCoursesStatsResponse, error) {
+	totalCourses, err := s.courseRepo.CountCourses()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get courses by status
+	activeCourses, err := s.courseRepo.CountActiveCourses()
+	if err != nil {
+		return nil, err
+	}
+
+	finishedCourses, err := s.courseRepo.CountFinishedCourses()
+	if err != nil {
+		return nil, err
+	}
+
+	coursesByStatus := map[string]int{
+		"active":   int(activeCourses),
+		"finished": int(finishedCourses),
+	}
+
+	// Get recent courses
+	recentCourses, err := s.courseRepo.GetRecentCourses(10)
+	if err != nil {
+		return nil, err
+	}
+
+	return &schemas.BackofficeCoursesStatsResponse{
+		TotalCourses:    int(totalCourses),
+		CoursesByStatus: coursesByStatus,
+		RecentCourses:   recentCourses,
+	}, nil
+}
+
+// GetBackofficeAssignmentsStats returns detailed assignment statistics for backoffice
+func (s *StatisticsService) GetBackofficeAssignmentsStats(ctx context.Context) (*schemas.BackofficeAssignmentsStatsResponse, error) {
+	totalAssignments, err := s.assignmentRepo.CountAssignments()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get assignments by type
+	exams, err := s.assignmentRepo.CountAssignmentsByType("exam")
+	if err != nil {
+		return nil, err
+	}
+
+	homeworks, err := s.assignmentRepo.CountAssignmentsByType("homework")
+	if err != nil {
+		return nil, err
+	}
+
+	quizzes, err := s.assignmentRepo.CountAssignmentsByType("quiz")
+	if err != nil {
+		return nil, err
+	}
+
+	assignmentsByType := map[string]int{
+		"exam":     int(exams),
+		"homework": int(homeworks),
+		"quiz":     int(quizzes),
+	}
+
+	// Get assignments by status
+	published, err := s.assignmentRepo.CountAssignmentsByStatus("published")
+	if err != nil {
+		return nil, err
+	}
+
+	draft, err := s.assignmentRepo.CountAssignmentsByStatus("draft")
+	if err != nil {
+		return nil, err
+	}
+
+	assignmentsByStatus := map[string]int{
+		"published": int(published),
+		"draft":     int(draft),
+	}
+
+	// Get assignment distribution
+	assignmentDistribution, err := s.assignmentRepo.GetAssignmentDistribution()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get recent assignments
+	recentAssignments, err := s.assignmentRepo.GetRecentAssignments(10)
+	if err != nil {
+		return nil, err
+	}
+
+	return &schemas.BackofficeAssignmentsStatsResponse{
+		TotalAssignments:       int(totalAssignments),
+		AssignmentsByType:      assignmentsByType,
+		AssignmentsByStatus:    assignmentsByStatus,
+		AssignmentDistribution: assignmentDistribution,
+		RecentAssignments:      recentAssignments,
+	}, nil
+}

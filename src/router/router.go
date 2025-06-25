@@ -159,6 +159,18 @@ func InitializeStatisticsRoutes(r *gin.Engine, controller *controller.Statistics
 
 	// Teacher's courses statistics endpoint
 	statisticsGroup.GET("/teachers/:teacherId/courses", controller.GetTeacherCoursesStatistics)
+
+	// Backoffice statistics endpoints
+	backofficeGroup := r.Group("/backoffice/statistics")
+
+	// General system statistics
+	backofficeGroup.GET("/general", controller.GetBackofficeStatistics)
+
+	// Detailed course statistics
+	backofficeGroup.GET("/courses", controller.GetBackofficeCoursesStats)
+
+	// Detailed assignment statistics
+	backofficeGroup.GET("/assignments", controller.GetBackofficeAssignmentsStats)
 }
 
 func NewRouter(config *config.Config) *gin.Engine {
