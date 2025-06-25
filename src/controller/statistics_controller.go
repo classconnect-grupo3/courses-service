@@ -144,3 +144,36 @@ func (c *StatisticsController) GetTeacherCoursesStatistics(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"csv": string(data)})
 }
+
+// GetBackofficeStatistics returns general system statistics for backoffice
+func (c *StatisticsController) GetBackofficeStatistics(ctx *gin.Context) {
+	data, err := c.statisticsService.GetBackofficeStatistics(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, data)
+}
+
+// GetBackofficeCoursesStats returns detailed course statistics for backoffice
+func (c *StatisticsController) GetBackofficeCoursesStats(ctx *gin.Context) {
+	data, err := c.statisticsService.GetBackofficeCoursesStats(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, data)
+}
+
+// GetBackofficeAssignmentsStats returns detailed assignment statistics for backoffice
+func (c *StatisticsController) GetBackofficeAssignmentsStats(ctx *gin.Context) {
+	data, err := c.statisticsService.GetBackofficeAssignmentsStats(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, data)
+}
