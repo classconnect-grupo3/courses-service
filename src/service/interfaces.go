@@ -104,7 +104,7 @@ type StatisticsServiceInterface interface {
 	ExportStudentStatsCSV(ctx context.Context, studentID string, courseID string, from, to time.Time) ([]byte, string, error)
 
 	ExportTeacherCoursesStatsCSV(ctx context.Context, teacherID string, from, to time.Time) ([]byte, string, error)
-	
+
 	// Backoffice statistics methods
 	GetBackofficeStatistics(ctx context.Context) (*schemas.BackofficeStatisticsResponse, error)
 	GetBackofficeCoursesStats(ctx context.Context) (*schemas.BackofficeCoursesStatsResponse, error)

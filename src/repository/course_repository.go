@@ -421,14 +421,14 @@ func (r *CourseRepository) CountCoursesCreatedThisMonth() (int64, error) {
 	now := time.Now()
 	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
 	endOfMonth := startOfMonth.AddDate(0, 1, 0)
-	
+
 	filter := bson.M{
 		"created_at": bson.M{
 			"$gte": startOfMonth,
 			"$lt":  endOfMonth,
 		},
 	}
-	
+
 	count, err := r.courseCollection.CountDocuments(context.TODO(), filter)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count courses created this month: %v", err)
@@ -442,27 +442,27 @@ func (r *CourseRepository) CountUniqueTeachers() (int64, error) {
 		{"$group": bson.M{"_id": "$teacher_uuid"}},
 		{"$count": "unique_teachers"},
 	}
-	
+
 	cursor, err := r.courseCollection.Aggregate(context.TODO(), pipeline)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count unique teachers: %v", err)
 	}
 	defer cursor.Close(context.TODO())
-	
+
 	var result []bson.M
 	if err = cursor.All(context.TODO(), &result); err != nil {
 		return 0, fmt.Errorf("failed to decode unique teachers count: %v", err)
 	}
-	
+
 	if len(result) == 0 {
 		return 0, nil
 	}
-	
+
 	count, ok := result[0]["unique_teachers"].(int32)
 	if !ok {
 		return 0, fmt.Errorf("unexpected result format for unique teachers count")
 	}
-	
+
 	return int64(count), nil
 }
 
@@ -473,27 +473,27 @@ func (r *CourseRepository) CountUniqueAuxTeachers() (int64, error) {
 		{"$group": bson.M{"_id": "$aux_teachers"}},
 		{"$count": "unique_aux_teachers"},
 	}
-	
+
 	cursor, err := r.courseCollection.Aggregate(context.TODO(), pipeline)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count unique aux teachers: %v", err)
 	}
 	defer cursor.Close(context.TODO())
-	
+
 	var result []bson.M
 	if err = cursor.All(context.TODO(), &result); err != nil {
 		return 0, fmt.Errorf("failed to decode unique aux teachers count: %v", err)
 	}
-	
+
 	if len(result) == 0 {
 		return 0, nil
 	}
-	
+
 	count, ok := result[0]["unique_aux_teachers"].(int32)
 	if !ok {
 		return 0, fmt.Errorf("unexpected result format for unique aux teachers count")
 	}
-	
+
 	return int64(count), nil
 }
 
@@ -516,18 +516,18 @@ func (r *CourseRepository) GetTopTeachersByCourseCount(limit int) ([]schemas.Cou
 			"_id":          0,
 		}},
 	}
-	
+
 	cursor, err := r.courseCollection.Aggregate(context.TODO(), pipeline)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get top teachers: %v", err)
 	}
 	defer cursor.Close(context.TODO())
-	
+
 	var teachers []schemas.CourseDistributionByTeacher
 	if err = cursor.All(context.TODO(), &teachers); err != nil {
 		return nil, fmt.Errorf("failed to decode top teachers: %v", err)
 	}
-	
+
 	return teachers, nil
 }
 
@@ -545,17 +545,17 @@ func (r *CourseRepository) GetRecentCourses(limit int) ([]schemas.CourseBasicInf
 			"created_at":      1,
 		}},
 	}
-	
+
 	cursor, err := r.courseCollection.Aggregate(context.TODO(), pipeline)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recent courses: %v", err)
 	}
 	defer cursor.Close(context.TODO())
-	
+
 	var courses []schemas.CourseBasicInfo
 	if err = cursor.All(context.TODO(), &courses); err != nil {
 		return nil, fmt.Errorf("failed to decode recent courses: %v", err)
 	}
-	
+
 	return courses, nil
 }

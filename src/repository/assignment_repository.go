@@ -202,14 +202,14 @@ func (r *AssignmentRepository) CountAssignmentsCreatedThisMonth() (int64, error)
 	now := time.Now()
 	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
 	endOfMonth := startOfMonth.AddDate(0, 1, 0)
-	
+
 	filter := bson.M{
 		"created_at": bson.M{
 			"$gte": startOfMonth,
 			"$lt":  endOfMonth,
 		},
 	}
-	
+
 	count, err := r.assignmentCollection.CountDocuments(context.TODO(), filter)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count assignments created this month: %v", err)
@@ -235,18 +235,18 @@ func (r *AssignmentRepository) GetAssignmentDistribution() ([]schemas.Assignment
 		}},
 		{"$sort": bson.M{"type": 1, "status": 1}},
 	}
-	
+
 	cursor, err := r.assignmentCollection.Aggregate(context.TODO(), pipeline)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get assignment distribution: %v", err)
 	}
 	defer cursor.Close(context.TODO())
-	
+
 	var distribution []schemas.AssignmentDistribution
 	if err = cursor.All(context.TODO(), &distribution); err != nil {
 		return nil, fmt.Errorf("failed to decode assignment distribution: %v", err)
 	}
-	
+
 	return distribution, nil
 }
 
@@ -265,17 +265,17 @@ func (r *AssignmentRepository) GetRecentAssignments(limit int) ([]schemas.Assign
 			"due_date":   1,
 		}},
 	}
-	
+
 	cursor, err := r.assignmentCollection.Aggregate(context.TODO(), pipeline)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recent assignments: %v", err)
 	}
 	defer cursor.Close(context.TODO())
-	
+
 	var assignments []schemas.AssignmentBasicInfo
 	if err = cursor.All(context.TODO(), &assignments); err != nil {
 		return nil, fmt.Errorf("failed to decode recent assignments: %v", err)
 	}
-	
+
 	return assignments, nil
 }

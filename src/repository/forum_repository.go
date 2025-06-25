@@ -479,26 +479,26 @@ func (r *ForumRepository) CountAnswers() (int64, error) {
 		{"$unwind": "$answers"},
 		{"$count": "total_answers"},
 	}
-	
+
 	cursor, err := r.questionCollection.Aggregate(context.TODO(), pipeline)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count answers: %v", err)
 	}
 	defer cursor.Close(context.TODO())
-	
+
 	var result []bson.M
 	if err = cursor.All(context.TODO(), &result); err != nil {
 		return 0, fmt.Errorf("failed to decode answers count: %v", err)
 	}
-	
+
 	if len(result) == 0 {
 		return 0, nil
 	}
-	
+
 	count, ok := result[0]["total_answers"].(int32)
 	if !ok {
 		return 0, fmt.Errorf("unexpected result format for answers count")
 	}
-	
+
 	return int64(count), nil
 }

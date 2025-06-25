@@ -94,54 +94,54 @@ const (
 // BackofficeStatisticsResponse represents general system statistics for backoffice
 type BackofficeStatisticsResponse struct {
 	// General counts
-	TotalCourses     int `json:"total_courses"`
-	TotalAssignments int `json:"total_assignments"`
-	TotalSubmissions int `json:"total_submissions"`
-	TotalEnrollments int `json:"total_enrollments"`
+	TotalCourses        int `json:"total_courses"`
+	TotalAssignments    int `json:"total_assignments"`
+	TotalSubmissions    int `json:"total_submissions"`
+	TotalEnrollments    int `json:"total_enrollments"`
 	TotalForumQuestions int `json:"total_forum_questions"`
 	TotalForumAnswers   int `json:"total_forum_answers"`
-	
+
 	// Course statistics
 	ActiveCourses   int `json:"active_courses"`
 	FinishedCourses int `json:"finished_courses"`
-	
+
 	// Assignment statistics by type
 	TotalExams     int `json:"total_exams"`
 	TotalHomeworks int `json:"total_homeworks"`
 	TotalQuizzes   int `json:"total_quizzes"`
-	
+
 	// Submission statistics by status
 	DraftSubmissions     int `json:"draft_submissions"`
 	SubmittedSubmissions int `json:"submitted_submissions"`
 	LateSubmissions      int `json:"late_submissions"`
-	
+
 	// Enrollment statistics by status
 	ActiveEnrollments    int `json:"active_enrollments"`
 	DroppedEnrollments   int `json:"dropped_enrollments"`
 	CompletedEnrollments int `json:"completed_enrollments"`
-	
+
 	// Forum statistics by status
 	OpenForumQuestions     int `json:"open_forum_questions"`
 	ResolvedForumQuestions int `json:"resolved_forum_questions"`
 	ClosedForumQuestions   int `json:"closed_forum_questions"`
-	
+
 	// Teacher statistics
 	TotalUniqueTeachers    int `json:"total_unique_teachers"`
 	TotalUniqueAuxTeachers int `json:"total_unique_aux_teachers"`
-	
+
 	// Student statistics
 	TotalUniqueStudents int `json:"total_unique_students"`
-	
+
 	// Average statistics
-	AverageStudentsPerCourse    float64 `json:"average_students_per_course"`
-	AverageAssignmentsPerCourse float64 `json:"average_assignments_per_course"`
+	AverageStudentsPerCourse        float64 `json:"average_students_per_course"`
+	AverageAssignmentsPerCourse     float64 `json:"average_assignments_per_course"`
 	AverageSubmissionsPerAssignment float64 `json:"average_submissions_per_assignment"`
-	
+
 	// Date-based statistics
-	CoursesCreatedThisMonth int `json:"courses_created_this_month"`
+	CoursesCreatedThisMonth     int `json:"courses_created_this_month"`
 	AssignmentsCreatedThisMonth int `json:"assignments_created_this_month"`
-	SubmissionsThisMonth int `json:"submissions_this_month"`
-	EnrollmentsThisMonth int `json:"enrollments_this_month"`
+	SubmissionsThisMonth        int `json:"submissions_this_month"`
+	EnrollmentsThisMonth        int `json:"enrollments_this_month"`
 }
 
 // CourseDistributionByTeacher represents course distribution grouped by teacher
@@ -153,20 +153,20 @@ type CourseDistributionByTeacher struct {
 
 // BackofficeCoursesStatsResponse represents detailed course statistics for backoffice
 type BackofficeCoursesStatsResponse struct {
-	TotalCourses     int                           `json:"total_courses"`
-	TopTeachers      []CourseDistributionByTeacher `json:"top_teachers"`
-	CoursesByStatus  map[string]int                `json:"courses_by_status"`
-	RecentCourses    []CourseBasicInfo             `json:"recent_courses"`
+	TotalCourses    int                           `json:"total_courses"`
+	TopTeachers     []CourseDistributionByTeacher `json:"top_teachers"`
+	CoursesByStatus map[string]int                `json:"courses_by_status"`
+	RecentCourses   []CourseBasicInfo             `json:"recent_courses"`
 }
 
 // CourseBasicInfo represents basic course information
 type CourseBasicInfo struct {
-	ID           string    `json:"id"`
-	Title        string    `json:"title"`
-	TeacherName  string    `json:"teacher_name"`
-	StudentsAmount int     `json:"students_amount"`
-	Capacity     int       `json:"capacity"`
-	CreatedAt    time.Time `json:"created_at"`
+	ID             string    `json:"id"`
+	Title          string    `json:"title"`
+	TeacherName    string    `json:"teacher_name"`
+	StudentsAmount int       `json:"students_amount"`
+	Capacity       int       `json:"capacity"`
+	CreatedAt      time.Time `json:"created_at"`
 }
 
 // AssignmentDistribution represents assignment distribution by type and status
@@ -187,11 +187,11 @@ type BackofficeAssignmentsStatsResponse struct {
 
 // AssignmentBasicInfo represents basic assignment information
 type AssignmentBasicInfo struct {
-	ID          string    `json:"id"`
-	Title       string    `json:"title"`
-	Type        string    `json:"type"`
-	Status      string    `json:"status"`
-	CourseID    string    `json:"course_id"`
-	CreatedAt   time.Time `json:"created_at"`
-	DueDate     time.Time `json:"due_date"`
+	ID        string    `json:"id"`
+	Title     string    `json:"title"`
+	Type      string    `json:"type"`
+	Status    string    `json:"status"`
+	CourseID  string    `json:"course_id"`
+	CreatedAt time.Time `json:"created_at"`
+	DueDate   time.Time `json:"due_date"`
 }

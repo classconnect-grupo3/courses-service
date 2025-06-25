@@ -149,14 +149,14 @@ func (r *MongoSubmissionRepository) CountSubmissionsThisMonth(ctx context.Contex
 	now := time.Now()
 	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
 	endOfMonth := startOfMonth.AddDate(0, 1, 0)
-	
+
 	filter := bson.M{
 		"created_at": bson.M{
 			"$gte": startOfMonth,
 			"$lt":  endOfMonth,
 		},
 	}
-	
+
 	count, err := r.collection.CountDocuments(ctx, filter)
 	if err != nil {
 		return 0, err
