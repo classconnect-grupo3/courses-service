@@ -21,6 +21,16 @@ type CourseRepositoryInterface interface {
 	UpdateStudentsAmount(courseID string, newStudentsAmount int) error
 	CreateCourseFeedback(courseID string, feedback model.CourseFeedback) (*model.CourseFeedback, error)
 	GetCourseFeedback(courseID string, getCourseFeedbackRequest schemas.GetCourseFeedbackRequest) ([]*model.CourseFeedback, error)
+	
+	// Backoffice statistics methods
+	CountCourses() (int64, error)
+	CountActiveCourses() (int64, error)
+	CountFinishedCourses() (int64, error)
+	CountCoursesCreatedThisMonth() (int64, error)
+	CountUniqueTeachers() (int64, error)
+	CountUniqueAuxTeachers() (int64, error)
+	GetTopTeachersByCourseCount(limit int) ([]schemas.CourseDistributionByTeacher, error)
+	GetRecentCourses(limit int) ([]schemas.CourseBasicInfo, error)
 }
 
 type AssignmentRepositoryInterface interface {
@@ -30,6 +40,14 @@ type AssignmentRepositoryInterface interface {
 	GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error)
 	UpdateAssignment(id string, updateAssignment model.Assignment) (*model.Assignment, error)
 	DeleteAssignment(id string) error
+	
+	// Backoffice statistics methods
+	CountAssignments() (int64, error)
+	CountAssignmentsByType(assignmentType string) (int64, error)
+	CountAssignmentsByStatus(status string) (int64, error)
+	CountAssignmentsCreatedThisMonth() (int64, error)
+	GetAssignmentDistribution() ([]schemas.AssignmentDistribution, error)
+	GetRecentAssignments(limit int) ([]schemas.AssignmentBasicInfo, error)
 }
 
 type EnrollmentRepositoryInterface interface {
@@ -46,6 +64,12 @@ type EnrollmentRepositoryInterface interface {
 	ApproveStudent(studentID, courseID string) error
 	DisapproveStudent(studentID, courseID, reason string) error
 	ReactivateDroppedEnrollment(studentID, courseID string) error
+	
+	// Backoffice statistics methods
+	CountEnrollments() (int64, error)
+	CountEnrollmentsByStatus(status model.EnrollmentStatus) (int64, error)
+	CountEnrollmentsThisMonth() (int64, error)
+	CountUniqueStudents() (int64, error)
 }
 
 type ModuleRepositoryInterface interface {
@@ -67,6 +91,11 @@ type SubmissionRepositoryInterface interface {
 	GetByAssignment(ctx context.Context, assignmentID string) ([]model.Submission, error)
 	GetByStudent(ctx context.Context, studentUUID string) ([]model.Submission, error)
 	DeleteByStudentAndCourse(ctx context.Context, studentUUID, courseID string) error
+	
+	// Backoffice statistics methods
+	CountSubmissions(ctx context.Context) (int64, error)
+	CountSubmissionsByStatus(ctx context.Context, status model.SubmissionStatus) (int64, error)
+	CountSubmissionsThisMonth(ctx context.Context) (int64, error)
 }
 
 type ForumRepositoryInterface interface {
@@ -91,4 +120,9 @@ type ForumRepositoryInterface interface {
 
 	// Search and filter operations
 	SearchQuestions(courseID string, query string, tags []model.QuestionTag, status model.QuestionStatus) ([]model.ForumQuestion, error)
+	
+	// Backoffice statistics methods
+	CountQuestions() (int64, error)
+	CountQuestionsByStatus(status model.QuestionStatus) (int64, error)
+	CountAnswers() (int64, error)
 }
