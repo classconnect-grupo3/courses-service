@@ -273,6 +273,25 @@ func (m *MockForumRepository) SearchQuestions(courseID, query string, tags []mod
 	return questions, nil
 }
 
+// Backoffice statistics methods for MockForumRepository
+func (m *MockForumRepository) CountQuestions() (int64, error) {
+	return 2, nil
+}
+
+func (m *MockForumRepository) CountQuestionsByStatus(status model.QuestionStatus) (int64, error) {
+	if status == model.QuestionStatusOpen {
+		return 1, nil
+	}
+	if status == model.QuestionStatusResolved {
+		return 1, nil
+	}
+	return 0, nil
+}
+
+func (m *MockForumRepository) CountAnswers() (int64, error) {
+	return 3, nil
+}
+
 // Mock Course Repository (reusing from existing tests)
 type MockForumCourseRepository struct{}
 
@@ -343,6 +362,45 @@ func (m *MockForumCourseRepository) RemoveAuxTeacherFromCourse(course *model.Cou
 
 func (m *MockForumCourseRepository) GetCoursesByAuxTeacherId(auxTeacherId string) ([]*model.Course, error) {
 	return []*model.Course{}, nil
+}
+
+// Backoffice statistics methods for MockForumCourseRepository
+func (m *MockForumCourseRepository) CountCourses() (int64, error) {
+	return 2, nil
+}
+
+func (m *MockForumCourseRepository) CountActiveCourses() (int64, error) {
+	return 1, nil
+}
+
+func (m *MockForumCourseRepository) CountFinishedCourses() (int64, error) {
+	return 1, nil
+}
+
+func (m *MockForumCourseRepository) CountCoursesCreatedThisMonth() (int64, error) {
+	return 2, nil
+}
+
+func (m *MockForumCourseRepository) CountUniqueTeachers() (int64, error) {
+	return 2, nil
+}
+
+func (m *MockForumCourseRepository) CountUniqueAuxTeachers() (int64, error) {
+	return 3, nil
+}
+
+func (m *MockForumCourseRepository) GetTopTeachersByCourseCount(limit int) ([]schemas.CourseDistributionByTeacher, error) {
+	return []schemas.CourseDistributionByTeacher{
+		{TeacherID: "teacher-1", TeacherName: "Teacher One", CourseCount: 2},
+		{TeacherID: "teacher-2", TeacherName: "Teacher Two", CourseCount: 1},
+	}, nil
+}
+
+func (m *MockForumCourseRepository) GetRecentCourses(limit int) ([]schemas.CourseBasicInfo, error) {
+	return []schemas.CourseBasicInfo{
+		{ID: "course1", Title: "Test Course 1", TeacherName: "Teacher One", StudentsAmount: 15, Capacity: 20},
+		{ID: "course2", Title: "Test Course 2", TeacherName: "Teacher Two", StudentsAmount: 10, Capacity: 15},
+	}, nil
 }
 
 // Helper function

@@ -149,6 +149,29 @@ func (m *MockEnrollmentRepository) ReactivateDroppedEnrollment(studentID, course
 	return nil
 }
 
+// Backoffice statistics methods for MockEnrollmentRepository
+func (m *MockEnrollmentRepository) CountEnrollments() (int64, error) {
+	return 4, nil
+}
+
+func (m *MockEnrollmentRepository) CountEnrollmentsByStatus(status model.EnrollmentStatus) (int64, error) {
+	if status == model.EnrollmentStatusActive {
+		return 3, nil
+	}
+	if status == model.EnrollmentStatusCompleted {
+		return 1, nil
+	}
+	return 0, nil
+}
+
+func (m *MockEnrollmentRepository) CountEnrollmentsThisMonth() (int64, error) {
+	return 4, nil
+}
+
+func (m *MockEnrollmentRepository) CountUniqueStudents() (int64, error) {
+	return 3, nil
+}
+
 type MockCourseRepository struct{}
 
 // RemoveAuxTeacherFromCourse implements repository.CourseRepositoryInterface.
@@ -454,6 +477,45 @@ func (m *MockCourseRepository) GetCourseFeedback(courseID string, request schema
 		return nil, errors.New("Course not found")
 	}
 	return []*model.CourseFeedback{}, nil
+}
+
+// Backoffice statistics methods for MockCourseRepository
+func (m *MockCourseRepository) CountCourses() (int64, error) {
+	return 2, nil
+}
+
+func (m *MockCourseRepository) CountActiveCourses() (int64, error) {
+	return 1, nil
+}
+
+func (m *MockCourseRepository) CountFinishedCourses() (int64, error) {
+	return 1, nil
+}
+
+func (m *MockCourseRepository) CountCoursesCreatedThisMonth() (int64, error) {
+	return 2, nil
+}
+
+func (m *MockCourseRepository) CountUniqueTeachers() (int64, error) {
+	return 2, nil
+}
+
+func (m *MockCourseRepository) CountUniqueAuxTeachers() (int64, error) {
+	return 3, nil
+}
+
+func (m *MockCourseRepository) GetTopTeachersByCourseCount(limit int) ([]schemas.CourseDistributionByTeacher, error) {
+	return []schemas.CourseDistributionByTeacher{
+		{TeacherID: "teacher-1", TeacherName: "Teacher One", CourseCount: 2},
+		{TeacherID: "teacher-2", TeacherName: "Teacher Two", CourseCount: 1},
+	}, nil
+}
+
+func (m *MockCourseRepository) GetRecentCourses(limit int) ([]schemas.CourseBasicInfo, error) {
+	return []schemas.CourseBasicInfo{
+		{ID: "course1", Title: "Test Course 1", TeacherName: "Teacher One", StudentsAmount: 15, Capacity: 20},
+		{ID: "course2", Title: "Test Course 2", TeacherName: "Teacher Two", StudentsAmount: 10, Capacity: 15},
+	}, nil
 }
 
 // Helper function to create ObjectID from string
@@ -1288,6 +1350,23 @@ func (m *MockEnrollmentRepositoryWithError) ReactivateDroppedEnrollment(studentI
 	return errors.New("Error reactivating enrollment")
 }
 
+// Backoffice statistics methods for MockEnrollmentRepositoryWithError
+func (m *MockEnrollmentRepositoryWithError) CountEnrollments() (int64, error) {
+	return 0, errors.New("error counting enrollments")
+}
+
+func (m *MockEnrollmentRepositoryWithError) CountEnrollmentsByStatus(status model.EnrollmentStatus) (int64, error) {
+	return 0, errors.New("error counting enrollments by status")
+}
+
+func (m *MockEnrollmentRepositoryWithError) CountEnrollmentsThisMonth() (int64, error) {
+	return 0, errors.New("error counting enrollments this month")
+}
+
+func (m *MockEnrollmentRepositoryWithError) CountUniqueStudents() (int64, error) {
+	return 0, errors.New("error counting unique students")
+}
+
 // Mock course repository with errors for testing error scenarios
 type MockCourseRepositoryWithError struct{}
 
@@ -1345,6 +1424,39 @@ func (m *MockCourseRepositoryWithError) RemoveAuxTeacherFromCourse(course *model
 
 func (m *MockCourseRepositoryWithError) GetCoursesByAuxTeacherId(auxTeacherId string) ([]*model.Course, error) {
 	return nil, errors.New("error getting courses by aux teacher")
+}
+
+// Backoffice statistics methods for MockCourseRepositoryWithError
+func (m *MockCourseRepositoryWithError) CountCourses() (int64, error) {
+	return 0, errors.New("error counting courses")
+}
+
+func (m *MockCourseRepositoryWithError) CountActiveCourses() (int64, error) {
+	return 0, errors.New("error counting active courses")
+}
+
+func (m *MockCourseRepositoryWithError) CountFinishedCourses() (int64, error) {
+	return 0, errors.New("error counting finished courses")
+}
+
+func (m *MockCourseRepositoryWithError) CountCoursesCreatedThisMonth() (int64, error) {
+	return 0, errors.New("error counting courses created this month")
+}
+
+func (m *MockCourseRepositoryWithError) CountUniqueTeachers() (int64, error) {
+	return 0, errors.New("error counting unique teachers")
+}
+
+func (m *MockCourseRepositoryWithError) CountUniqueAuxTeachers() (int64, error) {
+	return 0, errors.New("error counting unique aux teachers")
+}
+
+func (m *MockCourseRepositoryWithError) GetTopTeachersByCourseCount(limit int) ([]schemas.CourseDistributionByTeacher, error) {
+	return nil, errors.New("error getting top teachers")
+}
+
+func (m *MockCourseRepositoryWithError) GetRecentCourses(limit int) ([]schemas.CourseBasicInfo, error) {
+	return nil, errors.New("error getting recent courses")
 }
 
 func (m *MockCourseRepository) GetCoursesByAuxTeacherId(auxTeacherId string) ([]*model.Course, error) {

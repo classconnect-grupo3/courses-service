@@ -247,6 +247,29 @@ func (m *MockEnrollmentRepositoryForEnrollmentService) ReactivateDroppedEnrollme
 	return nil
 }
 
+// Backoffice statistics methods for MockEnrollmentRepositoryForEnrollmentService
+func (m *MockEnrollmentRepositoryForEnrollmentService) CountEnrollments() (int64, error) {
+	return 4, nil
+}
+
+func (m *MockEnrollmentRepositoryForEnrollmentService) CountEnrollmentsByStatus(status model.EnrollmentStatus) (int64, error) {
+	if status == model.EnrollmentStatusActive {
+		return 3, nil
+	}
+	if status == model.EnrollmentStatusCompleted {
+		return 1, nil
+	}
+	return 0, nil
+}
+
+func (m *MockEnrollmentRepositoryForEnrollmentService) CountEnrollmentsThisMonth() (int64, error) {
+	return 4, nil
+}
+
+func (m *MockEnrollmentRepositoryForEnrollmentService) CountUniqueStudents() (int64, error) {
+	return 3, nil
+}
+
 type MockCourseRepositoryForEnrollment struct{}
 
 // GetCourseFeedback implements repository.CourseRepositoryInterface.
@@ -356,6 +379,45 @@ func (m *MockCourseRepositoryForEnrollment) GetCoursesByAuxTeacherId(auxTeacherI
 	return nil, nil
 }
 
+// Backoffice statistics methods for MockCourseRepositoryForEnrollment
+func (m *MockCourseRepositoryForEnrollment) CountCourses() (int64, error) {
+	return 2, nil
+}
+
+func (m *MockCourseRepositoryForEnrollment) CountActiveCourses() (int64, error) {
+	return 1, nil
+}
+
+func (m *MockCourseRepositoryForEnrollment) CountFinishedCourses() (int64, error) {
+	return 1, nil
+}
+
+func (m *MockCourseRepositoryForEnrollment) CountCoursesCreatedThisMonth() (int64, error) {
+	return 2, nil
+}
+
+func (m *MockCourseRepositoryForEnrollment) CountUniqueTeachers() (int64, error) {
+	return 2, nil
+}
+
+func (m *MockCourseRepositoryForEnrollment) CountUniqueAuxTeachers() (int64, error) {
+	return 3, nil
+}
+
+func (m *MockCourseRepositoryForEnrollment) GetTopTeachersByCourseCount(limit int) ([]schemas.CourseDistributionByTeacher, error) {
+	return []schemas.CourseDistributionByTeacher{
+		{TeacherID: "teacher-1", TeacherName: "Teacher One", CourseCount: 2},
+		{TeacherID: "teacher-2", TeacherName: "Teacher Two", CourseCount: 1},
+	}, nil
+}
+
+func (m *MockCourseRepositoryForEnrollment) GetRecentCourses(limit int) ([]schemas.CourseBasicInfo, error) {
+	return []schemas.CourseBasicInfo{
+		{ID: "course1", Title: "Test Course 1", TeacherName: "Teacher One", StudentsAmount: 15, Capacity: 20},
+		{ID: "course2", Title: "Test Course 2", TeacherName: "Teacher Two", StudentsAmount: 10, Capacity: 15},
+	}, nil
+}
+
 // MockSubmissionRepositoryForEnrollmentService for testing enrollment service
 type MockSubmissionRepositoryForEnrollmentService struct{}
 
@@ -388,6 +450,22 @@ func (m *MockSubmissionRepositoryForEnrollmentService) DeleteByStudentAndCourse(
 		return errors.New("error deleting submissions")
 	}
 	return nil
+}
+
+// Backoffice statistics methods for MockSubmissionRepositoryForEnrollmentService
+func (m *MockSubmissionRepositoryForEnrollmentService) CountSubmissions(ctx context.Context) (int64, error) {
+	return 1, nil
+}
+
+func (m *MockSubmissionRepositoryForEnrollmentService) CountSubmissionsByStatus(ctx context.Context, status model.SubmissionStatus) (int64, error) {
+	if status == model.SubmissionStatusSubmitted {
+		return 1, nil
+	}
+	return 0, nil
+}
+
+func (m *MockSubmissionRepositoryForEnrollmentService) CountSubmissionsThisMonth(ctx context.Context) (int64, error) {
+	return 1, nil
 }
 
 // Helper function to create enrollment service with proper dependencies
