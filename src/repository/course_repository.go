@@ -497,40 +497,6 @@ func (r *CourseRepository) CountUniqueAuxTeachers() (int64, error) {
 	return int64(count), nil
 }
 
-// GetTopTeachersByCourseCount returns top teachers by course count
-func (r *CourseRepository) GetTopTeachersByCourseCount(limit int) ([]schemas.CourseDistributionByTeacher, error) {
-	pipeline := []bson.M{
-		{"$group": bson.M{
-			"_id": bson.M{
-				"teacher_id":   "$teacher_uuid",
-				"teacher_name": "$teacher_name",
-			},
-			"course_count": bson.M{"$sum": 1},
-		}},
-		{"$sort": bson.M{"course_count": -1}},
-		{"$limit": limit},
-		{"$project": bson.M{
-			"teacher_id":   "$_id.teacher_id",
-			"teacher_name": "$_id.teacher_name",
-			"course_count": 1,
-			"_id":          0,
-		}},
-	}
-
-	cursor, err := r.courseCollection.Aggregate(context.TODO(), pipeline)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get top teachers: %v", err)
-	}
-	defer cursor.Close(context.TODO())
-
-	var teachers []schemas.CourseDistributionByTeacher
-	if err = cursor.All(context.TODO(), &teachers); err != nil {
-		return nil, fmt.Errorf("failed to decode top teachers: %v", err)
-	}
-
-	return teachers, nil
-}
-
 // GetRecentCourses returns recent courses with basic information
 func (r *CourseRepository) GetRecentCourses(limit int) ([]schemas.CourseBasicInfo, error) {
 	pipeline := []bson.M{

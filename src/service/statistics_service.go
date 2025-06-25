@@ -698,12 +698,6 @@ func (s *StatisticsService) GetBackofficeCoursesStats(ctx context.Context) (*sch
 		return nil, err
 	}
 
-	// Get top teachers by course count
-	topTeachers, err := s.courseRepo.GetTopTeachersByCourseCount(10)
-	if err != nil {
-		return nil, err
-	}
-
 	// Get courses by status
 	activeCourses, err := s.courseRepo.CountActiveCourses()
 	if err != nil {
@@ -728,7 +722,6 @@ func (s *StatisticsService) GetBackofficeCoursesStats(ctx context.Context) (*sch
 
 	return &schemas.BackofficeCoursesStatsResponse{
 		TotalCourses:    int(totalCourses),
-		TopTeachers:     topTeachers,
 		CoursesByStatus: coursesByStatus,
 		RecentCourses:   recentCourses,
 	}, nil
