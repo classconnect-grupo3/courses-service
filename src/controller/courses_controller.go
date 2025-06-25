@@ -165,6 +165,11 @@ func (c *CourseController) GetCourseByTitle(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	if len(course) == 0 {
+		slog.Error("Course not found")
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Course not found"})
+		return
+	}
 	slog.Debug("Course retrieved", "course", course)
 	ctx.JSON(http.StatusOK, course)
 }
