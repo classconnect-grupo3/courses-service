@@ -146,9 +146,9 @@ type BackofficeStatisticsResponse struct {
 
 // BackofficeCoursesStatsResponse represents detailed course statistics for backoffice
 type BackofficeCoursesStatsResponse struct {
-	TotalCourses    int                `json:"total_courses"`
-	CoursesByStatus map[string]int     `json:"courses_by_status"`
-	RecentCourses   []CourseBasicInfo  `json:"recent_courses"`
+	TotalCourses    int               `json:"total_courses"`
+	CoursesByStatus map[string]int    `json:"courses_by_status"`
+	RecentCourses   []CourseBasicInfo `json:"recent_courses"`
 }
 
 // CourseBasicInfo represents basic course information
