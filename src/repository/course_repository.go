@@ -384,3 +384,178 @@ func (r *CourseRepository) GetCourseFeedback(courseID string, getCourseFeedbackR
 
 	return filteredFeedbacks, nil
 }
+
+// CountCourses returns the total number of courses
+func (r *CourseRepository) CountCourses() (int64, error) {
+	count, err := r.courseCollection.CountDocuments(context.TODO(), bson.M{})
+	if err != nil {
+		return 0, fmt.Errorf("failed to count courses: %v", err)
+	}
+	return count, nil
+}
+
+// CountActiveCourses returns the number of active courses (courses that have not ended yet)
+func (r *CourseRepository) CountActiveCourses() (int64, error) {
+	now := time.Now()
+	filter := bson.M{"end_date": bson.M{"$gt": now}}
+	count, err := r.courseCollection.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count active courses: %v", err)
+	}
+	return count, nil
+}
+
+// CountFinishedCourses returns the number of finished courses (courses that have ended)
+func (r *CourseRepository) CountFinishedCourses() (int64, error) {
+	now := time.Now()
+	filter := bson.M{"end_date": bson.M{"$lte": now}}
+	count, err := r.courseCollection.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count finished courses: %v", err)
+	}
+	return count, nil
+}
+
+// CountCoursesCreatedThisMonth returns the number of courses created this month
+func (r *CourseRepository) CountCoursesCreatedThisMonth() (int64, error) {
+	now := time.Now()
+	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	endOfMonth := startOfMonth.AddDate(0, 1, 0)
+	
+	filter := bson.M{
+		"created_at": bson.M{
+			"$gte": startOfMonth,
+			"$lt":  endOfMonth,
+		},
+	}
+	
+	count, err := r.courseCollection.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count courses created this month: %v", err)
+	}
+	return count, nil
+}
+
+// CountUniqueTeachers returns the number of unique teachers
+func (r *CourseRepository) CountUniqueTeachers() (int64, error) {
+	pipeline := []bson.M{
+		{"$group": bson.M{"_id": "$teacher_uuid"}},
+		{"$count": "unique_teachers"},
+	}
+	
+	cursor, err := r.courseCollection.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count unique teachers: %v", err)
+	}
+	defer cursor.Close(context.TODO())
+	
+	var result []bson.M
+	if err = cursor.All(context.TODO(), &result); err != nil {
+		return 0, fmt.Errorf("failed to decode unique teachers count: %v", err)
+	}
+	
+	if len(result) == 0 {
+		return 0, nil
+	}
+	
+	count, ok := result[0]["unique_teachers"].(int32)
+	if !ok {
+		return 0, fmt.Errorf("unexpected result format for unique teachers count")
+	}
+	
+	return int64(count), nil
+}
+
+// CountUniqueAuxTeachers returns the number of unique auxiliary teachers
+func (r *CourseRepository) CountUniqueAuxTeachers() (int64, error) {
+	pipeline := []bson.M{
+		{"$unwind": "$aux_teachers"},
+		{"$group": bson.M{"_id": "$aux_teachers"}},
+		{"$count": "unique_aux_teachers"},
+	}
+	
+	cursor, err := r.courseCollection.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count unique aux teachers: %v", err)
+	}
+	defer cursor.Close(context.TODO())
+	
+	var result []bson.M
+	if err = cursor.All(context.TODO(), &result); err != nil {
+		return 0, fmt.Errorf("failed to decode unique aux teachers count: %v", err)
+	}
+	
+	if len(result) == 0 {
+		return 0, nil
+	}
+	
+	count, ok := result[0]["unique_aux_teachers"].(int32)
+	if !ok {
+		return 0, fmt.Errorf("unexpected result format for unique aux teachers count")
+	}
+	
+	return int64(count), nil
+}
+
+// GetTopTeachersByCourseCount returns top teachers by course count
+func (r *CourseRepository) GetTopTeachersByCourseCount(limit int) ([]schemas.CourseDistributionByTeacher, error) {
+	pipeline := []bson.M{
+		{"$group": bson.M{
+			"_id": bson.M{
+				"teacher_id":   "$teacher_uuid",
+				"teacher_name": "$teacher_name",
+			},
+			"course_count": bson.M{"$sum": 1},
+		}},
+		{"$sort": bson.M{"course_count": -1}},
+		{"$limit": limit},
+		{"$project": bson.M{
+			"teacher_id":   "$_id.teacher_id",
+			"teacher_name": "$_id.teacher_name",
+			"course_count": 1,
+			"_id":          0,
+		}},
+	}
+	
+	cursor, err := r.courseCollection.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get top teachers: %v", err)
+	}
+	defer cursor.Close(context.TODO())
+	
+	var teachers []schemas.CourseDistributionByTeacher
+	if err = cursor.All(context.TODO(), &teachers); err != nil {
+		return nil, fmt.Errorf("failed to decode top teachers: %v", err)
+	}
+	
+	return teachers, nil
+}
+
+// GetRecentCourses returns recent courses with basic information
+func (r *CourseRepository) GetRecentCourses(limit int) ([]schemas.CourseBasicInfo, error) {
+	pipeline := []bson.M{
+		{"$sort": bson.M{"created_at": -1}},
+		{"$limit": limit},
+		{"$project": bson.M{
+			"id":              bson.M{"$toString": "$_id"},
+			"title":           1,
+			"teacher_name":    1,
+			"students_amount": 1,
+			"capacity":        1,
+			"created_at":      1,
+		}},
+	}
+	
+	cursor, err := r.courseCollection.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recent courses: %v", err)
+	}
+	defer cursor.Close(context.TODO())
+	
+	var courses []schemas.CourseBasicInfo
+	if err = cursor.All(context.TODO(), &courses); err != nil {
+		return nil, fmt.Errorf("failed to decode recent courses: %v", err)
+	}
+	
+	return courses, nil
+}

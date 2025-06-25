@@ -374,3 +374,72 @@ func (r *EnrollmentRepository) ReactivateDroppedEnrollment(studentID, courseID s
 
 	return nil
 }
+
+// CountEnrollments returns the total number of enrollments
+func (r *EnrollmentRepository) CountEnrollments() (int64, error) {
+	count, err := r.enrollmentCollection.CountDocuments(context.TODO(), bson.M{})
+	if err != nil {
+		return 0, fmt.Errorf("failed to count enrollments: %v", err)
+	}
+	return count, nil
+}
+
+// CountEnrollmentsByStatus returns the number of enrollments by status
+func (r *EnrollmentRepository) CountEnrollmentsByStatus(status model.EnrollmentStatus) (int64, error) {
+	filter := bson.M{"status": status}
+	count, err := r.enrollmentCollection.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count enrollments by status: %v", err)
+	}
+	return count, nil
+}
+
+// CountEnrollmentsThisMonth returns the number of enrollments created this month
+func (r *EnrollmentRepository) CountEnrollmentsThisMonth() (int64, error) {
+	now := time.Now()
+	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	endOfMonth := startOfMonth.AddDate(0, 1, 0)
+	
+	filter := bson.M{
+		"enrolled_at": bson.M{
+			"$gte": startOfMonth,
+			"$lt":  endOfMonth,
+		},
+	}
+	
+	count, err := r.enrollmentCollection.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count enrollments this month: %v", err)
+	}
+	return count, nil
+}
+
+// CountUniqueStudents returns the number of unique students
+func (r *EnrollmentRepository) CountUniqueStudents() (int64, error) {
+	pipeline := []bson.M{
+		{"$group": bson.M{"_id": "$student_id"}},
+		{"$count": "unique_students"},
+	}
+	
+	cursor, err := r.enrollmentCollection.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count unique students: %v", err)
+	}
+	defer cursor.Close(context.TODO())
+	
+	var result []bson.M
+	if err = cursor.All(context.TODO(), &result); err != nil {
+		return 0, fmt.Errorf("failed to decode unique students count: %v", err)
+	}
+	
+	if len(result) == 0 {
+		return 0, nil
+	}
+	
+	count, ok := result[0]["unique_students"].(int32)
+	if !ok {
+		return 0, fmt.Errorf("unexpected result format for unique students count")
+	}
+	
+	return int64(count), nil
+}
