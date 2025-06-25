@@ -144,19 +144,11 @@ type BackofficeStatisticsResponse struct {
 	EnrollmentsThisMonth        int `json:"enrollments_this_month"`
 }
 
-// CourseDistributionByTeacher represents course distribution grouped by teacher
-type CourseDistributionByTeacher struct {
-	TeacherID   string `json:"teacher_id"`
-	TeacherName string `json:"teacher_name"`
-	CourseCount int    `json:"course_count"`
-}
-
 // BackofficeCoursesStatsResponse represents detailed course statistics for backoffice
 type BackofficeCoursesStatsResponse struct {
-	TotalCourses    int                           `json:"total_courses"`
-	TopTeachers     []CourseDistributionByTeacher `json:"top_teachers"`
-	CoursesByStatus map[string]int                `json:"courses_by_status"`
-	RecentCourses   []CourseBasicInfo             `json:"recent_courses"`
+	TotalCourses    int                `json:"total_courses"`
+	CoursesByStatus map[string]int     `json:"courses_by_status"`
+	RecentCourses   []CourseBasicInfo  `json:"recent_courses"`
 }
 
 // CourseBasicInfo represents basic course information

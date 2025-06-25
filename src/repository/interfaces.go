@@ -29,7 +29,6 @@ type CourseRepositoryInterface interface {
 	CountCoursesCreatedThisMonth() (int64, error)
 	CountUniqueTeachers() (int64, error)
 	CountUniqueAuxTeachers() (int64, error)
-	GetTopTeachersByCourseCount(limit int) ([]schemas.CourseDistributionByTeacher, error)
 	GetRecentCourses(limit int) ([]schemas.CourseBasicInfo, error)
 }
 
