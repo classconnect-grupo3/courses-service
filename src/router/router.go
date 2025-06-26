@@ -63,6 +63,10 @@ func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseControl
 	r.GET("/courses/:id/feedback/summary", controller.GetCourseFeedbackSummary)
 }
 
+func InitializeTeacherActivityRoutes(r *gin.Engine, controller *controller.TeacherActivityController) {
+	r.GET("/activity-logs/course/:courseId", controller.GetCourseActivityLogs)
+}
+
 func InitializeModulesRoutes(r *gin.Engine, controller *controller.ModuleController) {
 	r.POST("/modules", controller.CreateModule)
 	r.GET("/modules/course/:courseId", controller.GetModulesByCourseId)
@@ -201,6 +205,7 @@ func NewRouter(config *config.Config) *gin.Engine {
 	submissionRepository := repository.NewMongoSubmissionRepository(dbClient.Database(config.DBName))
 	moduleRepository := repository.NewModuleRepository(dbClient, config.DBName)
 	forumRepository := repository.NewForumRepository(dbClient, config.DBName)
+	activityLogRepo := repository.NewTeacherActivityLogRepository(dbClient, config.DBName)
 
 	courseService := service.NewCourseService(courseRepo, enrollmentRepo)
 	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo, submissionRepository)
@@ -209,16 +214,18 @@ func NewRouter(config *config.Config) *gin.Engine {
 	moduleService := service.NewModuleService(moduleRepository)
 	forumService := service.NewForumService(forumRepository, courseRepo)
 	statisticsService := service.NewStatisticsService(courseRepo, assignmentRepository, enrollmentRepo, submissionRepository, forumRepository)
+	activityService := service.NewTeacherActivityService(activityLogRepo, courseRepo)
 
-	courseController := controller.NewCourseController(courseService, aiClient)
-	enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient)
-	assignmentsController := controller.NewAssignmentsController(assignmentService, notificationsQueue)
-	submissionController := controller.NewSubmissionController(submissionService, notificationsQueue)
-	moduleController := controller.NewModuleController(moduleService)
-	forumController := controller.NewForumController(forumService)
+	courseController := controller.NewCourseController(courseService, aiClient, activityService)
+	enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient, activityService)
+	assignmentsController := controller.NewAssignmentsController(assignmentService, notificationsQueue, activityService)
+	submissionController := controller.NewSubmissionController(submissionService, notificationsQueue, activityService, assignmentService)
+	moduleController := controller.NewModuleController(moduleService, activityService)
+	forumController := controller.NewForumController(forumService, activityService)
 	statisticsController := controller.NewStatisticsController(statisticsService)
+	activityController := controller.NewTeacherActivityController(activityService, courseService)
 
-	InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController, moduleController, forumController, statisticsController)
+	InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController, moduleController, forumController, statisticsController, activityController)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler)) // endpoint to consult the swagger documentation
 	return r
 }
@@ -232,6 +239,7 @@ func InitializeRoutes(
 	moduleController *controller.ModuleController,
 	forumController *controller.ForumController,
 	statisticsController *controller.StatisticsController,
+	activityController *controller.TeacherActivityController,
 ) {
 	InitializeCoursesRoutes(r, courseController)
 	InitializeSubmissionRoutes(r, submissionController)
@@ -240,4 +248,5 @@ func InitializeRoutes(
 	InitializeModulesRoutes(r, moduleController)
 	InitializeForumRoutes(r, forumController)
 	InitializeStatisticsRoutes(r, statisticsController)
+	InitializeTeacherActivityRoutes(r, activityController)
 }
