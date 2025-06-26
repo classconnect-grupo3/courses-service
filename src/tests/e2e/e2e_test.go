@@ -1283,7 +1283,7 @@ func getGradeFeedback(score float64) string {
 	}
 }
 
-func TestForumParticipantsE2E(t *testing.T) {Add commentMore actions
+func TestForumParticipantsE2E(t *testing.T) {
 	// Cleanup all collections at the end
 	t.Cleanup(func() {
 		dbSetup.CleanupCollection("courses")
@@ -1455,7 +1455,7 @@ func TestForumParticipantsE2E(t *testing.T) {Add commentMore actions
 	fmt.Println("\n🎯 Validated Forum Participants Logic:")
 	fmt.Printf("✓ Question authors are included: %s, %s\n", student1ID, student2ID)
 	fmt.Printf("✓ Answer authors are included: %s, %s\n", student1ID, student2ID)
-	fmt.Printf("✓ Voters are included: %s\n", teacherID)Add commentMore actions
+	fmt.Printf("✓ Voters are included: %s\n", teacherID)
 	fmt.Printf("✓ No duplicates in participant list\n")
 	fmt.Printf("✓ Correct total count: 3 unique participants\n")
 	fmt.Printf("✓ Error handling works correctly\n")

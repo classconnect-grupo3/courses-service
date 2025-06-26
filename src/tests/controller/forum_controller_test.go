@@ -257,7 +257,7 @@ func (m *MockForumService) SearchQuestions(courseID, query string, tags []model.
 
 func (m *MockForumService) GetForumParticipants(courseID string) ([]string, error) {
 	if courseID == "error-course" {
-		return nil, errors.New("course not found")Add commentMore actions
+		return nil, errors.New("course not found")
 	}
 	if courseID == "empty-course" {
 		return []string{}, nil
