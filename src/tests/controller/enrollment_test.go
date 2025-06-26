@@ -19,8 +19,8 @@ import (
 var (
 	mockEnrollmentService      = &MockEnrollmentService{}
 	mockErrorEnrollmentService = &MockEnrollmentServiceWithError{}
-	normalEnrollmentController = controller.NewEnrollmentController(mockEnrollmentService, nil, mockActivityService)
-	errorEnrollmentController  = controller.NewEnrollmentController(mockErrorEnrollmentService, nil, mockActivityService)
+	normalEnrollmentController = controller.NewEnrollmentController(mockEnrollmentService, nil, mockActivityService, mockNotificationsQueue)
+	errorEnrollmentController  = controller.NewEnrollmentController(mockErrorEnrollmentService, nil, mockActivityService, mockNotificationsQueue)
 	normalEnrollmentRouter     = gin.Default()
 	errorEnrollmentRouter      = gin.Default()
 )

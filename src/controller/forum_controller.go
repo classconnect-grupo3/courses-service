@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"courses-service/src/model"
+	"courses-service/src/queues"
 	"courses-service/src/schemas"
 	"courses-service/src/service"
 
@@ -13,14 +15,16 @@ import (
 )
 
 type ForumController struct {
-	service         service.ForumServiceInterface
-	activityService service.TeacherActivityServiceInterface
+	service            service.ForumServiceInterface
+	activityService    service.TeacherActivityServiceInterface
+	notificationsQueue queues.NotificationsQueueInterface
 }
 
-func NewForumController(service service.ForumServiceInterface, activityService service.TeacherActivityServiceInterface) *ForumController {
+func NewForumController(service service.ForumServiceInterface, activityService service.TeacherActivityServiceInterface, notificationsQueue queues.NotificationsQueueInterface) *ForumController {
 	return &ForumController{
-		service:         service,
-		activityService: activityService,
+		service:            service,
+		activityService:    activityService,
+		notificationsQueue: notificationsQueue,
 	}
 }
 
@@ -72,6 +76,15 @@ func (c *ForumController) CreateQuestion(ctx *gin.Context) {
 
 	response := c.mapQuestionToDetailResponse(question)
 	slog.Debug("Question created", "question_id", question.ID.Hex())
+
+	message := queues.NewForumActivityMessage(request.CourseID, request.AuthorID, question.ID.Hex(), question.Title, response.CreatedAt)
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	ctx.JSON(http.StatusCreated, response)
 }
 
@@ -175,6 +188,15 @@ func (c *ForumController) UpdateQuestion(ctx *gin.Context) {
 
 	response := c.mapQuestionToDetailResponse(question)
 	slog.Debug("Question updated", "question_id", id)
+
+	message := queues.NewForumActivityMessage(question.CourseID, question.AuthorID, id, question.Title, response.UpdatedAt)
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	ctx.JSON(http.StatusOK, response)
 }
 
@@ -258,11 +280,14 @@ func (c *ForumController) AddAnswer(ctx *gin.Context) {
 		return
 	}
 
+	var question *model.ForumQuestion
+	var qErr error
+
 	// Log activity if teacher is auxiliary - we need to get the question to know the course
 	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
 	if teacherUUID != "" && teacherUUID == request.AuthorID {
 		// Get the question to find the course ID
-		question, qErr := c.service.GetQuestionById(questionID)
+		question, qErr = c.service.GetQuestionById(questionID)
 		if qErr == nil && question != nil {
 			c.activityService.LogActivityIfAuxTeacher(
 				question.CourseID,
@@ -273,8 +298,24 @@ func (c *ForumController) AddAnswer(ctx *gin.Context) {
 		}
 	}
 
+	question, qErr = c.service.GetQuestionById(questionID)
+	if qErr != nil {
+		slog.Error("Error getting question", "error", qErr)
+		ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: qErr.Error()})
+		return
+	}
+
 	response := c.mapAnswerToResponse(answer)
 	slog.Debug("Answer added", "question_id", questionID, "answer_id", answer.ID)
+
+	message := queues.NewForumActivityMessage(question.CourseID, question.AuthorID, question.ID.Hex(), question.Title, response.CreatedAt)
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	ctx.JSON(http.StatusCreated, response)
 }
 
@@ -444,9 +485,26 @@ func (c *ForumController) VoteQuestion(ctx *gin.Context) {
 		return
 	}
 
+	// get the question to find the course ID
+	question, qErr := c.service.GetQuestionById(questionID)
+	if qErr != nil {
+		slog.Error("Error getting question", "error", qErr)
+		ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: qErr.Error()})
+		return
+	}
+
 	voteTypeStr := "up"
 	if request.VoteType == model.VoteTypeDown {
 		voteTypeStr = "down"
+	}
+
+	message := queues.NewForumActivityMessage(question.CourseID, request.UserID, question.ID.Hex(), question.Title, time.Now())
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
 	slog.Debug("Vote registered", "question_id", questionID, "vote_type", voteTypeStr)
@@ -491,7 +549,25 @@ func (c *ForumController) VoteAnswer(ctx *gin.Context) {
 		voteTypeStr = "down"
 	}
 
+	// get the question to find the course ID
+	question, qErr := c.service.GetQuestionById(questionID)
+	if qErr != nil {
+		slog.Error("Error getting question", "error", qErr)
+		ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: qErr.Error()})
+		return
+	}
 	slog.Debug("Vote registered", "question_id", questionID, "answer_id", answerID, "vote_type", voteTypeStr)
+
+	message := queues.NewForumActivityMessage(question.CourseID, request.UserID, question.ID.Hex(), question.Title, time.Now())
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+
 	ctx.JSON(http.StatusOK, schemas.VoteResponse{Message: "Vote registered successfully"})
 }
 

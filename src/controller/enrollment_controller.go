@@ -3,27 +3,31 @@ package controller
 import (
 	"courses-service/src/ai"
 	"courses-service/src/model"
+	"courses-service/src/queues"
 	"courses-service/src/schemas"
 	"courses-service/src/service"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"slices"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 type EnrollmentController struct {
-	enrollmentService service.EnrollmentServiceInterface
-	aiClient          *ai.AiClient
-	activityService   service.TeacherActivityServiceInterface
+	enrollmentService  service.EnrollmentServiceInterface
+	aiClient           *ai.AiClient
+	activityService    service.TeacherActivityServiceInterface
+	notificationsQueue queues.NotificationsQueueInterface
 }
 
-func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface, aiClient *ai.AiClient, activityService service.TeacherActivityServiceInterface) *EnrollmentController {
+func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface, aiClient *ai.AiClient, activityService service.TeacherActivityServiceInterface, notificationsQueue queues.NotificationsQueueInterface) *EnrollmentController {
 	return &EnrollmentController{
-		enrollmentService: enrollmentService,
-		aiClient:          aiClient,
-		activityService:   activityService,
+		enrollmentService:  enrollmentService,
+		aiClient:           aiClient,
+		activityService:    activityService,
+		notificationsQueue: notificationsQueue,
 	}
 }
 
@@ -60,6 +64,16 @@ func (c *EnrollmentController) EnrollStudent(ctx *gin.Context) {
 	}
 
 	slog.Debug("Student enrolled in course", "studentId", enrollmentRequest.StudentID, "courseId", courseID)
+
+	message := queues.NewEnrolledStudentToCourseMessage(courseID, enrollmentRequest.StudentID)
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	ctx.JSON(http.StatusCreated, gin.H{"message": "Student successfully enrolled in course"})
 }
 
@@ -97,6 +111,16 @@ func (c *EnrollmentController) UnenrollStudent(ctx *gin.Context) {
 	}
 
 	slog.Debug("Student unenrolled from course", "studentId", studentId, "courseId", courseID)
+
+	message := queues.NewUnenrolledStudentFromCourseMessage(courseID, studentId, "")
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	
 	ctx.JSON(http.StatusOK, gin.H{"message": "Student successfully unenrolled from course"})
 }
 
@@ -235,6 +259,15 @@ func (c *EnrollmentController) CreateFeedback(ctx *gin.Context) {
 	}
 
 	slog.Debug("Feedback created", "studentId", feedbackRequest.StudentUUID, "teacherId", feedbackRequest.TeacherUUID)
+
+	message := queues.NewFeedbackCreatedMessage(feedbackRequest.StudentUUID, courseID, "", feedbackRequest.Feedback, feedbackRequest.Score, time.Now())
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "Feedback created"})
 }
 

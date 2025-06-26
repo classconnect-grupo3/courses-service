@@ -61,9 +61,9 @@
 				
 				<option value="file2">courses-service/src/controller/courses_controller.go (82.6%)</option>
 				
-				<option value="file3">courses-service/src/controller/enrollment_controller.go (86.8%)</option>
+				<option value="file3">courses-service/src/controller/enrollment_controller.go (83.9%)</option>
 				
-				<option value="file4">courses-service/src/controller/forum_controller.go (94.9%)</option>
+				<option value="file4">courses-service/src/controller/forum_controller.go (87.9%)</option>
 				
 				<option value="file5">courses-service/src/controller/module_controller.go (91.4%)</option>
 				
@@ -954,27 +954,31 @@ func (c *CourseController) GetCourseMembers(ctx *gin.Context) <span class="cov8"
 import (
         "courses-service/src/ai"
         "courses-service/src/model"
+        "courses-service/src/queues"
         "courses-service/src/schemas"
         "courses-service/src/service"
         "fmt"
         "log/slog"
         "net/http"
         "slices"
+        "time"
 
         "github.com/gin-gonic/gin"
 )
 
 type EnrollmentController struct {
-        enrollmentService service.EnrollmentServiceInterface
-        aiClient          *ai.AiClient
-        activityService   service.TeacherActivityServiceInterface
+        enrollmentService  service.EnrollmentServiceInterface
+        aiClient           *ai.AiClient
+        activityService    service.TeacherActivityServiceInterface
+        notificationsQueue queues.NotificationsQueueInterface
 }
 
-func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface, aiClient *ai.AiClient, activityService service.TeacherActivityServiceInterface) *EnrollmentController <span class="cov8" title="1">{
+func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface, aiClient *ai.AiClient, activityService service.TeacherActivityServiceInterface, notificationsQueue queues.NotificationsQueueInterface) *EnrollmentController <span class="cov8" title="1">{
         return &amp;EnrollmentController{
-                enrollmentService: enrollmentService,
-                aiClient:          aiClient,
-                activityService:   activityService,
+                enrollmentService:  enrollmentService,
+                aiClient:           aiClient,
+                activityService:    activityService,
+                notificationsQueue: notificationsQueue,
         }
 }</span>
 
@@ -1011,7 +1015,17 @@ func (c *EnrollmentController) EnrollStudent(ctx *gin.Context) <span class="cov8
         }</span>
 
         <span class="cov8" title="1">slog.Debug("Student enrolled in course", "studentId", enrollmentRequest.StudentID, "courseId", courseID)
-        ctx.JSON(http.StatusCreated, gin.H{"message": "Student successfully enrolled in course"})</span>
+
+        message := queues.NewEnrolledStudentToCourseMessage(courseID, enrollmentRequest.StudentID)
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">ctx.JSON(http.StatusCreated, gin.H{"message": "Student successfully enrolled in course"})</span>
 }
 
 // @Summary Unenroll a student from a course
@@ -1048,7 +1062,17 @@ func (c *EnrollmentController) UnenrollStudent(ctx *gin.Context) <span class="co
         }</span>
 
         <span class="cov8" title="1">slog.Debug("Student unenrolled from course", "studentId", studentId, "courseId", courseID)
-        ctx.JSON(http.StatusOK, gin.H{"message": "Student successfully unenrolled from course"})</span>
+
+        message := queues.NewUnenrolledStudentFromCourseMessage(courseID, studentId, "")
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, gin.H{"message": "Student successfully unenrolled from course"})</span>
 }
 
 // @Summary Get enrollments by course ID
@@ -1186,7 +1210,16 @@ func (c *EnrollmentController) CreateFeedback(ctx *gin.Context) <span class="cov
         }</span>
 
         <span class="cov8" title="1">slog.Debug("Feedback created", "studentId", feedbackRequest.StudentUUID, "teacherId", feedbackRequest.TeacherUUID)
-        ctx.JSON(http.StatusOK, gin.H{"message": "Feedback created"})</span>
+
+        message := queues.NewFeedbackCreatedMessage(feedbackRequest.StudentUUID, courseID, "", feedbackRequest.Feedback, feedbackRequest.Score, time.Now())
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, gin.H{"message": "Feedback created"})</span>
 }
 
 // @Summary Get feedback by student ID
@@ -1390,8 +1423,10 @@ import (
         "fmt"
         "log/slog"
         "net/http"
+        "time"
 
         "courses-service/src/model"
+        "courses-service/src/queues"
         "courses-service/src/schemas"
         "courses-service/src/service"
 
@@ -1399,14 +1434,16 @@ import (
 )
 
 type ForumController struct {
-        service         service.ForumServiceInterface
-        activityService service.TeacherActivityServiceInterface
+        service            service.ForumServiceInterface
+        activityService    service.TeacherActivityServiceInterface
+        notificationsQueue queues.NotificationsQueueInterface
 }
 
-func NewForumController(service service.ForumServiceInterface, activityService service.TeacherActivityServiceInterface) *ForumController <span class="cov8" title="1">{
+func NewForumController(service service.ForumServiceInterface, activityService service.TeacherActivityServiceInterface, notificationsQueue queues.NotificationsQueueInterface) *ForumController <span class="cov8" title="1">{
         return &amp;ForumController{
-                service:         service,
-                activityService: activityService,
+                service:            service,
+                activityService:    activityService,
+                notificationsQueue: notificationsQueue,
         }
 }</span>
 
@@ -1458,7 +1495,16 @@ func (c *ForumController) CreateQuestion(ctx *gin.Context) <span class="cov8" ti
 
         <span class="cov8" title="1">response := c.mapQuestionToDetailResponse(question)
         slog.Debug("Question created", "question_id", question.ID.Hex())
-        ctx.JSON(http.StatusCreated, response)</span>
+
+        message := queues.NewForumActivityMessage(request.CourseID, request.AuthorID, question.ID.Hex(), question.Title, response.CreatedAt)
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusCreated, response)</span>
 }
 
 // @Summary Get question by ID
@@ -1561,7 +1607,16 @@ func (c *ForumController) UpdateQuestion(ctx *gin.Context) <span class="cov8" ti
 
         <span class="cov8" title="1">response := c.mapQuestionToDetailResponse(question)
         slog.Debug("Question updated", "question_id", id)
-        ctx.JSON(http.StatusOK, response)</span>
+
+        message := queues.NewForumActivityMessage(question.CourseID, question.AuthorID, id, question.Title, response.UpdatedAt)
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, response)</span>
 }
 
 // @Summary Delete a question
@@ -1644,11 +1699,14 @@ func (c *ForumController) AddAnswer(ctx *gin.Context) <span class="cov8" title="
                 return
         }</span>
 
+        <span class="cov8" title="1">var question *model.ForumQuestion
+        var qErr error
+
         // Log activity if teacher is auxiliary - we need to get the question to know the course
-        <span class="cov8" title="1">teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+        teacherUUID := ctx.GetHeader("X-Teacher-UUID")
         if teacherUUID != "" &amp;&amp; teacherUUID == request.AuthorID </span><span class="cov0" title="0">{
                 // Get the question to find the course ID
-                question, qErr := c.service.GetQuestionById(questionID)
+                question, qErr = c.service.GetQuestionById(questionID)
                 if qErr == nil &amp;&amp; question != nil </span><span class="cov0" title="0">{
                         c.activityService.LogActivityIfAuxTeacher(
                                 question.CourseID,
@@ -1659,9 +1717,25 @@ func (c *ForumController) AddAnswer(ctx *gin.Context) <span class="cov8" title="
                 }</span>
         }
 
+        <span class="cov8" title="1">question, qErr = c.service.GetQuestionById(questionID)
+        if qErr != nil </span><span class="cov0" title="0">{
+                slog.Error("Error getting question", "error", qErr)
+                ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: qErr.Error()})
+                return
+        }</span>
+
         <span class="cov8" title="1">response := c.mapAnswerToResponse(answer)
         slog.Debug("Answer added", "question_id", questionID, "answer_id", answer.ID)
-        ctx.JSON(http.StatusCreated, response)</span>
+
+        message := queues.NewForumActivityMessage(question.CourseID, question.AuthorID, question.ID.Hex(), question.Title, response.CreatedAt)
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusCreated, response)</span>
 }
 
 // @Summary Update an answer
@@ -1830,9 +1904,26 @@ func (c *ForumController) VoteQuestion(ctx *gin.Context) <span class="cov8" titl
                 return
         }</span>
 
+        // get the question to find the course ID
+        <span class="cov8" title="1">question, qErr := c.service.GetQuestionById(questionID)
+        if qErr != nil </span><span class="cov0" title="0">{
+                slog.Error("Error getting question", "error", qErr)
+                ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: qErr.Error()})
+                return
+        }</span>
+
         <span class="cov8" title="1">voteTypeStr := "up"
         if request.VoteType == model.VoteTypeDown </span><span class="cov8" title="1">{
                 voteTypeStr = "down"
+        }</span>
+
+        <span class="cov8" title="1">message := queues.NewForumActivityMessage(question.CourseID, request.UserID, question.ID.Hex(), question.Title, time.Now())
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
         }</span>
 
         <span class="cov8" title="1">slog.Debug("Vote registered", "question_id", questionID, "vote_type", voteTypeStr)
@@ -1877,8 +1968,26 @@ func (c *ForumController) VoteAnswer(ctx *gin.Context) <span class="cov8" title=
                 voteTypeStr = "down"
         }</span>
 
+        // get the question to find the course ID
+        <span class="cov8" title="1">question, qErr := c.service.GetQuestionById(questionID)
+        if qErr != nil </span><span class="cov0" title="0">{
+                slog.Error("Error getting question", "error", qErr)
+                ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: qErr.Error()})
+                return
+        }</span>
         <span class="cov8" title="1">slog.Debug("Vote registered", "question_id", questionID, "answer_id", answerID, "vote_type", voteTypeStr)
-        ctx.JSON(http.StatusOK, schemas.VoteResponse{Message: "Vote registered successfully"})</span>
+
+        message := queues.NewForumActivityMessage(question.CourseID, request.UserID, question.ID.Hex(), question.Title, time.Now())
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, schemas.VoteResponse{Message: "Vote registered successfully"})</span>
 }
 
 // @Summary Remove vote from question
@@ -5552,11 +5661,11 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
         activityService := service.NewTeacherActivityService(activityLogRepo, courseRepo)
 
         courseController := controller.NewCourseController(courseService, aiClient, activityService, notificationsQueue)
-        enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient, activityService)
+        enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient, activityService, notificationsQueue)
         assignmentsController := controller.NewAssignmentsController(assignmentService, notificationsQueue, activityService)
         submissionController := controller.NewSubmissionController(submissionService, notificationsQueue, activityService, assignmentService)
         moduleController := controller.NewModuleController(moduleService, activityService)
-        forumController := controller.NewForumController(forumService, activityService)
+        forumController := controller.NewForumController(forumService, activityService, notificationsQueue)
         statisticsController := controller.NewStatisticsController(statisticsService)
         activityController := controller.NewTeacherActivityController(activityService, courseService)
 
