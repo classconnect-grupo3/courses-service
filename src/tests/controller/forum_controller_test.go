@@ -278,10 +278,10 @@ func (m *MockTeacherActivityService) GetCourseActivityLogs(courseID string) ([]*
 
 // Setup
 var (
-	mockForumService  = &MockForumService{}
+	mockForumService    = &MockForumService{}
 	mockActivityService = &MockTeacherActivityService{}
-	forumController   = controller.NewForumController(mockForumService, mockActivityService)
-	normalForumRouter = gin.Default()
+	forumController     = controller.NewForumController(mockForumService, mockActivityService)
+	normalForumRouter   = gin.Default()
 )
 
 func init() {
