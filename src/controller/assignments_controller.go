@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
@@ -15,15 +16,18 @@ import (
 type AssignmentsController struct {
 	service            service.AssignmentServiceInterface
 	notificationsQueue queues.NotificationsQueueInterface
+	activityService    service.TeacherActivityServiceInterface
 }
 
 func NewAssignmentsController(
 	service service.AssignmentServiceInterface,
 	notificationsQueue queues.NotificationsQueueInterface,
+	activityService service.TeacherActivityServiceInterface,
 ) *AssignmentsController {
 	return &AssignmentsController{
 		service:            service,
 		notificationsQueue: notificationsQueue,
+		activityService:    activityService,
 	}
 }
 
@@ -71,6 +75,17 @@ func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) {
 		log.Println("Error creating assignment:", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+	if teacherUUID != "" {
+		c.activityService.LogActivityIfAuxTeacher(
+			createdAssignment.CourseID,
+			teacherUUID,
+			"CREATE_ASSIGNMENT",
+			fmt.Sprintf("Created assignment: %s", createdAssignment.Title),
+		)
 	}
 
 	queueMessage := queues.NewAssignmentCreatedMessage(
@@ -168,6 +183,17 @@ func (c *AssignmentsController) UpdateAssignment(ctx *gin.Context) {
 		return
 	}
 
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+	if teacherUUID != "" {
+		c.activityService.LogActivityIfAuxTeacher(
+			updatedAssignment.CourseID,
+			teacherUUID,
+			"UPDATE_ASSIGNMENT",
+			fmt.Sprintf("Updated assignment: %s", updatedAssignment.Title),
+		)
+	}
+
 	slog.Debug("Assignment updated", "assignment", updatedAssignment)
 	ctx.JSON(http.StatusOK, updatedAssignment)
 }
@@ -184,10 +210,29 @@ func (c *AssignmentsController) DeleteAssignment(ctx *gin.Context) {
 	slog.Debug("Deleting assignment")
 	id := ctx.Param("assignmentId")
 
+	// Get assignment info before deleting for logging
+	assignment, err := c.service.GetAssignmentById(id)
+	if err != nil {
+		slog.Error("Error getting assignment for deletion", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	if err := c.service.DeleteAssignment(id); err != nil {
 		slog.Error("Error deleting assignment", "error", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+	if teacherUUID != "" && assignment != nil {
+		c.activityService.LogActivityIfAuxTeacher(
+			assignment.CourseID,
+			teacherUUID,
+			"DELETE_ASSIGNMENT",
+			fmt.Sprintf("Deleted assignment: %s", assignment.Title),
+		)
 	}
 
 	slog.Debug("Assignment deleted")

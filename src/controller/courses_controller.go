@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 	"slices"
@@ -14,12 +15,17 @@ import (
 )
 
 type CourseController struct {
-	service  service.CourseServiceInterface
-	aiClient *ai.AiClient
+	service         service.CourseServiceInterface
+	aiClient        *ai.AiClient
+	activityService service.TeacherActivityServiceInterface
 }
 
-func NewCourseController(service service.CourseServiceInterface, aiClient *ai.AiClient) *CourseController {
-	return &CourseController{service: service, aiClient: aiClient}
+func NewCourseController(service service.CourseServiceInterface, aiClient *ai.AiClient, activityService service.TeacherActivityServiceInterface) *CourseController {
+	return &CourseController{
+		service:         service,
+		aiClient:        aiClient,
+		activityService: activityService,
+	}
 }
 
 // @Summary Get all courses
@@ -381,6 +387,17 @@ func (c *CourseController) CreateCourseFeedback(ctx *gin.Context) {
 		slog.Error("Error creating course feedback", "error", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+	if teacherUUID != "" {
+		c.activityService.LogActivityIfAuxTeacher(
+			courseId,
+			teacherUUID,
+			"CREATE_COURSE_FEEDBACK",
+			fmt.Sprintf("Created course feedback of type: %s", feedback.FeedbackType),
+		)
 	}
 
 	slog.Debug("Course feedback created", "feedback", feedbackModel)

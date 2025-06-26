@@ -16,12 +16,16 @@ import (
 type SubmissionController struct {
 	submissionService  service.SubmissionServiceInterface
 	notificationsQueue queues.NotificationsQueueInterface
+	activityService    service.TeacherActivityServiceInterface
+	assignmentService  service.AssignmentServiceInterface
 }
 
-func NewSubmissionController(submissionService service.SubmissionServiceInterface, notificationsQueue queues.NotificationsQueueInterface) *SubmissionController {
+func NewSubmissionController(submissionService service.SubmissionServiceInterface, notificationsQueue queues.NotificationsQueueInterface, activityService service.TeacherActivityServiceInterface, assignmentService service.AssignmentServiceInterface) *SubmissionController {
 	return &SubmissionController{
 		submissionService:  submissionService,
 		notificationsQueue: notificationsQueue,
+		activityService:    activityService,
+		assignmentService:  assignmentService,
 	}
 }
 
@@ -323,6 +327,19 @@ func (c *SubmissionController) GradeSubmission(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Log activity if teacher is auxiliary - we need to get the assignment to find the course
+	if c.activityService != nil && c.assignmentService != nil {
+		assignment, err := c.assignmentService.GetAssignmentById(assignmentID)
+		if err == nil && assignment != nil {
+			c.activityService.LogActivityIfAuxTeacher(
+				assignment.CourseID,
+				teacherUUID,
+				"GRADE_SUBMISSION",
+				fmt.Sprintf("Graded submission for student %s", gradedSubmission.StudentName),
+			)
+		}
 	}
 
 	ctx.JSON(http.StatusOK, gradedSubmission)

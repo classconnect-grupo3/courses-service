@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -12,11 +13,15 @@ import (
 )
 
 type ForumController struct {
-	service service.ForumServiceInterface
+	service         service.ForumServiceInterface
+	activityService service.TeacherActivityServiceInterface
 }
 
-func NewForumController(service service.ForumServiceInterface) *ForumController {
-	return &ForumController{service: service}
+func NewForumController(service service.ForumServiceInterface, activityService service.TeacherActivityServiceInterface) *ForumController {
+	return &ForumController{
+		service:         service,
+		activityService: activityService,
+	}
 }
 
 // Question endpoints
@@ -52,6 +57,17 @@ func (c *ForumController) CreateQuestion(ctx *gin.Context) {
 		slog.Error("Error creating question", "error", err)
 		ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
 		return
+	}
+
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+	if teacherUUID != "" && teacherUUID == request.AuthorID {
+		c.activityService.LogActivityIfAuxTeacher(
+			request.CourseID,
+			teacherUUID,
+			"CREATE_FORUM_QUESTION",
+			fmt.Sprintf("Created forum question: %s", request.Title),
+		)
 	}
 
 	response := c.mapQuestionToDetailResponse(question)
@@ -146,6 +162,17 @@ func (c *ForumController) UpdateQuestion(ctx *gin.Context) {
 		return
 	}
 
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+	if teacherUUID != "" && question != nil {
+		c.activityService.LogActivityIfAuxTeacher(
+			question.CourseID,
+			teacherUUID,
+			"UPDATE_FORUM_QUESTION",
+			fmt.Sprintf("Updated forum question: %s", request.Title),
+		)
+	}
+
 	response := c.mapQuestionToDetailResponse(question)
 	slog.Debug("Question updated", "question_id", id)
 	ctx.JSON(http.StatusOK, response)
@@ -174,11 +201,25 @@ func (c *ForumController) DeleteQuestion(ctx *gin.Context) {
 		return
 	}
 
+	// Get question before deleting for logging
+	question, qErr := c.service.GetQuestionById(id)
+	
 	err := c.service.DeleteQuestion(id, authorID)
 	if err != nil {
 		slog.Error("Error deleting question", "error", err)
 		ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
 		return
+	}
+
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+	if teacherUUID != "" && teacherUUID == authorID && qErr == nil && question != nil {
+		c.activityService.LogActivityIfAuxTeacher(
+			question.CourseID,
+			teacherUUID,
+			"DELETE_FORUM_QUESTION",
+			fmt.Sprintf("Deleted forum question: %s", question.Title),
+		)
 	}
 
 	slog.Debug("Question deleted", "question_id", id)
@@ -215,6 +256,21 @@ func (c *ForumController) AddAnswer(ctx *gin.Context) {
 		slog.Error("Error adding answer", "error", err)
 		ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
 		return
+	}
+
+	// Log activity if teacher is auxiliary - we need to get the question to know the course
+	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+	if teacherUUID != "" && teacherUUID == request.AuthorID {
+		// Get the question to find the course ID
+		question, qErr := c.service.GetQuestionById(questionID)
+		if qErr == nil && question != nil {
+			c.activityService.LogActivityIfAuxTeacher(
+				question.CourseID,
+				teacherUUID,
+				"CREATE_FORUM_ANSWER",
+				"Created forum answer",
+			)
+		}
 	}
 
 	response := c.mapAnswerToResponse(answer)
@@ -334,6 +390,21 @@ func (c *ForumController) AcceptAnswer(ctx *gin.Context) {
 		slog.Error("Error accepting answer", "error", err)
 		ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
 		return
+	}
+
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+	if teacherUUID != "" && teacherUUID == authorID {
+		// Get the question to find the course ID
+		question, qErr := c.service.GetQuestionById(questionID)
+		if qErr == nil && question != nil {
+			c.activityService.LogActivityIfAuxTeacher(
+				question.CourseID,
+				teacherUUID,
+				"ACCEPT_FORUM_ANSWER",
+				"Accepted forum answer",
+			)
+		}
 	}
 
 	slog.Debug("Answer accepted", "question_id", questionID, "answer_id", answerID)
