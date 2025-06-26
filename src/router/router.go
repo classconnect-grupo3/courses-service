@@ -216,7 +216,7 @@ func NewRouter(config *config.Config) *gin.Engine {
 	statisticsService := service.NewStatisticsService(courseRepo, assignmentRepository, enrollmentRepo, submissionRepository, forumRepository)
 	activityService := service.NewTeacherActivityService(activityLogRepo, courseRepo)
 
-	courseController := controller.NewCourseController(courseService, aiClient, activityService)
+	courseController := controller.NewCourseController(courseService, aiClient, activityService, notificationsQueue)
 	enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient, activityService)
 	assignmentsController := controller.NewAssignmentsController(assignmentService, notificationsQueue, activityService)
 	submissionController := controller.NewSubmissionController(submissionService, notificationsQueue, activityService, assignmentService)

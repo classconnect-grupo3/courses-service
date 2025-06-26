@@ -59,7 +59,7 @@
 				
 				<option value="file1">courses-service/src/controller/assignments_controller.go (89.4%)</option>
 				
-				<option value="file2">courses-service/src/controller/courses_controller.go (85.8%)</option>
+				<option value="file2">courses-service/src/controller/courses_controller.go (82.6%)</option>
 				
 				<option value="file3">courses-service/src/controller/enrollment_controller.go (86.8%)</option>
 				
@@ -406,6 +406,7 @@ import (
 
         "courses-service/src/ai"
         "courses-service/src/model"
+        "courses-service/src/queues"
         "courses-service/src/schemas"
         "courses-service/src/service"
 
@@ -413,16 +414,18 @@ import (
 )
 
 type CourseController struct {
-        service         service.CourseServiceInterface
-        aiClient        *ai.AiClient
-        activityService service.TeacherActivityServiceInterface
+        service            service.CourseServiceInterface
+        aiClient           *ai.AiClient
+        activityService    service.TeacherActivityServiceInterface
+        notificationsQueue queues.NotificationsQueueInterface
 }
 
-func NewCourseController(service service.CourseServiceInterface, aiClient *ai.AiClient, activityService service.TeacherActivityServiceInterface) *CourseController <span class="cov8" title="1">{
+func NewCourseController(service service.CourseServiceInterface, aiClient *ai.AiClient, activityService service.TeacherActivityServiceInterface, notificationsQueue queues.NotificationsQueueInterface) *CourseController <span class="cov8" title="1">{
         return &amp;CourseController{
                 service:         service,
                 aiClient:        aiClient,
                 activityService: activityService,
+                notificationsQueue: notificationsQueue,
         }
 }</span>
 
@@ -681,7 +684,16 @@ func (c *CourseController) AddAuxTeacherToCourse(ctx *gin.Context) <span class="
                 return
         }</span>
         <span class="cov8" title="1">slog.Debug("Aux teacher added to course", "course", course)
-        ctx.JSON(http.StatusOK, course)</span>
+
+        message := queues.NewAddedAuxTeacherToCourseMessage(id, course.Title, auxTeacherId)
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, course)</span>
 }
 
 // @Summary Remove an aux teacher from a course
@@ -719,7 +731,16 @@ func (c *CourseController) RemoveAuxTeacherFromCourse(ctx *gin.Context) <span cl
                 return
         }</span>
         <span class="cov8" title="1">slog.Debug("Aux teacher removed from course", "course", course)
-        ctx.JSON(http.StatusOK, course)</span>
+
+        message := queues.NewRemoveAuxTeacherFromCourseMessage(id, course.Title, auxTeacherId)
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, course)</span>
 }
 
 // @Summary Get favourite courses
@@ -799,7 +820,24 @@ func (c *CourseController) CreateCourseFeedback(ctx *gin.Context) <span class="c
         }</span>
 
         <span class="cov8" title="1">slog.Debug("Course feedback created", "feedback", feedbackModel)
-        ctx.JSON(http.StatusOK, feedbackModel)</span>
+
+        // Getting the course so we have the teacher ID
+        course, err := c.service.GetCourseById(courseId)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error getting course", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">message := queues.NewFeedbackCreatedMessage(course.TeacherUUID, courseId, feedbackModel.ID.Hex(), feedbackModel.Feedback, feedbackModel.Score, feedbackModel.CreatedAt)
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, feedbackModel)</span>
 }
 
 // @Summary Get course feedback
@@ -5513,7 +5551,7 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
         statisticsService := service.NewStatisticsService(courseRepo, assignmentRepository, enrollmentRepo, submissionRepository, forumRepository)
         activityService := service.NewTeacherActivityService(activityLogRepo, courseRepo)
 
-        courseController := controller.NewCourseController(courseService, aiClient, activityService)
+        courseController := controller.NewCourseController(courseService, aiClient, activityService, notificationsQueue)
         enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient, activityService)
         assignmentsController := controller.NewAssignmentsController(assignmentService, notificationsQueue, activityService)
         submissionController := controller.NewSubmissionController(submissionService, notificationsQueue, activityService, assignmentService)
