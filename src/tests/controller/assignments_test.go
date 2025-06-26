@@ -22,8 +22,10 @@ import (
 var (
 	mockAssignmentService      = &MockAssignmentService{}
 	mockAssignmentErrorService = &MockAssignmentServiceWithError{}
-	normalAssignmentController = controller.NewAssignmentsController(mockAssignmentService, SharedMockNotificationsQueue, SharedMockActivityService)
-	errorAssignmentController  = controller.NewAssignmentsController(mockAssignmentErrorService, SharedMockNotificationsQueue, SharedMockActivityService)
+	mockNotificationsQueue     = &MockNotificationsQueue{}
+	mockActivityService        = &MockTeacherActivityService{}
+	normalAssignmentController = controller.NewAssignmentsController(mockAssignmentService, mockNotificationsQueue, mockActivityService)
+	errorAssignmentController  = controller.NewAssignmentsController(mockAssignmentErrorService, mockNotificationsQueue, mockActivityService)
 	normalAssignmentRouter     = gin.Default()
 	errorAssignmentRouter      = gin.Default()
 )
