@@ -255,6 +255,17 @@ func (m *MockForumService) SearchQuestions(courseID, query string, tags []model.
 	return questions, nil
 }
 
+func (m *MockForumService) GetForumParticipants(courseID string) ([]string, error) {
+	if courseID == "error-course" {
+		return nil, errors.New("course not found")Add commentMore actions
+	}
+	if courseID == "empty-course" {
+		return []string{}, nil
+	}
+
+	return []string{"author-123", "author-456", "voter-123"}, nil
+}
+
 // Helper function
 func mustParseForumObjectID(id string) primitive.ObjectID {
 	if len(id) == 24 {
