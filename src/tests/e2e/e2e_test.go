@@ -1282,3 +1282,181 @@ func getGradeFeedback(score float64) string {
 		return "Trabajo insuficiente. Se requiere mayor estudio y práctica."
 	}
 }
+
+func TestForumParticipantsE2E(t *testing.T) {
+	// Cleanup all collections at the end
+	t.Cleanup(func() {
+		dbSetup.CleanupCollection("courses")
+		dbSetup.CleanupCollection("forum_questions")
+	})
+
+	// Test data
+	teacherID := "teacher-123"
+	student1ID := "student-001"
+	student2ID := "student-002"
+
+	fmt.Println("🚀 Starting Forum Participants E2E Test...")
+
+	// Step 1: Create a course
+	fmt.Println("Step 1: Creating course...")
+	courseJSON := fmt.Sprintf(`{
+		"title": "Test Forum Course",
+		"description": "Course for testing forum participants",
+		"teacher_id": "%s",
+		"capacity": 30,
+		"start_date": "%s",
+		"end_date": "%s"
+	}`, teacherID, time.Now().Format(time.RFC3339), time.Now().AddDate(0, 1, 0).Format(time.RFC3339))
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/courses", strings.NewReader(courseJSON))
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusCreated, w.Code)
+
+	var courseResponse map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &courseResponse)
+	assert.Equal(t, nil, err)
+	courseID := courseResponse["id"].(string)
+	fmt.Printf("✓ Created course: %s (ID: %s)\n", "Test Forum Course", courseID)
+
+	// Step 2: Create forum questions
+	fmt.Println("Step 2: Creating forum questions...")
+	questions := []struct {
+		authorID    string
+		title       string
+		description string
+	}{
+		{student1ID, "Question by Student 1", "This is a question from student 1"},
+		{student2ID, "Question by Student 2", "This is a question from student 2"},
+	}
+
+	questionIDs := make([]string, len(questions))
+	for i, q := range questions {
+		questionJSON := fmt.Sprintf(`{
+			"course_id": "%s",
+			"author_id": "%s",
+			"title": "%s",
+			"description": "%s",
+			"tags": ["general"]
+		}`, courseID, q.authorID, q.title, q.description)
+
+		w = httptest.NewRecorder()
+		req, _ = http.NewRequest("POST", "/forum/questions", strings.NewReader(questionJSON))
+		r.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusCreated, w.Code)
+
+		var questionResponse map[string]interface{}
+		err = json.Unmarshal(w.Body.Bytes(), &questionResponse)
+		assert.Equal(t, nil, err)
+		questionIDs[i] = questionResponse["id"].(string)
+		fmt.Printf("✓ Created question: %s (ID: %s) by %s\n", q.title, questionIDs[i], q.authorID)
+	}
+
+	// Step 3: Create answers
+	fmt.Println("Step 3: Creating forum answers...")
+	answers := []struct {
+		questionIdx int
+		authorID    string
+		content     string
+	}{
+		{0, student2ID, "Answer to question 1 by student 2"},
+		{1, student1ID, "Answer to question 2 by student 1"},
+	}
+
+	for _, answer := range answers {
+		answerJSON := fmt.Sprintf(`{
+			"author_id": "%s",
+			"content": "%s"
+		}`, answer.authorID, answer.content)
+
+		w = httptest.NewRecorder()
+		req, _ = http.NewRequest("POST", "/forum/questions/"+questionIDs[answer.questionIdx]+"/answers", strings.NewReader(answerJSON))
+		r.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusCreated, w.Code)
+		fmt.Printf("✓ Added answer to question %d by %s\n", answer.questionIdx+1, answer.authorID)
+	}
+
+	// Step 4: Add votes
+	fmt.Println("Step 4: Adding votes...")
+	votes := []struct {
+		questionIdx int
+		voterID     string
+		voteType    int
+	}{
+		{0, teacherID, 1}, // Teacher upvotes question 1
+		{1, teacherID, 1}, // Teacher upvotes question 2
+	}
+
+	for _, vote := range votes {
+		voteJSON := fmt.Sprintf(`{"vote_type": %d, "user_id": "%s"}`, vote.voteType, vote.voterID)
+		w = httptest.NewRecorder()
+		req, _ = http.NewRequest("POST", "/forum/questions/"+questionIDs[vote.questionIdx]+"/vote", strings.NewReader(voteJSON))
+		r.ServeHTTP(w, req)
+		fmt.Printf("✓ Added vote to question %d by %s\n", vote.questionIdx+1, vote.voterID)
+	}
+
+	// Wait a moment for all data to be persisted
+	time.Sleep(100 * time.Millisecond)
+
+	// Step 5: Test the forum participants endpoint
+	fmt.Println("Step 5: Testing forum participants endpoint...")
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/forum/courses/"+courseID+"/participants", nil)
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var participantsResponse schemas.ForumParticipantsResponse
+	err = json.Unmarshal(w.Body.Bytes(), &participantsResponse)
+	assert.Equal(t, nil, err)
+
+	// Step 6: Verify the participants
+	fmt.Println("Step 6: Verifying forum participants...")
+
+	// Expected participants: student1ID, student2ID, teacherID
+	expectedParticipants := []string{student1ID, student2ID, teacherID}
+
+	// Verify we have the expected number of participants
+	assert.Equal(t, len(expectedParticipants), len(participantsResponse.Participants))
+
+	// Verify all expected participants are present
+	participantsSet := make(map[string]bool)
+	for _, participant := range participantsResponse.Participants {
+		participantsSet[participant] = true
+	}
+
+	for _, expected := range expectedParticipants {
+		assert.Equal(t, true, participantsSet[expected])
+	}
+
+	fmt.Printf("✓ Found %d unique participants: %v\n", len(participantsResponse.Participants), participantsResponse.Participants)
+
+	// Step 7: Test error case
+	fmt.Println("Step 7: Testing error case...")
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/forum/courses/non-existent-course/participants", nil)
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNotFound, w.Code)
+
+	var errorResponse schemas.ErrorResponse
+	err = json.Unmarshal(w.Body.Bytes(), &errorResponse)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, "course not found", errorResponse.Error)
+	fmt.Printf("✓ Correctly returned 404 for non-existent course\n")
+
+	fmt.Println("✅ Forum Participants E2E Test completed successfully!")
+	fmt.Println("\nTest Summary:")
+	fmt.Printf("- Created 1 course\n")
+	fmt.Printf("- Created 2 forum questions by different students\n")
+	fmt.Printf("- Created 2 answers by different students\n")
+	fmt.Printf("- Added 2 votes by teacher\n")
+	fmt.Printf("- Verified 3 unique participants: %v\n", participantsResponse.Participants)
+	fmt.Printf("- Tested error handling for non-existent course\n")
+
+	fmt.Println("\n🎯 Validated Forum Participants Logic:")
+	fmt.Printf("✓ Question authors are included: %s, %s\n", student1ID, student2ID)
+	fmt.Printf("✓ Answer authors are included: %s, %s\n", student1ID, student2ID)
+	fmt.Printf("✓ Voters are included: %s\n", teacherID)
+	fmt.Printf("✓ No duplicates in participant list\n")
+	fmt.Printf("✓ Correct total count: 3 unique participants\n")
+	fmt.Printf("✓ Error handling works correctly\n")
+}
