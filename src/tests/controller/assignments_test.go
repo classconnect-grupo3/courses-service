@@ -23,8 +23,9 @@ var (
 	mockAssignmentService      = &MockAssignmentService{}
 	mockAssignmentErrorService = &MockAssignmentServiceWithError{}
 	mockNotificationsQueue     = &MockNotificationsQueue{}
-	normalAssignmentController = controller.NewAssignmentsController(mockAssignmentService, mockNotificationsQueue)
-	errorAssignmentController  = controller.NewAssignmentsController(mockAssignmentErrorService, mockNotificationsQueue)
+	mockActivityService        = &MockTeacherActivityService{}
+	normalAssignmentController = controller.NewAssignmentsController(mockAssignmentService, mockNotificationsQueue, mockActivityService)
+	errorAssignmentController  = controller.NewAssignmentsController(mockAssignmentErrorService, mockNotificationsQueue, mockActivityService)
 	normalAssignmentRouter     = gin.Default()
 	errorAssignmentRouter      = gin.Default()
 )
@@ -39,6 +40,16 @@ type MockNotificationsQueue struct{}
 
 func (m *MockNotificationsQueue) Publish(message queues.QueueMessage) error {
 	return nil
+}
+
+type MockTeacherActivityService struct{}
+
+func (m *MockTeacherActivityService) LogActivityIfAuxTeacher(courseID, teacherUUID, activityType, description string) {
+	// Mock implementation - do nothing
+}
+
+func (m *MockTeacherActivityService) GetCourseActivityLogs(courseID string) ([]*model.TeacherActivityLog, error) {
+	return []*model.TeacherActivityLog{}, nil
 }
 
 type MockAssignmentService struct{}

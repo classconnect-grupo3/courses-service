@@ -19,8 +19,9 @@ import (
 var (
 	mockEnrollmentService      = &MockEnrollmentService{}
 	mockErrorEnrollmentService = &MockEnrollmentServiceWithError{}
-	normalEnrollmentController = controller.NewEnrollmentController(mockEnrollmentService, nil)
-	errorEnrollmentController  = controller.NewEnrollmentController(mockErrorEnrollmentService, nil)
+	mockActivityService        = &MockTeacherActivityService{}
+	normalEnrollmentController = controller.NewEnrollmentController(mockEnrollmentService, nil, mockActivityService)
+	errorEnrollmentController  = controller.NewEnrollmentController(mockErrorEnrollmentService, nil, mockActivityService)
 	normalEnrollmentRouter     = gin.Default()
 	errorEnrollmentRouter      = gin.Default()
 )
@@ -140,6 +141,16 @@ func (m *MockEnrollmentServiceWithError) ApproveStudent(studentID, courseID stri
 // DisapproveStudent implements service.EnrollmentServiceInterface.
 func (m *MockEnrollmentServiceWithError) DisapproveStudent(studentID, courseID, reason string) error {
 	return errors.New("Error disapproving student")
+}
+
+type MockTeacherActivityService struct{}
+
+func (m *MockTeacherActivityService) LogActivityIfAuxTeacher(courseID, teacherUUID, activityType, description string) {
+	// Mock implementation - do nothing
+}
+
+func (m *MockTeacherActivityService) GetCourseActivityLogs(courseID string) ([]*model.TeacherActivityLog, error) {
+	return []*model.TeacherActivityLog{}, nil
 }
 
 func TestEnrollStudent(t *testing.T) {

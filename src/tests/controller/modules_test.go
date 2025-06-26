@@ -20,8 +20,9 @@ import (
 var (
 	mockModuleService      = &MockModuleService{}
 	mockModuleErrorService = &MockModuleServiceWithError{}
-	normalModuleController = controller.NewModuleController(mockModuleService)
-	errorModuleController  = controller.NewModuleController(mockModuleErrorService)
+	mockActivityService    = &MockTeacherActivityService{}
+	normalModuleController = controller.NewModuleController(mockModuleService, mockActivityService)
+	errorModuleController  = controller.NewModuleController(mockModuleErrorService, mockActivityService)
 	normalModuleRouter     = gin.Default()
 	errorModuleRouter      = gin.Default()
 )
@@ -104,6 +105,16 @@ func (m *MockModuleServiceWithError) UpdateModule(id string, module model.Module
 
 func (m *MockModuleServiceWithError) CreateModule(module schemas.CreateModuleRequest) (*model.Module, error) {
 	return nil, errors.New("Error creating module")
+}
+
+type MockTeacherActivityService struct{}
+
+func (m *MockTeacherActivityService) LogActivityIfAuxTeacher(courseID, teacherUUID, activityType, description string) {
+	// Mock implementation - do nothing
+}
+
+func (m *MockTeacherActivityService) GetCourseActivityLogs(courseID string) ([]*model.TeacherActivityLog, error) {
+	return []*model.TeacherActivityLog{}, nil
 }
 
 func TestCreateModule(t *testing.T) {

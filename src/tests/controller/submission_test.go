@@ -12,6 +12,7 @@ import (
 
 	"courses-service/src/controller"
 	"courses-service/src/model"
+	"courses-service/src/queues"
 	"courses-service/src/schemas"
 
 	"github.com/gin-gonic/gin"
@@ -22,8 +23,11 @@ import (
 var (
 	mockSubmissionService      = &MockSubmissionService{}
 	mockSubmissionErrorService = &MockSubmissionServiceWithError{}
-	normalSubmissionController = controller.NewSubmissionController(mockSubmissionService, nil)
-	errorSubmissionController  = controller.NewSubmissionController(mockSubmissionErrorService, nil)
+	mockNotificationsQueue     = &MockNotificationsQueue{}
+	mockActivityService        = &MockTeacherActivityService{}
+	mockAssignmentService      = &MockAssignmentService{}
+	normalSubmissionController = controller.NewSubmissionController(mockSubmissionService, mockNotificationsQueue, mockActivityService, mockAssignmentService)
+	errorSubmissionController  = controller.NewSubmissionController(mockSubmissionErrorService, mockNotificationsQueue, mockActivityService, mockAssignmentService)
 	normalSubmissionRouter     = gin.Default()
 	errorSubmissionRouter      = gin.Default()
 )
@@ -322,6 +326,52 @@ func mustParseSubmissionObjectID(id string) primitive.ObjectID {
 	default:
 		return primitive.NewObjectID()
 	}
+}
+
+type MockNotificationsQueue struct{}
+
+func (m *MockNotificationsQueue) Publish(message queues.QueueMessage) error {
+	return nil
+}
+
+type MockTeacherActivityService struct{}
+
+func (m *MockTeacherActivityService) LogActivityIfAuxTeacher(courseID, teacherUUID, activityType, description string) {
+	// Mock implementation - do nothing
+}
+
+func (m *MockTeacherActivityService) GetCourseActivityLogs(courseID string) ([]*model.TeacherActivityLog, error) {
+	return []*model.TeacherActivityLog{}, nil
+}
+
+type MockAssignmentService struct{}
+
+func (m *MockAssignmentService) GetAssignmentById(id string) (*model.Assignment, error) {
+	return &model.Assignment{
+		ID:       primitive.NewObjectID(),
+		CourseID: "course123",
+		Title:    "Test Assignment",
+	}, nil
+}
+
+func (m *MockAssignmentService) CreateAssignment(c schemas.CreateAssignmentRequest) (*model.Assignment, error) {
+	return &model.Assignment{}, nil
+}
+
+func (m *MockAssignmentService) GetAssignments() ([]*model.Assignment, error) {
+	return []*model.Assignment{}, nil
+}
+
+func (m *MockAssignmentService) GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error) {
+	return []*model.Assignment{}, nil
+}
+
+func (m *MockAssignmentService) UpdateAssignment(id string, updateAssignmentRequest schemas.UpdateAssignmentRequest) (*model.Assignment, error) {
+	return &model.Assignment{}, nil
+}
+
+func (m *MockAssignmentService) DeleteAssignment(id string) error {
+	return nil
 }
 
 // Tests for CreateSubmission
