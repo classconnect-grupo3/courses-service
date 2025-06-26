@@ -5,6 +5,7 @@ import (
 	"courses-service/src/model"
 	"courses-service/src/schemas"
 	"courses-service/src/service"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"slices"
@@ -15,10 +16,15 @@ import (
 type EnrollmentController struct {
 	enrollmentService service.EnrollmentServiceInterface
 	aiClient          *ai.AiClient
+	activityService   service.TeacherActivityServiceInterface
 }
 
-func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface, aiClient *ai.AiClient) *EnrollmentController {
-	return &EnrollmentController{enrollmentService: enrollmentService, aiClient: aiClient}
+func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface, aiClient *ai.AiClient, activityService service.TeacherActivityServiceInterface) *EnrollmentController {
+	return &EnrollmentController{
+		enrollmentService: enrollmentService,
+		aiClient:          aiClient,
+		activityService:   activityService,
+	}
 }
 
 // @Summary Enroll a student in a course
@@ -345,6 +351,17 @@ func (c *EnrollmentController) ApproveStudent(ctx *gin.Context) {
 		return
 	}
 
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetString("teacher_uuid")
+	if teacherUUID != "" {
+		c.activityService.LogActivityIfAuxTeacher(
+			courseID,
+			teacherUUID,
+			"APPROVE_STUDENT",
+			fmt.Sprintf("Approved student: %s", studentID),
+		)
+	}
+
 	slog.Debug("Student approved successfully", "studentId", studentID, "courseId", courseID)
 	ctx.JSON(http.StatusOK, schemas.ApproveStudentResponse{
 		Message:   "Student approved successfully",
@@ -393,6 +410,17 @@ func (c *EnrollmentController) DisapproveStudent(ctx *gin.Context) {
 		slog.Error("Error disapproving student", "error", err, "studentId", studentID, "courseId", courseID)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetString("teacher_uuid")
+	if teacherUUID != "" {
+		c.activityService.LogActivityIfAuxTeacher(
+			courseID,
+			teacherUUID,
+			"DISAPPROVE_STUDENT",
+			fmt.Sprintf("Disapproved student: %s (reason: %s)", studentID, disapproveRequest.Reason),
+		)
 	}
 
 	slog.Debug("Student disapproved successfully", "studentId", studentID, "courseId", courseID, "reason", disapproveRequest.Reason)

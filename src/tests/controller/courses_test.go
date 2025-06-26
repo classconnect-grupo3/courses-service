@@ -22,8 +22,8 @@ import (
 var (
 	mockService      = &MockCourseService{}
 	mockErrorService = &MockCourseServiceWithError{}
-	normalController = controller.NewCourseController(mockService, nil)
-	errorController  = controller.NewCourseController(mockErrorService, nil)
+	normalController = controller.NewCourseController(mockService, nil, mockActivityService)
+	errorController  = controller.NewCourseController(mockErrorService, nil, mockActivityService)
 	normalRouter     = gin.Default()
 	errorRouter      = gin.Default()
 )
