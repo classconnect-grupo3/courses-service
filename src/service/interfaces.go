@@ -4,6 +4,7 @@ import (
 	"context"
 	"courses-service/src/model"
 	"courses-service/src/schemas"
+	"time"
 )
 
 // CourseServiceInterface define los métodos que debe implementar un servicio de cursos
@@ -11,7 +12,7 @@ type CourseServiceInterface interface {
 	GetCourses() ([]*model.Course, error)
 	CreateCourse(c schemas.CreateCourseRequest) (*model.Course, error)
 	GetCourseById(id string) (*model.Course, error)
-	DeleteCourse(id string) error
+	DeleteCourse(id string, teacherId string) error
 	GetCourseByTeacherId(teacherId string) ([]*model.Course, error)
 	GetCoursesByStudentId(studentId string) ([]*model.Course, error)
 	GetCoursesByUserId(userId string) (*schemas.GetCoursesByUserIdResponse, error)
@@ -42,6 +43,8 @@ type EnrollmentServiceInterface interface {
 	UnsetFavouriteCourse(studentID, courseID string) error
 	CreateStudentFeedback(feedbackRequest schemas.CreateStudentFeedbackRequest) error
 	GetFeedbackByStudentId(studentID string, getFeedbackByStudentIdRequest schemas.GetFeedbackByStudentIdRequest) ([]*model.StudentFeedback, error)
+	ApproveStudent(studentID, courseID string) error
+	DisapproveStudent(studentID, courseID, reason string) error
 }
 
 type AssignmentServiceInterface interface {
@@ -63,6 +66,8 @@ type SubmissionServiceInterface interface {
 	GetOrCreateSubmission(ctx context.Context, assignmentID, studentUUID, studentName string) (*model.Submission, error)
 	GradeSubmission(ctx context.Context, submissionID string, score *float64, feedback string) (*model.Submission, error)
 	ValidateTeacherPermissions(ctx context.Context, assignmentID, teacherUUID string) error
+	GenerateFeedbackSummary(ctx context.Context, submissionID string) (*schemas.AiSummaryResponse, error)
+	AutoCorrectSubmission(ctx context.Context, submissionID string) error
 }
 
 type ForumServiceInterface interface {
@@ -87,4 +92,29 @@ type ForumServiceInterface interface {
 
 	// Search and filter operations
 	SearchQuestions(courseID, query string, tags []model.QuestionTag, status model.QuestionStatus) ([]model.ForumQuestion, error)
+
+	// Forum participants operations
+	GetForumParticipants(courseID string) ([]string, error)
+}
+
+// StatisticsServiceInterface define los métodos que debe implementar un servicio de estadísticas
+type StatisticsServiceInterface interface {
+
+	// ExportCourseStatsCSV genera un CSV con las estadísticas del curso
+	ExportCourseStatsCSV(ctx context.Context, courseID string, from, to time.Time) ([]byte, string, error)
+
+	// ExportStudentStatsCSV genera un CSV con las estadísticas del estudiante
+	ExportStudentStatsCSV(ctx context.Context, studentID string, courseID string, from, to time.Time) ([]byte, string, error)
+
+	ExportTeacherCoursesStatsCSV(ctx context.Context, teacherID string, from, to time.Time) ([]byte, string, error)
+
+	// Backoffice statistics methods
+	GetBackofficeStatistics(ctx context.Context) (*schemas.BackofficeStatisticsResponse, error)
+	GetBackofficeCoursesStats(ctx context.Context) (*schemas.BackofficeCoursesStatsResponse, error)
+	GetBackofficeAssignmentsStats(ctx context.Context) (*schemas.BackofficeAssignmentsStatsResponse, error)
+}
+
+type TeacherActivityServiceInterface interface {
+	LogActivityIfAuxTeacher(courseID, teacherUUID, activityType, description string)
+	GetCourseActivityLogs(courseID string) ([]*model.TeacherActivityLog, error)
 }

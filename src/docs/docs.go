@@ -372,6 +372,45 @@ const docTemplate = `{
                 }
             }
         },
+        "/assignments/{assignmentId}/submissions/{id}/feedback-summary": {
+            "get": {
+                "description": "Generate an AI summary of the feedback for a submission",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submissions"
+                ],
+                "summary": "Generate feedback summary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Assignment ID",
+                        "name": "assignmentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Submission ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.AiSummaryResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/assignments/{assignmentId}/submissions/{id}/grade": {
             "put": {
                 "description": "Grade a submission by ID (for teachers)",
@@ -781,6 +820,13 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Teacher ID",
+                        "name": "teacherId",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -788,6 +834,52 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/schemas.DeleteCourseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/{id}/aux-teacher/remove": {
+            "delete": {
+                "description": "Remove an aux teacher from a course by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "courses"
+                ],
+                "summary": "Remove an aux teacher from a course",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Teacher ID",
+                        "name": "teacherId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Aux teacher ID",
+                        "name": "auxTeacherId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Course"
                         }
                     }
                 }
@@ -923,13 +1015,11 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Unset favourite course request",
-                        "name": "unsetFavouriteCourseRequest",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/schemas.UnsetFavouriteCourseRequest"
-                        }
+                        "type": "string",
+                        "description": "Student ID",
+                        "name": "studentId",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -943,7 +1033,7 @@ const docTemplate = `{
             }
         },
         "/courses/{id}/feedback": {
-            "get": {
+            "put": {
                 "description": "Get course feedback by course ID",
                 "consumes": [
                     "application/json"
@@ -1049,9 +1139,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Course feedback summary",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/schemas.AiSummaryResponse"
                         }
                     }
                 }
@@ -1107,47 +1197,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/courses/{id}/remove-aux-teacher": {
-            "delete": {
-                "description": "Remove an aux teacher from a course by ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "courses"
-                ],
-                "summary": "Remove an aux teacher from a course",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Course ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Remove aux teacher from course request",
-                        "name": "removeAuxTeacherRequest",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/schemas.RemoveAuxTeacherFromCourseRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.Course"
-                        }
-                    }
-                }
-            }
-        },
         "/courses/{id}/student-feedback": {
             "post": {
                 "description": "Create a feedback for a course",
@@ -1189,6 +1238,93 @@ const docTemplate = `{
                 }
             }
         },
+        "/courses/{id}/students/{studentId}/approve": {
+            "put": {
+                "description": "Approve a student by changing their enrollment status to completed",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Approve a student in a course",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Student ID",
+                        "name": "studentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ApproveStudentResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/{id}/students/{studentId}/disapprove": {
+            "put": {
+                "description": "Disapprove a student by changing their enrollment status to dropped with a reason",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "enrollments"
+                ],
+                "summary": "Disapprove a student in a course",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Course ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Student ID",
+                        "name": "studentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Disapprove request",
+                        "name": "disapproveRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.DisapproveStudentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.DisapproveStudentResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/courses/{id}/unenroll": {
             "delete": {
                 "description": "Unenroll a student from a course",
@@ -1211,13 +1347,11 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Unenrollment request",
-                        "name": "unenrollmentRequest",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/schemas.UnenrollStudentRequest"
-                        }
+                        "type": "string",
+                        "description": "Student ID",
+                        "name": "studentId",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1231,7 +1365,7 @@ const docTemplate = `{
             }
         },
         "/feedback/student/{id}": {
-            "get": {
+            "put": {
                 "description": "Get feedback by student ID",
                 "consumes": [
                     "application/json"
@@ -1298,9 +1432,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Student feedback summary",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/schemas.AiSummaryResponse"
                         }
                     }
                 }
@@ -2530,6 +2664,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "reason_for_unenrollment": {
+                    "type": "string"
+                },
                 "status": {
                     "$ref": "#/definitions/model.EnrollmentStatus"
                 },
@@ -2576,12 +2713,6 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.ModuleData"
-                    }
-                },
                 "description": {
                     "type": "string"
                 },
@@ -2591,6 +2722,12 @@ const docTemplate = `{
                 "order": {
                     "type": "integer"
                 },
+                "resources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ModuleResource"
+                    }
+                },
                 "title": {
                     "type": "string"
                 },
@@ -2599,30 +2736,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.ModuleData": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "module_id": {
-                    "type": "string"
-                },
-                "resources": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.ModuleDataResource"
-                    }
-                },
-                "title": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.ModuleDataResource": {
+        "model.ModuleResource": {
             "type": "object",
             "properties": {
                 "id": {
@@ -2720,6 +2834,9 @@ const docTemplate = `{
         "model.StudentFeedback": {
             "type": "object",
             "properties": {
+                "course_id": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -2746,6 +2863,12 @@ const docTemplate = `{
         "model.Submission": {
             "type": "object",
             "properties": {
+                "ai_feedback": {
+                    "type": "string"
+                },
+                "ai_score": {
+                    "type": "number"
+                },
                 "answers": {
                     "type": "array",
                     "items": {
@@ -2763,6 +2886,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
+                },
+                "needs_manual_review": {
+                    "type": "boolean"
                 },
                 "score": {
                     "type": "number"
@@ -2797,6 +2923,28 @@ const docTemplate = `{
                 "SubmissionStatusLate"
             ]
         },
+        "model.Vote": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "vote_type": {
+                    "type": "integer"
+                }
+            }
+        },
+        "schemas.AiSummaryResponse": {
+            "type": "object",
+            "properties": {
+                "summary": {
+                    "type": "string"
+                }
+            }
+        },
         "schemas.AnswerResponse": {
             "type": "object",
             "properties": {
@@ -2820,6 +2968,26 @@ const docTemplate = `{
                 },
                 "vote_count": {
                     "type": "integer"
+                },
+                "votes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Vote"
+                    }
+                }
+            }
+        },
+        "schemas.ApproveStudentResponse": {
+            "type": "object",
+            "properties": {
+                "course_id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "student_id": {
+                    "type": "string"
                 }
             }
         },
@@ -3057,6 +3225,34 @@ const docTemplate = `{
                 }
             }
         },
+        "schemas.DisapproveStudentRequest": {
+            "type": "object",
+            "required": [
+                "reason"
+            ],
+            "properties": {
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.DisapproveStudentResponse": {
+            "type": "object",
+            "properties": {
+                "course_id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "student_id": {
+                    "type": "string"
+                }
+            }
+        },
         "schemas.EnrollStudentRequest": {
             "type": "object",
             "required": [
@@ -3182,6 +3378,12 @@ const docTemplate = `{
                 },
                 "vote_count": {
                     "type": "integer"
+                },
+                "votes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Vote"
+                    }
                 }
             }
         },
@@ -3226,21 +3428,12 @@ const docTemplate = `{
                 },
                 "vote_count": {
                     "type": "integer"
-                }
-            }
-        },
-        "schemas.RemoveAuxTeacherFromCourseRequest": {
-            "type": "object",
-            "required": [
-                "aux_teacher_id",
-                "teacher_id"
-            ],
-            "properties": {
-                "aux_teacher_id": {
-                    "type": "string"
                 },
-                "teacher_id": {
-                    "type": "string"
+                "votes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Vote"
+                    }
                 }
             }
         },
@@ -3277,32 +3470,10 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.UnenrollStudentRequest": {
-            "type": "object",
-            "required": [
-                "student_id"
-            ],
-            "properties": {
-                "student_id": {
-                    "type": "string"
-                }
-            }
-        },
         "schemas.UnenrollStudentResponse": {
             "type": "object",
             "properties": {
                 "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "schemas.UnsetFavouriteCourseRequest": {
-            "type": "object",
-            "required": [
-                "student_id"
-            ],
-            "properties": {
-                "student_id": {
                     "type": "string"
                 }
             }
@@ -3366,6 +3537,9 @@ const docTemplate = `{
         },
         "schemas.UpdateCourseRequest": {
             "type": "object",
+            "required": [
+                "teacher_id"
+            ],
             "properties": {
                 "capacity": {
                     "type": "integer"
@@ -3390,17 +3564,17 @@ const docTemplate = `{
         "schemas.UpdateModuleRequest": {
             "type": "object",
             "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.ModuleData"
-                    }
-                },
                 "description": {
                     "type": "string"
                 },
                 "order": {
                     "type": "integer"
+                },
+                "resources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ModuleResource"
+                    }
                 },
                 "title": {
                     "type": "string"

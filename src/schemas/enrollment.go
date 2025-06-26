@@ -8,10 +8,6 @@ type EnrollStudentResponse struct {
 	Message string `json:"message"`
 }
 
-type UnenrollStudentRequest struct {
-	StudentID string `json:"student_id" binding:"required"`
-}
-
 type UnenrollStudentResponse struct {
 	Message string `json:"message"`
 }
@@ -24,10 +20,27 @@ type SetFavouriteCourseResponse struct {
 	Message string `json:"message"`
 }
 
-type UnsetFavouriteCourseRequest struct {
+type UnsetFavouriteCourseResponse struct {
+	Message string `json:"message"`
+}
+
+type ApproveStudentRequest struct {
 	StudentID string `json:"student_id" binding:"required"`
 }
 
-type UnsetFavouriteCourseResponse struct {
-	Message string `json:"message"`
+type ApproveStudentResponse struct {
+	Message   string `json:"message"`
+	StudentID string `json:"student_id"`
+	CourseID  string `json:"course_id"`
+}
+
+type DisapproveStudentRequest struct {
+	Reason string `json:"reason" binding:"required"`
+}
+
+type DisapproveStudentResponse struct {
+	Message   string `json:"message"`
+	StudentID string `json:"student_id"`
+	CourseID  string `json:"course_id"`
+	Reason    string `json:"reason"`
 }

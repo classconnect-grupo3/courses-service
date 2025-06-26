@@ -30,7 +30,7 @@ type CreateCourseResponse struct {
 type UpdateCourseRequest struct {
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
-	TeacherID   string    `json:"teacher_id"`
+	TeacherID   string    `json:"teacher_id" binding:"required"`
 	Capacity    int       `json:"capacity"`
 	StartDate   time.Time `json:"start_date"`
 	EndDate     time.Time `json:"end_date"`
@@ -49,8 +49,9 @@ type UpdateCourseResponse struct {
 }
 
 type GetCoursesByUserIdResponse struct {
-	Teacher []*model.Course `json:"teacher"`
-	Student []*model.Course `json:"student"`
+	Teacher    []*model.Course `json:"teacher"`
+	AuxTeacher []*model.Course `json:"aux_teacher"`
+	Student    []*model.Course `json:"student"`
 }
 
 type AddAuxTeacherToCourseRequest struct {

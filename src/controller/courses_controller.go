@@ -1,12 +1,14 @@
 package controller
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 	"slices"
 
 	"courses-service/src/ai"
 	"courses-service/src/model"
+	"courses-service/src/queues"
 	"courses-service/src/schemas"
 	"courses-service/src/service"
 
@@ -14,12 +16,19 @@ import (
 )
 
 type CourseController struct {
-	service  service.CourseServiceInterface
-	aiClient *ai.AiClient
+	service            service.CourseServiceInterface
+	aiClient           *ai.AiClient
+	activityService    service.TeacherActivityServiceInterface
+	notificationsQueue queues.NotificationsQueueInterface
 }
 
-func NewCourseController(service service.CourseServiceInterface, aiClient *ai.AiClient) *CourseController {
-	return &CourseController{service: service, aiClient: aiClient}
+func NewCourseController(service service.CourseServiceInterface, aiClient *ai.AiClient, activityService service.TeacherActivityServiceInterface, notificationsQueue queues.NotificationsQueueInterface) *CourseController {
+	return &CourseController{
+		service:            service,
+		aiClient:           aiClient,
+		activityService:    activityService,
+		notificationsQueue: notificationsQueue,
+	}
 }
 
 // @Summary Get all courses
@@ -98,13 +107,26 @@ func (c *CourseController) GetCourseById(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Course ID"
+// @Param teacherId query string true "Teacher ID"
 // @Success 200 {object} schemas.DeleteCourseResponse
 // @Router /courses/{id} [delete]
 func (c *CourseController) DeleteCourse(ctx *gin.Context) {
 	slog.Debug("Deleting course")
 	id := ctx.Param("id")
+	if id == "" {
+		slog.Error("Course ID is required")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+		return
+	}
 
-	err := c.service.DeleteCourse(id)
+	teacherId := ctx.Query("teacherId")
+	if teacherId == "" {
+		slog.Error("Teacher ID is required")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Teacher ID is required"})
+		return
+	}
+
+	err := c.service.DeleteCourse(id, teacherId)
 	if err != nil {
 		slog.Error("Error deleting course", "error", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -150,6 +172,11 @@ func (c *CourseController) GetCourseByTitle(ctx *gin.Context) {
 	if err != nil {
 		slog.Error("Error getting course by title", "error", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if len(course) == 0 {
+		slog.Error("Course not found")
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Course not found"})
 		return
 	}
 	slog.Debug("Course retrieved", "course", course)
@@ -259,6 +286,15 @@ func (c *CourseController) AddAuxTeacherToCourse(ctx *gin.Context) {
 		return
 	}
 	slog.Debug("Aux teacher added to course", "course", course)
+
+	message := queues.NewAddedAuxTeacherToCourseMessage(id, course.Title, auxTeacherId)
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	ctx.JSON(http.StatusOK, course)
 }
 
@@ -268,9 +304,10 @@ func (c *CourseController) AddAuxTeacherToCourse(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Course ID"
-// @Param removeAuxTeacherRequest body schemas.RemoveAuxTeacherFromCourseRequest true "Remove aux teacher from course request"
+// @Param teacherId query string true "Teacher ID"
+// @Param auxTeacherId query string true "Aux teacher ID"
 // @Success 200 {object} model.Course
-// @Router /courses/{id}/remove-aux-teacher [delete]
+// @Router /courses/{id}/aux-teacher/remove [delete]
 func (c *CourseController) RemoveAuxTeacherFromCourse(ctx *gin.Context) {
 	slog.Debug("Removing aux teacher from course")
 	id := ctx.Param("id")
@@ -280,15 +317,15 @@ func (c *CourseController) RemoveAuxTeacherFromCourse(ctx *gin.Context) {
 		return
 	}
 
-	var removeAuxTeacherRequest schemas.RemoveAuxTeacherFromCourseRequest
-	if err := ctx.ShouldBindJSON(&removeAuxTeacherRequest); err != nil {
-		slog.Error("Error binding JSON", "error", err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	teacherId := ctx.Query("teacherId")
+	auxTeacherId := ctx.Query("auxTeacherId")
+
+	if teacherId == "" || auxTeacherId == "" {
+		slog.Error("Teacher ID and aux teacher ID are required")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Teacher ID and aux teacher ID are required"})
 		return
 	}
 
-	teacherId := removeAuxTeacherRequest.TeacherID
-	auxTeacherId := removeAuxTeacherRequest.AuxTeacherID
 	course, err := c.service.RemoveAuxTeacherFromCourse(id, teacherId, auxTeacherId)
 	if err != nil {
 		slog.Error("Error removing aux teacher from course", "error", err)
@@ -296,6 +333,15 @@ func (c *CourseController) RemoveAuxTeacherFromCourse(ctx *gin.Context) {
 		return
 	}
 	slog.Debug("Aux teacher removed from course", "course", course)
+
+	message := queues.NewRemoveAuxTeacherFromCourseMessage(id, course.Title, auxTeacherId)
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	ctx.JSON(http.StatusOK, course)
 }
 
@@ -364,7 +410,35 @@ func (c *CourseController) CreateCourseFeedback(ctx *gin.Context) {
 		return
 	}
 
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+	if teacherUUID != "" {
+		c.activityService.LogActivityIfAuxTeacher(
+			courseId,
+			teacherUUID,
+			"CREATE_COURSE_FEEDBACK",
+			fmt.Sprintf("Created course feedback of type: %s", feedback.FeedbackType),
+		)
+	}
+
 	slog.Debug("Course feedback created", "feedback", feedbackModel)
+
+	// Getting the course so we have the teacher ID
+	course, err := c.service.GetCourseById(courseId)
+	if err != nil {
+		slog.Error("Error getting course", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	message := queues.NewFeedbackCreatedMessage(course.TeacherUUID, courseId, feedbackModel.ID.Hex(), feedbackModel.Feedback, feedbackModel.Score, feedbackModel.CreatedAt)
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	ctx.JSON(http.StatusOK, feedbackModel)
 }
 
@@ -376,7 +450,7 @@ func (c *CourseController) CreateCourseFeedback(ctx *gin.Context) {
 // @Param id path string true "Course ID"
 // @Param getCourseFeedbackRequest body schemas.GetCourseFeedbackRequest true "Get course feedback request"
 // @Success 200 {array} model.CourseFeedback
-// @Router /courses/{id}/feedback [get]
+// @Router /courses/{id}/feedback [put]
 func (c *CourseController) GetCourseFeedback(ctx *gin.Context) {
 	slog.Debug("Getting course feedback")
 	courseId := ctx.Param("id")
@@ -410,7 +484,7 @@ func (c *CourseController) GetCourseFeedback(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Course ID"
-// @Success 200 {string} string "Course feedback summary"
+// @Success 200 {object} schemas.AiSummaryResponse
 // @Router /courses/{id}/feedback/summary [get]
 func (c *CourseController) GetCourseFeedbackSummary(ctx *gin.Context) {
 	slog.Debug("Getting course feedback summary")
@@ -442,7 +516,7 @@ func (c *CourseController) GetCourseFeedbackSummary(ctx *gin.Context) {
 	}
 
 	slog.Debug("Course feedback summary retrieved", "summary", summary)
-	ctx.JSON(http.StatusOK, summary)
+	ctx.JSON(http.StatusOK, schemas.AiSummaryResponse{Summary: summary})
 }
 
 // @Summary Get course members

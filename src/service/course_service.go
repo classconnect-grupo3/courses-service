@@ -5,6 +5,7 @@ import (
 	"courses-service/src/repository"
 	"courses-service/src/schemas"
 	"errors"
+	"fmt"
 	"slices"
 	"time"
 )
@@ -50,10 +51,20 @@ func (s *CourseService) GetCourseById(id string) (*model.Course, error) {
 	return s.courseRepository.GetCourseById(id)
 }
 
-func (s *CourseService) DeleteCourse(id string) error {
+func (s *CourseService) DeleteCourse(id string, teacherId string) error {
 	if id == "" {
 		return errors.New("id is required")
 	}
+
+	course, err := s.courseRepository.GetCourseById(id)
+	if err != nil {
+		return err
+	}
+
+	if course.TeacherUUID != teacherId {
+		return errors.New("the user trying to delete the course is not the owner of the course")
+	}
+
 	return s.courseRepository.DeleteCourse(id)
 }
 
@@ -87,8 +98,18 @@ func (s *CourseService) GetCoursesByUserId(userId string) (*schemas.GetCoursesBy
 		return nil, err
 	}
 
+	fmt.Printf("ID: %v\n", userId)
+	auxTeacherCourses, err := s.courseRepository.GetCoursesByAuxTeacherId(userId)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("Aux Teacher Courses: %v\n", auxTeacherCourses)
+	fmt.Printf("Teacher Courses: %v\n", teacherCourses)
+	fmt.Printf("Student Courses: %v\n", studentCourses)
+
 	result.Student = studentCourses
 	result.Teacher = teacherCourses
+	result.AuxTeacher = auxTeacherCourses
 
 	return &result, nil
 }
@@ -104,14 +125,22 @@ func (s *CourseService) UpdateCourse(id string, updateCourseRequest schemas.Upda
 	if id == "" {
 		return nil, errors.New("id is required")
 	}
-	course := model.Course{
+
+	course, err := s.courseRepository.GetCourseById(id)
+	if err != nil {
+		return nil, err
+	}
+	if course.TeacherUUID != updateCourseRequest.TeacherID {
+		return nil, errors.New("the user trying to update the course is not the owner of the course")
+	}
+	courseToUpdate := model.Course{
 		Title:       updateCourseRequest.Title,
 		Description: updateCourseRequest.Description,
 		TeacherUUID: updateCourseRequest.TeacherID,
 		Capacity:    updateCourseRequest.Capacity,
 		UpdatedAt:   time.Now(),
 	}
-	return s.courseRepository.UpdateCourse(id, course)
+	return s.courseRepository.UpdateCourse(id, courseToUpdate)
 }
 
 func (s *CourseService) AddAuxTeacherToCourse(id string, titularTeacherId string, auxTeacherId string) (*model.Course, error) {

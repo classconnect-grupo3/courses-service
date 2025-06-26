@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"courses-service/src/model"
+	"courses-service/src/queues"
 	"courses-service/src/schemas"
 	"courses-service/src/service"
 
@@ -13,12 +14,18 @@ import (
 )
 
 type SubmissionController struct {
-	submissionService service.SubmissionServiceInterface
+	submissionService  service.SubmissionServiceInterface
+	notificationsQueue queues.NotificationsQueueInterface
+	activityService    service.TeacherActivityServiceInterface
+	assignmentService  service.AssignmentServiceInterface
 }
 
-func NewSubmissionController(submissionService service.SubmissionServiceInterface) *SubmissionController {
+func NewSubmissionController(submissionService service.SubmissionServiceInterface, notificationsQueue queues.NotificationsQueueInterface, activityService service.TeacherActivityServiceInterface, assignmentService service.AssignmentServiceInterface) *SubmissionController {
 	return &SubmissionController{
-		submissionService: submissionService,
+		submissionService:  submissionService,
+		notificationsQueue: notificationsQueue,
+		activityService:    activityService,
+		assignmentService:  assignmentService,
 	}
 }
 
@@ -178,13 +185,50 @@ func (c *SubmissionController) SubmitSubmission(ctx *gin.Context) {
 		return
 	}
 
-	submission, err = c.submissionService.GetSubmission(ctx, id)
+	// Get the updated submission after auto-correction
+	updatedSubmission, err := c.submissionService.GetSubmission(ctx, id)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, submission)
+	// Send notification about the corrected submission
+	c.sendCorrectionNotification(updatedSubmission, assignmentID)
+
+	ctx.JSON(http.StatusOK, updatedSubmission)
+}
+
+// sendCorrectionNotification sends a notification about the corrected submission
+func (c *SubmissionController) sendCorrectionNotification(submission *model.Submission, assignmentID string) {
+	if c.notificationsQueue == nil {
+		return // Skip if notifications are not configured
+	}
+
+	correctionType := "automatic"
+	needsManualReview := false
+
+	if submission.NeedsManualReview != nil && *submission.NeedsManualReview {
+		correctionType = "needs_manual_review"
+		needsManualReview = true
+	}
+
+	queueMessage := queues.NewSubmissionCorrectedMessage(
+		assignmentID,
+		submission.ID.Hex(),
+		submission.StudentUUID,
+		submission.Score,
+		submission.Feedback,
+		submission.AIScore,
+		submission.AIFeedback,
+		correctionType,
+		needsManualReview,
+	)
+
+	// if err := c.notificationsQueue.Publish(queueMessage); err != nil {
+	// 	// Log the error but don't fail the response
+	// 	fmt.Printf("Error publishing correction notification: %v\n", err)
+	// } TODO: Uncomment this when the notifications queue is implemented
+	fmt.Println("queueMessage: ", queueMessage)
 }
 
 // @Summary Get submissions by assignment ID
@@ -285,5 +329,65 @@ func (c *SubmissionController) GradeSubmission(ctx *gin.Context) {
 		return
 	}
 
+	// Log activity if teacher is auxiliary - we need to get the assignment to find the course
+	if c.activityService != nil && c.assignmentService != nil {
+		assignment, err := c.assignmentService.GetAssignmentById(assignmentID)
+		if err == nil && assignment != nil {
+			c.activityService.LogActivityIfAuxTeacher(
+				assignment.CourseID,
+				teacherUUID,
+				"GRADE_SUBMISSION",
+				fmt.Sprintf("Graded submission for student %s", gradedSubmission.StudentName),
+			)
+		}
+	}
+
 	ctx.JSON(http.StatusOK, gradedSubmission)
+}
+
+// @Summary Generate feedback summary
+// @Description Generate an AI summary of the feedback for a submission
+// @Tags submissions
+// @Accept json
+// @Produce json
+// @Param assignmentId path string true "Assignment ID"
+// @Param id path string true "Submission ID"
+// @Success 200 {object} schemas.AiSummaryResponse
+// @Router /assignments/{assignmentId}/submissions/{id}/feedback-summary [get]
+func (c *SubmissionController) GenerateFeedbackSummary(ctx *gin.Context) {
+	assignmentID := ctx.Param("assignmentId")
+	id := ctx.Param("id")
+
+	// Get teacher info from context
+	teacherUUID := ctx.GetString("teacher_uuid")
+
+	// Validate teacher permissions for this assignment
+	if err := c.submissionService.ValidateTeacherPermissions(ctx, assignmentID, teacherUUID); err != nil {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Validate submission belongs to the assignment
+	submission, err := c.submissionService.GetSubmission(ctx, id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if submission == nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "submission not found"})
+		return
+	}
+	if submission.AssignmentID != assignmentID {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "submission not found"})
+		return
+	}
+
+	// Generate feedback summary
+	summary, err := c.submissionService.GenerateFeedbackSummary(ctx, id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, summary)
 }

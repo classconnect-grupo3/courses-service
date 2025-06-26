@@ -12,6 +12,8 @@ import (
 
 	"courses-service/src/controller"
 	"courses-service/src/model"
+	"courses-service/src/queues"
+	"courses-service/src/schemas"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -19,12 +21,14 @@ import (
 )
 
 var (
-	mockSubmissionService      = &MockSubmissionService{}
-	mockSubmissionErrorService = &MockSubmissionServiceWithError{}
-	normalSubmissionController = controller.NewSubmissionController(mockSubmissionService)
-	errorSubmissionController  = controller.NewSubmissionController(mockSubmissionErrorService)
-	normalSubmissionRouter     = gin.Default()
-	errorSubmissionRouter      = gin.Default()
+	mockSubmissionService                     = &MockSubmissionService{}
+	mockSubmissionErrorService                = &MockSubmissionServiceWithError{}
+	submissionMockNotificationsQueue          = &MockSubmissionNotificationsQueue{}
+	submissionMockSubmissionAssignmentService = &MockSubmissionAssignmentService{}
+	normalSubmissionController                = controller.NewSubmissionController(mockSubmissionService, submissionMockNotificationsQueue, mockActivityService, submissionMockSubmissionAssignmentService)
+	errorSubmissionController                 = controller.NewSubmissionController(mockSubmissionErrorService, submissionMockNotificationsQueue, mockActivityService, submissionMockSubmissionAssignmentService)
+	normalSubmissionRouter                    = gin.Default()
+	errorSubmissionRouter                     = gin.Default()
 )
 
 // InitializeSubmissionRoutesForTest initializes submission routes without authentication middleware for testing
@@ -79,6 +83,16 @@ func init() {
 }
 
 type MockSubmissionService struct{}
+
+// AutoCorrectSubmission implements service.SubmissionServiceInterface.
+func (m *MockSubmissionService) AutoCorrectSubmission(ctx context.Context, submissionID string) error {
+	panic("unimplemented")
+}
+
+// GenerateFeedbackSummary implements service.SubmissionServiceInterface.
+func (m *MockSubmissionService) GenerateFeedbackSummary(ctx context.Context, submissionID string) (*schemas.AiSummaryResponse, error) {
+	panic("unimplemented")
+}
 
 func (m *MockSubmissionService) CreateSubmission(ctx context.Context, submission *model.Submission) error {
 	submission.ID = primitive.NewObjectID()
@@ -253,6 +267,16 @@ func (m *MockSubmissionService) ValidateTeacherPermissions(ctx context.Context, 
 
 type MockSubmissionServiceWithError struct{}
 
+// AutoCorrectSubmission implements service.SubmissionServiceInterface.
+func (m *MockSubmissionServiceWithError) AutoCorrectSubmission(ctx context.Context, submissionID string) error {
+	panic("unimplemented")
+}
+
+// GenerateFeedbackSummary implements service.SubmissionServiceInterface.
+func (m *MockSubmissionServiceWithError) GenerateFeedbackSummary(ctx context.Context, submissionID string) (*schemas.AiSummaryResponse, error) {
+	panic("unimplemented")
+}
+
 func (m *MockSubmissionServiceWithError) CreateSubmission(ctx context.Context, submission *model.Submission) error {
 	return errors.New("error creating submission")
 }
@@ -301,6 +325,42 @@ func mustParseSubmissionObjectID(id string) primitive.ObjectID {
 	default:
 		return primitive.NewObjectID()
 	}
+}
+
+type MockSubmissionNotificationsQueue struct{}
+
+func (m *MockSubmissionNotificationsQueue) Publish(message queues.QueueMessage) error {
+	return nil
+}
+
+type MockSubmissionAssignmentService struct{}
+
+func (m *MockSubmissionAssignmentService) GetAssignmentById(id string) (*model.Assignment, error) {
+	return &model.Assignment{
+		ID:       primitive.NewObjectID(),
+		CourseID: "course123",
+		Title:    "Test Assignment",
+	}, nil
+}
+
+func (m *MockSubmissionAssignmentService) CreateAssignment(c schemas.CreateAssignmentRequest) (*model.Assignment, error) {
+	return &model.Assignment{}, nil
+}
+
+func (m *MockSubmissionAssignmentService) GetAssignments() ([]*model.Assignment, error) {
+	return []*model.Assignment{}, nil
+}
+
+func (m *MockSubmissionAssignmentService) GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error) {
+	return []*model.Assignment{}, nil
+}
+
+func (m *MockSubmissionAssignmentService) UpdateAssignment(id string, updateAssignmentRequest schemas.UpdateAssignmentRequest) (*model.Assignment, error) {
+	return &model.Assignment{}, nil
+}
+
+func (m *MockSubmissionAssignmentService) DeleteAssignment(id string) error {
+	return nil
 }
 
 // Tests for CreateSubmission

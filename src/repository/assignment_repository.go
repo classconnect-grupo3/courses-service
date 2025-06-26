@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"courses-service/src/model"
+	"courses-service/src/schemas"
 	"fmt"
 	"time"
 
@@ -165,4 +166,116 @@ func (r *AssignmentRepository) DeleteAssignment(id string) error {
 	}
 
 	return nil
+}
+
+// CountAssignments returns the total number of assignments
+func (r *AssignmentRepository) CountAssignments() (int64, error) {
+	count, err := r.assignmentCollection.CountDocuments(context.TODO(), bson.M{})
+	if err != nil {
+		return 0, fmt.Errorf("failed to count assignments: %v", err)
+	}
+	return count, nil
+}
+
+// CountAssignmentsByType returns the number of assignments by type
+func (r *AssignmentRepository) CountAssignmentsByType(assignmentType string) (int64, error) {
+	filter := bson.M{"type": assignmentType}
+	count, err := r.assignmentCollection.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count assignments by type: %v", err)
+	}
+	return count, nil
+}
+
+// CountAssignmentsByStatus returns the number of assignments by status
+func (r *AssignmentRepository) CountAssignmentsByStatus(status string) (int64, error) {
+	filter := bson.M{"status": status}
+	count, err := r.assignmentCollection.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count assignments by status: %v", err)
+	}
+	return count, nil
+}
+
+// CountAssignmentsCreatedThisMonth returns the number of assignments created this month
+func (r *AssignmentRepository) CountAssignmentsCreatedThisMonth() (int64, error) {
+	now := time.Now()
+	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	endOfMonth := startOfMonth.AddDate(0, 1, 0)
+
+	filter := bson.M{
+		"created_at": bson.M{
+			"$gte": startOfMonth,
+			"$lt":  endOfMonth,
+		},
+	}
+
+	count, err := r.assignmentCollection.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count assignments created this month: %v", err)
+	}
+	return count, nil
+}
+
+// GetAssignmentDistribution returns assignment distribution by type and status
+func (r *AssignmentRepository) GetAssignmentDistribution() ([]schemas.AssignmentDistribution, error) {
+	pipeline := []bson.M{
+		{"$group": bson.M{
+			"_id": bson.M{
+				"type":   "$type",
+				"status": "$status",
+			},
+			"count": bson.M{"$sum": 1},
+		}},
+		{"$project": bson.M{
+			"type":   "$_id.type",
+			"status": "$_id.status",
+			"count":  1,
+			"_id":    0,
+		}},
+		{"$sort": bson.M{"type": 1, "status": 1}},
+	}
+
+	cursor, err := r.assignmentCollection.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get assignment distribution: %v", err)
+	}
+	defer cursor.Close(context.TODO())
+
+	var distribution []schemas.AssignmentDistribution
+	if err = cursor.All(context.TODO(), &distribution); err != nil {
+		return nil, fmt.Errorf("failed to decode assignment distribution: %v", err)
+	}
+
+	return distribution, nil
+}
+
+// GetRecentAssignments returns recent assignments with basic information
+func (r *AssignmentRepository) GetRecentAssignments(limit int) ([]schemas.AssignmentBasicInfo, error) {
+	pipeline := []bson.M{
+		{"$sort": bson.M{"created_at": -1}},
+		{"$limit": limit},
+		{"$project": bson.M{
+			"id":         bson.M{"$toString": "$_id"},
+			"title":      1,
+			"type":       1,
+			"status":     1,
+			"course_id":  1,
+			"created_at": 1,
+			"due_date":   1,
+		}},
+	}
+
+	cursor, err := r.assignmentCollection.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recent assignments: %v", err)
+	}
+	defer cursor.Close(context.TODO())
+
+	var assignments []schemas.AssignmentBasicInfo
+	if err = cursor.All(context.TODO(), &assignments); err != nil {
+		return nil, fmt.Errorf("failed to decode recent assignments: %v", err)
+	}
+
+	return assignments, nil
 }

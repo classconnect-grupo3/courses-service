@@ -16,11 +16,11 @@ RUN mkdir -p /app/coverage
 
 # Variable para definir los paquetes a testear (ej: "./src/..." o "./src/domain/...")
 ENV TEST_PACKAGES="./src/..."
-# ENV TEST_PACKAGES="./src/tests/service/"
+# ENV TEST_PACKAGES="./src/tests/e2e/"
 
 # Comando para ejecutar pruebas con cobertura
 CMD ["sh", "-c", "go test -p 1 -covermode=set -coverprofile=/app/coverage/coverage.out -coverpkg=${TEST_PACKAGES} -v ${TEST_PACKAGES} && \
-    grep -v -e 'docs.go' -e 'ai_client.go' -e 'main.go' -e 'student_auth.go' -e 'teacher_auth.go' /app/coverage/coverage.out > /app/coverage/coverage_filtered.out && \
+    grep -v -e 'docs.go' -e 'ai_client.go' -e 'main.go' -e 'student_auth.go' -e 'teacher_auth.go' -e 'notifications_queue.go' -e 'messages.go' /app/coverage/coverage.out > /app/coverage/coverage_filtered.out && \
     mv /app/coverage/coverage_filtered.out /app/coverage/coverage.out && \
     go tool cover -html=/app/coverage/coverage.out -o /app/coverage/coverage.html && \
     go tool cover -func=/app/coverage/coverage.out"] 

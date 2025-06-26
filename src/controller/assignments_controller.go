@@ -1,26 +1,34 @@
 package controller
 
 import (
-	"encoding/json"
+	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
-	"os"
-	"time"
 
+	"courses-service/src/queues"
 	"courses-service/src/schemas"
 	"courses-service/src/service"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rabbitmq/amqp091-go"
 )
 
 type AssignmentsController struct {
-	service service.AssignmentServiceInterface
+	service            service.AssignmentServiceInterface
+	notificationsQueue queues.NotificationsQueueInterface
+	activityService    service.TeacherActivityServiceInterface
 }
 
-func NewAssignmentsController(service service.AssignmentServiceInterface) *AssignmentsController {
-	return &AssignmentsController{service: service}
+func NewAssignmentsController(
+	service service.AssignmentServiceInterface,
+	notificationsQueue queues.NotificationsQueueInterface,
+	activityService service.TeacherActivityServiceInterface,
+) *AssignmentsController {
+	return &AssignmentsController{
+		service:            service,
+		notificationsQueue: notificationsQueue,
+		activityService:    activityService,
+	}
 }
 
 // @Summary Get all assignments
@@ -69,66 +77,29 @@ func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) {
 		return
 	}
 
-	// 🟡 Publicar evento en RabbitMQ con amqp091-go
-	go func() {
-		conn, err := amqp091.Dial(os.Getenv("RABBITMQ_URL"))
-		if err != nil {
-			log.Println("RabbitMQ connection error:", err)
-			return
-		}
-		defer conn.Close()
-
-		ch, err := conn.Channel()
-		if err != nil {
-			log.Println("RabbitMQ channel error:", err)
-			return
-		}
-		defer ch.Close()
-
-		_, err = ch.QueueDeclare(
-			os.Getenv("NOTIFICATIONS_QUEUE_NAME"),
-			false,
-			false,
-			false,
-			false,
-			nil,
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+	if teacherUUID != "" {
+		c.activityService.LogActivityIfAuxTeacher(
+			createdAssignment.CourseID,
+			teacherUUID,
+			"CREATE_ASSIGNMENT",
+			fmt.Sprintf("Created assignment: %s", createdAssignment.Title),
 		)
-		if err != nil {
-			log.Println("Queue declare error:", err)
-			return
-		}
+	}
 
-		event := map[string]interface{}{
-			"event_type":          "assignment.created",
-			"course_id":           createdAssignment.CourseID,
-			"assignment_id":       createdAssignment.ID,
-			"assignment_title":    createdAssignment.Title,
-			"assignment_due_date": createdAssignment.DueDate.Format(time.RFC3339),
-		}
-
-		body, err := json.Marshal(event)
-		if err != nil {
-			log.Println("Error marshaling event:", err)
-			return
-		}
-
-		err = ch.Publish(
-			"",
-			os.Getenv("NOTIFICATIONS_QUEUE_NAME"),
-			false,
-			false,
-			amqp091.Publishing{
-				ContentType: "application/json",
-				Body:        body,
-			},
-		)
-		if err != nil {
-			log.Println("Error publishing message:", err)
-			return
-		}
-
-		log.Println("📤 Event published: assignment.created")
-	}()
+	queueMessage := queues.NewAssignmentCreatedMessage(
+		createdAssignment.CourseID,
+		createdAssignment.ID.Hex(),
+		createdAssignment.Title,
+		createdAssignment.DueDate,
+	)
+	err = c.notificationsQueue.Publish(queueMessage)
+	if err != nil {
+		log.Println("Error publishing message:", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
 	log.Println("Assignment created:", createdAssignment.ID)
 	ctx.JSON(http.StatusCreated, createdAssignment)
@@ -212,6 +183,17 @@ func (c *AssignmentsController) UpdateAssignment(ctx *gin.Context) {
 		return
 	}
 
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+	if teacherUUID != "" {
+		c.activityService.LogActivityIfAuxTeacher(
+			updatedAssignment.CourseID,
+			teacherUUID,
+			"UPDATE_ASSIGNMENT",
+			fmt.Sprintf("Updated assignment: %s", updatedAssignment.Title),
+		)
+	}
+
 	slog.Debug("Assignment updated", "assignment", updatedAssignment)
 	ctx.JSON(http.StatusOK, updatedAssignment)
 }
@@ -228,10 +210,29 @@ func (c *AssignmentsController) DeleteAssignment(ctx *gin.Context) {
 	slog.Debug("Deleting assignment")
 	id := ctx.Param("assignmentId")
 
+	// Get assignment info before deleting for logging
+	assignment, err := c.service.GetAssignmentById(id)
+	if err != nil {
+		slog.Error("Error getting assignment for deletion", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	if err := c.service.DeleteAssignment(id); err != nil {
 		slog.Error("Error deleting assignment", "error", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+	if teacherUUID != "" && assignment != nil {
+		c.activityService.LogActivityIfAuxTeacher(
+			assignment.CourseID,
+			teacherUUID,
+			"DELETE_ASSIGNMENT",
+			fmt.Sprintf("Deleted assignment: %s", assignment.Title),
+		)
 	}
 
 	slog.Debug("Assignment deleted")

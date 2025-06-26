@@ -4,6 +4,7 @@ import (
 	"courses-service/src/model"
 	"courses-service/src/schemas"
 	"courses-service/src/service"
+	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
@@ -12,12 +13,14 @@ import (
 )
 
 type ModuleController struct {
-	service service.ModuleServiceInterface
+	service         service.ModuleServiceInterface
+	activityService service.TeacherActivityServiceInterface
 }
 
-func NewModuleController(service service.ModuleServiceInterface) *ModuleController {
+func NewModuleController(service service.ModuleServiceInterface, activityService service.TeacherActivityServiceInterface) *ModuleController {
 	return &ModuleController{
-		service: service,
+		service:         service,
+		activityService: activityService,
 	}
 }
 
@@ -45,6 +48,17 @@ func (c *ModuleController) CreateModule(ctx *gin.Context) {
 		slog.Error("Error creating module", "error", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+	if teacherUUID != "" {
+		c.activityService.LogActivityIfAuxTeacher(
+			createdModule.CourseID,
+			teacherUUID,
+			"CREATE_MODULE",
+			fmt.Sprintf("Created module: %s", createdModule.Title),
+		)
 	}
 
 	slog.Debug("Module created", "module", createdModule)
@@ -124,6 +138,17 @@ func (c *ModuleController) UpdateModule(ctx *gin.Context) {
 		return
 	}
 
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+	if teacherUUID != "" {
+		c.activityService.LogActivityIfAuxTeacher(
+			updatedModule.CourseID,
+			teacherUUID,
+			"UPDATE_MODULE",
+			fmt.Sprintf("Updated module: %s", updatedModule.Title),
+		)
+	}
+
 	slog.Debug("Module updated", "module", updatedModule)
 	ctx.JSON(http.StatusOK, updatedModule)
 }
@@ -140,11 +165,30 @@ func (c *ModuleController) DeleteModule(ctx *gin.Context) {
 	slog.Debug("Deleting module")
 	id := ctx.Param("id")
 
-	err := c.service.DeleteModule(id)
+	// Get module info before deleting for logging
+	moduleToDelete, err := c.service.GetModuleById(id)
+	if err != nil {
+		slog.Error("Error getting module for deletion", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	err = c.service.DeleteModule(id)
 	if err != nil {
 		slog.Error("Error deleting module", "error", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+	if teacherUUID != "" && moduleToDelete != nil {
+		c.activityService.LogActivityIfAuxTeacher(
+			moduleToDelete.CourseID,
+			teacherUUID,
+			"DELETE_MODULE",
+			fmt.Sprintf("Deleted module: %s", moduleToDelete.Title),
+		)
 	}
 
 	slog.Debug("Module deleted", "id", id)

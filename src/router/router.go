@@ -6,6 +6,7 @@ import (
 	"courses-service/src/controller"
 	"courses-service/src/database"
 	"courses-service/src/middleware"
+	"courses-service/src/queues"
 	"courses-service/src/repository"
 	"courses-service/src/service"
 	"log"
@@ -58,8 +59,12 @@ func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseControl
 	r.POST("/courses/:id/aux-teacher/add", controller.AddAuxTeacherToCourse)
 	r.DELETE("/courses/:id/aux-teacher/remove", controller.RemoveAuxTeacherFromCourse)
 	r.POST("/courses/:id/feedback", controller.CreateCourseFeedback)
-	r.GET("/courses/:id/feedback", controller.GetCourseFeedback)
+	r.PUT("/courses/:id/feedback", controller.GetCourseFeedback) // has to be a put because get doesnt receive a body and it was made to receive a body
 	r.GET("/courses/:id/feedback/summary", controller.GetCourseFeedbackSummary)
+}
+
+func InitializeTeacherActivityRoutes(r *gin.Engine, controller *controller.TeacherActivityController) {
+	r.GET("/activity-logs/course/:courseId", controller.GetCourseActivityLogs)
 }
 
 func InitializeModulesRoutes(r *gin.Engine, controller *controller.ModuleController) {
@@ -94,6 +99,7 @@ func InitializeSubmissionRoutes(r *gin.Engine, controller *controller.Submission
 	teacherAuthGroup := r.Group("")
 	teacherAuthGroup.Use(middleware.TeacherAuth())
 	teacherAuthGroup.PUT("/assignments/:assignmentId/submissions/:id/grade", controller.GradeSubmission)
+	teacherAuthGroup.GET("/assignments/:assignmentId/submissions/:id/feedback-summary", controller.GenerateFeedbackSummary)
 
 	// Esta ruta no requiere autenticación de estudiante
 	r.GET("/assignments/:assignmentId/submissions", controller.GetSubmissionsByAssignment)
@@ -106,8 +112,14 @@ func InitializeEnrollmentsRoutes(r *gin.Engine, controller *controller.Enrollmen
 	r.POST("/courses/:id/favourite", controller.SetFavouriteCourse)
 	r.DELETE("/courses/:id/favourite", controller.UnsetFavouriteCourse)
 	r.POST("/courses/:id/student-feedback", controller.CreateFeedback)
-	r.GET("/feedback/student/:id", controller.GetFeedbackByStudentId)
+	r.PUT("/feedback/student/:id", controller.GetFeedbackByStudentId)
 	r.GET("/feedback/student/:id/summary", controller.GetStudentFeedbackSummary)
+
+	// Aplicar el middleware de autenticación de docentes para aprobar estudiantes
+	teacherAuthGroup := r.Group("")
+	teacherAuthGroup.Use(middleware.TeacherAuth())
+	teacherAuthGroup.PUT("/courses/:id/students/:studentId/approve", controller.ApproveStudent)
+	teacherAuthGroup.PUT("/courses/:id/students/:studentId/disapprove", controller.DisapproveStudent)
 }
 
 func InitializeForumRoutes(r *gin.Engine, controller *controller.ForumController) {
@@ -132,6 +144,40 @@ func InitializeForumRoutes(r *gin.Engine, controller *controller.ForumController
 
 	// Search endpoints
 	r.GET("/forum/courses/:courseId/search", controller.SearchQuestions)
+
+	// Forum participants endpoints
+	r.GET("/forum/courses/:courseId/participants", controller.GetForumParticipants)
+}
+
+// InitializeStatisticsRoutes sets up all statistics-related routes
+func InitializeStatisticsRoutes(r *gin.Engine, controller *controller.StatisticsController) {
+	// Group all statistics routes
+	statisticsGroup := r.Group("/statistics")
+
+	// Apply teacher authentication middleware for all statistics routes
+	// Only teachers should be able to access these analytics
+	statisticsGroup.Use(middleware.TeacherAuth())
+
+	// Course statistics endpoints - supports JSON or CSV via ?format=csv
+	statisticsGroup.GET("/courses/:courseId", controller.GetCourseStatistics)
+
+	// Student statistics endpoints - supports JSON or CSV via ?format=csv
+	statisticsGroup.GET("/students/:studentId", controller.GetStudentStatistics)
+
+	// Teacher's courses statistics endpoint
+	statisticsGroup.GET("/teachers/:teacherId/courses", controller.GetTeacherCoursesStatistics)
+
+	// Backoffice statistics endpoints
+	backofficeGroup := r.Group("/backoffice/statistics")
+
+	// General system statistics
+	backofficeGroup.GET("/general", controller.GetBackofficeStatistics)
+
+	// Detailed course statistics
+	backofficeGroup.GET("/courses", controller.GetBackofficeCoursesStats)
+
+	// Detailed assignment statistics
+	backofficeGroup.GET("/assignments", controller.GetBackofficeAssignmentsStats)
 }
 
 func NewRouter(config *config.Config) *gin.Engine {
@@ -148,6 +194,10 @@ func NewRouter(config *config.Config) *gin.Engine {
 	slog.Debug("Connected to database")
 
 	aiClient := ai.NewAiClient(config)
+	notificationsQueue, err := queues.NewNotificationsQueue(config)
+	if err != nil {
+		log.Fatalf("Failed to create notifications queue: %v", err)
+	}
 
 	courseRepo := repository.NewCourseRepository(dbClient, config.DBName)
 	enrollmentRepo := repository.NewEnrollmentRepository(dbClient, config.DBName, courseRepo)
@@ -155,22 +205,27 @@ func NewRouter(config *config.Config) *gin.Engine {
 	submissionRepository := repository.NewMongoSubmissionRepository(dbClient.Database(config.DBName))
 	moduleRepository := repository.NewModuleRepository(dbClient, config.DBName)
 	forumRepository := repository.NewForumRepository(dbClient, config.DBName)
+	activityLogRepo := repository.NewTeacherActivityLogRepository(dbClient, config.DBName)
 
 	courseService := service.NewCourseService(courseRepo, enrollmentRepo)
-	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo)
+	enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo, submissionRepository)
 	assignmentService := service.NewAssignmentService(assignmentRepository, courseService)
-	submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository, courseService)
+	submissionService := service.NewSubmissionService(submissionRepository, assignmentRepository, courseService, aiClient)
 	moduleService := service.NewModuleService(moduleRepository)
 	forumService := service.NewForumService(forumRepository, courseRepo)
+	statisticsService := service.NewStatisticsService(courseRepo, assignmentRepository, enrollmentRepo, submissionRepository, forumRepository)
+	activityService := service.NewTeacherActivityService(activityLogRepo, courseRepo)
 
-	courseController := controller.NewCourseController(courseService, aiClient)
-	enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient)
-	assignmentsController := controller.NewAssignmentsController(assignmentService)
-	submissionController := controller.NewSubmissionController(submissionService) // TODO change this when interface is added
-	moduleController := controller.NewModuleController(moduleService)
-	forumController := controller.NewForumController(forumService)
+	courseController := controller.NewCourseController(courseService, aiClient, activityService, notificationsQueue)
+	enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient, activityService, notificationsQueue)
+	assignmentsController := controller.NewAssignmentsController(assignmentService, notificationsQueue, activityService)
+	submissionController := controller.NewSubmissionController(submissionService, notificationsQueue, activityService, assignmentService)
+	moduleController := controller.NewModuleController(moduleService, activityService)
+	forumController := controller.NewForumController(forumService, activityService, notificationsQueue)
+	statisticsController := controller.NewStatisticsController(statisticsService)
+	activityController := controller.NewTeacherActivityController(activityService, courseService)
 
-	InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController, moduleController, forumController)
+	InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController, moduleController, forumController, statisticsController, activityController)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler)) // endpoint to consult the swagger documentation
 	return r
 }
@@ -183,6 +238,8 @@ func InitializeRoutes(
 	enrollmentController *controller.EnrollmentController,
 	moduleController *controller.ModuleController,
 	forumController *controller.ForumController,
+	statisticsController *controller.StatisticsController,
+	activityController *controller.TeacherActivityController,
 ) {
 	InitializeCoursesRoutes(r, courseController)
 	InitializeSubmissionRoutes(r, submissionController)
@@ -190,4 +247,6 @@ func InitializeRoutes(
 	InitializeEnrollmentsRoutes(r, enrollmentController)
 	InitializeModulesRoutes(r, moduleController)
 	InitializeForumRoutes(r, forumController)
+	InitializeStatisticsRoutes(r, statisticsController)
+	InitializeTeacherActivityRoutes(r, activityController)
 }

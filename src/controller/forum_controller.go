@@ -1,10 +1,13 @@
 package controller
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"courses-service/src/model"
+	"courses-service/src/queues"
 	"courses-service/src/schemas"
 	"courses-service/src/service"
 
@@ -12,11 +15,17 @@ import (
 )
 
 type ForumController struct {
-	service service.ForumServiceInterface
+	service            service.ForumServiceInterface
+	activityService    service.TeacherActivityServiceInterface
+	notificationsQueue queues.NotificationsQueueInterface
 }
 
-func NewForumController(service service.ForumServiceInterface) *ForumController {
-	return &ForumController{service: service}
+func NewForumController(service service.ForumServiceInterface, activityService service.TeacherActivityServiceInterface, notificationsQueue queues.NotificationsQueueInterface) *ForumController {
+	return &ForumController{
+		service:            service,
+		activityService:    activityService,
+		notificationsQueue: notificationsQueue,
+	}
 }
 
 // Question endpoints
@@ -54,8 +63,28 @@ func (c *ForumController) CreateQuestion(ctx *gin.Context) {
 		return
 	}
 
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+	if teacherUUID != "" && teacherUUID == request.AuthorID {
+		c.activityService.LogActivityIfAuxTeacher(
+			request.CourseID,
+			teacherUUID,
+			"CREATE_FORUM_QUESTION",
+			fmt.Sprintf("Created forum question: %s", request.Title),
+		)
+	}
+
 	response := c.mapQuestionToDetailResponse(question)
 	slog.Debug("Question created", "question_id", question.ID.Hex())
+
+	message := queues.NewForumActivityMessage(request.CourseID, request.AuthorID, question.ID.Hex(), question.Title, response.CreatedAt)
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	ctx.JSON(http.StatusCreated, response)
 }
 
@@ -146,8 +175,28 @@ func (c *ForumController) UpdateQuestion(ctx *gin.Context) {
 		return
 	}
 
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+	if teacherUUID != "" && question != nil {
+		c.activityService.LogActivityIfAuxTeacher(
+			question.CourseID,
+			teacherUUID,
+			"UPDATE_FORUM_QUESTION",
+			fmt.Sprintf("Updated forum question: %s", request.Title),
+		)
+	}
+
 	response := c.mapQuestionToDetailResponse(question)
 	slog.Debug("Question updated", "question_id", id)
+
+	message := queues.NewForumActivityMessage(question.CourseID, question.AuthorID, id, question.Title, response.UpdatedAt)
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	ctx.JSON(http.StatusOK, response)
 }
 
@@ -174,11 +223,25 @@ func (c *ForumController) DeleteQuestion(ctx *gin.Context) {
 		return
 	}
 
+	// Get question before deleting for logging
+	question, qErr := c.service.GetQuestionById(id)
+
 	err := c.service.DeleteQuestion(id, authorID)
 	if err != nil {
 		slog.Error("Error deleting question", "error", err)
 		ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
 		return
+	}
+
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+	if teacherUUID != "" && teacherUUID == authorID && qErr == nil && question != nil {
+		c.activityService.LogActivityIfAuxTeacher(
+			question.CourseID,
+			teacherUUID,
+			"DELETE_FORUM_QUESTION",
+			fmt.Sprintf("Deleted forum question: %s", question.Title),
+		)
 	}
 
 	slog.Debug("Question deleted", "question_id", id)
@@ -217,8 +280,42 @@ func (c *ForumController) AddAnswer(ctx *gin.Context) {
 		return
 	}
 
+	var question *model.ForumQuestion
+	var qErr error
+
+	// Log activity if teacher is auxiliary - we need to get the question to know the course
+	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+	if teacherUUID != "" && teacherUUID == request.AuthorID {
+		// Get the question to find the course ID
+		question, qErr = c.service.GetQuestionById(questionID)
+		if qErr == nil && question != nil {
+			c.activityService.LogActivityIfAuxTeacher(
+				question.CourseID,
+				teacherUUID,
+				"CREATE_FORUM_ANSWER",
+				"Created forum answer",
+			)
+		}
+	}
+
+	question, qErr = c.service.GetQuestionById(questionID)
+	if qErr != nil {
+		slog.Error("Error getting question", "error", qErr)
+		ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: qErr.Error()})
+		return
+	}
+
 	response := c.mapAnswerToResponse(answer)
 	slog.Debug("Answer added", "question_id", questionID, "answer_id", answer.ID)
+
+	message := queues.NewForumActivityMessage(question.CourseID, question.AuthorID, question.ID.Hex(), question.Title, response.CreatedAt)
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	ctx.JSON(http.StatusCreated, response)
 }
 
@@ -336,6 +433,21 @@ func (c *ForumController) AcceptAnswer(ctx *gin.Context) {
 		return
 	}
 
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+	if teacherUUID != "" && teacherUUID == authorID {
+		// Get the question to find the course ID
+		question, qErr := c.service.GetQuestionById(questionID)
+		if qErr == nil && question != nil {
+			c.activityService.LogActivityIfAuxTeacher(
+				question.CourseID,
+				teacherUUID,
+				"ACCEPT_FORUM_ANSWER",
+				"Accepted forum answer",
+			)
+		}
+	}
+
 	slog.Debug("Answer accepted", "question_id", questionID, "answer_id", answerID)
 	ctx.JSON(http.StatusOK, schemas.MessageResponse{Message: "Answer accepted successfully"})
 }
@@ -373,9 +485,26 @@ func (c *ForumController) VoteQuestion(ctx *gin.Context) {
 		return
 	}
 
+	// get the question to find the course ID
+	question, qErr := c.service.GetQuestionById(questionID)
+	if qErr != nil {
+		slog.Error("Error getting question", "error", qErr)
+		ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: qErr.Error()})
+		return
+	}
+
 	voteTypeStr := "up"
 	if request.VoteType == model.VoteTypeDown {
 		voteTypeStr = "down"
+	}
+
+	message := queues.NewForumActivityMessage(question.CourseID, request.UserID, question.ID.Hex(), question.Title, time.Now())
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
 	slog.Debug("Vote registered", "question_id", questionID, "vote_type", voteTypeStr)
@@ -420,7 +549,24 @@ func (c *ForumController) VoteAnswer(ctx *gin.Context) {
 		voteTypeStr = "down"
 	}
 
+	// get the question to find the course ID
+	question, qErr := c.service.GetQuestionById(questionID)
+	if qErr != nil {
+		slog.Error("Error getting question", "error", qErr)
+		ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: qErr.Error()})
+		return
+	}
 	slog.Debug("Vote registered", "question_id", questionID, "answer_id", answerID, "vote_type", voteTypeStr)
+
+	message := queues.NewForumActivityMessage(question.CourseID, request.UserID, question.ID.Hex(), question.Title, time.Now())
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	ctx.JSON(http.StatusOK, schemas.VoteResponse{Message: "Vote registered successfully"})
 }
 
@@ -540,6 +686,40 @@ func (c *ForumController) SearchQuestions(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
+// @Summary Get forum participants
+// @Description Get all unique participants (authors, answerers, voters) for a specific course forum
+// @Tags forum
+// @Accept json
+// @Produce json
+// @Param courseId path string true "Course ID"
+// @Success 200 {object} schemas.ForumParticipantsResponse
+// @Failure 400 {object} schemas.ErrorResponse
+// @Failure 404 {object} schemas.ErrorResponse
+// @Failure 500 {object} schemas.ErrorResponse
+// @Router /forum/courses/{courseId}/participants [get]
+func (c *ForumController) GetForumParticipants(ctx *gin.Context) {
+	slog.Debug("Getting forum participants")
+
+	courseID := ctx.Param("courseId")
+	participants, err := c.service.GetForumParticipants(courseID)
+	if err != nil {
+		slog.Error("Error getting forum participants", "error", err)
+		if err.Error() == "course not found" {
+			ctx.JSON(http.StatusNotFound, schemas.ErrorResponse{Error: err.Error()})
+		} else {
+			ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
+		}
+		return
+	}
+
+	response := schemas.ForumParticipantsResponse{
+		Participants: participants,
+	}
+
+	slog.Debug("Forum participants retrieved", "course_id", courseID, "total", len(participants))
+	ctx.JSON(http.StatusOK, response)
+}
+
 // Helper methods for mapping models to responses
 
 func (c *ForumController) mapQuestionToResponse(question *model.ForumQuestion) schemas.QuestionResponse {
@@ -553,6 +733,7 @@ func (c *ForumController) mapQuestionToResponse(question *model.ForumQuestion) s
 		Title:            question.Title,
 		Description:      question.Description,
 		Tags:             question.Tags,
+		Votes:            question.Votes,
 		VoteCount:        voteCount,
 		AnswerCount:      answerCount,
 		Status:           question.Status,
@@ -577,6 +758,7 @@ func (c *ForumController) mapQuestionToDetailResponse(question *model.ForumQuest
 		Title:            question.Title,
 		Description:      question.Description,
 		Tags:             question.Tags,
+		Votes:            question.Votes,
 		VoteCount:        voteCount,
 		Answers:          answers,
 		Status:           question.Status,
@@ -593,6 +775,7 @@ func (c *ForumController) mapAnswerToResponse(answer *model.ForumAnswer) schemas
 		ID:         answer.ID,
 		AuthorID:   answer.AuthorID,
 		Content:    answer.Content,
+		Votes:      answer.Votes,
 		VoteCount:  voteCount,
 		IsAccepted: answer.IsAccepted,
 		CreatedAt:  answer.CreatedAt,

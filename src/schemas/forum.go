@@ -28,6 +28,7 @@ type QuestionResponse struct {
 	Title            string               `json:"title"`
 	Description      string               `json:"description"`
 	Tags             []model.QuestionTag  `json:"tags"`
+	Votes            []model.Vote         `json:"votes"`
 	VoteCount        int                  `json:"vote_count"`
 	AnswerCount      int                  `json:"answer_count"`
 	Status           model.QuestionStatus `json:"status"`
@@ -43,6 +44,7 @@ type QuestionDetailResponse struct {
 	Title            string               `json:"title"`
 	Description      string               `json:"description"`
 	Tags             []model.QuestionTag  `json:"tags"`
+	Votes            []model.Vote         `json:"votes"`
 	VoteCount        int                  `json:"vote_count"`
 	Answers          []AnswerResponse     `json:"answers"`
 	Status           model.QuestionStatus `json:"status"`
@@ -63,13 +65,14 @@ type UpdateAnswerRequest struct {
 }
 
 type AnswerResponse struct {
-	ID         string    `json:"id"`
-	AuthorID   string    `json:"author_id"`
-	Content    string    `json:"content"`
-	VoteCount  int       `json:"vote_count"`
-	IsAccepted bool      `json:"is_accepted"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	ID         string       `json:"id"`
+	AuthorID   string       `json:"author_id"`
+	Content    string       `json:"content"`
+	Votes      []model.Vote `json:"votes"`
+	VoteCount  int          `json:"vote_count"`
+	IsAccepted bool         `json:"is_accepted"`
+	CreatedAt  time.Time    `json:"created_at"`
+	UpdatedAt  time.Time    `json:"updated_at"`
 }
 
 // Vote schemas
@@ -94,6 +97,12 @@ type SearchQuestionsRequest struct {
 type SearchQuestionsResponse struct {
 	Questions []QuestionResponse `json:"questions"`
 	Total     int                `json:"total"`
+}
+
+// Forum participants schemas
+
+type ForumParticipantsResponse struct {
+	Participants []string `json:"participants"`
 }
 
 // Generic response schemas

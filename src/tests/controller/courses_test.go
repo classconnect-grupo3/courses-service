@@ -7,6 +7,7 @@ import (
 	"courses-service/src/schemas"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -21,8 +22,8 @@ import (
 var (
 	mockService      = &MockCourseService{}
 	mockErrorService = &MockCourseServiceWithError{}
-	normalController = controller.NewCourseController(mockService, nil)
-	errorController  = controller.NewCourseController(mockErrorService, nil)
+	normalController = controller.NewCourseController(mockService, nil, mockActivityService, mockNotificationsQueue)
+	errorController  = controller.NewCourseController(mockErrorService, nil, mockActivityService, mockNotificationsQueue)
 	normalRouter     = gin.Default()
 	errorRouter      = gin.Default()
 )
@@ -57,8 +58,9 @@ func (m *MockCourseService) GetCoursesByStudentId(studentId string) ([]*model.Co
 // GetCoursesByUserId implements controller.CourseService.
 func (m *MockCourseService) GetCoursesByUserId(userId string) (*schemas.GetCoursesByUserIdResponse, error) {
 	return &schemas.GetCoursesByUserIdResponse{
-		Student: []*model.Course{},
-		Teacher: []*model.Course{},
+		Student:    []*model.Course{},
+		Teacher:    []*model.Course{},
+		AuxTeacher: []*model.Course{},
 	}, nil
 }
 
@@ -88,7 +90,7 @@ func (m *MockCourseService) GetCourseById(id string) (*model.Course, error) {
 	}, nil
 }
 
-func (m *MockCourseService) DeleteCourse(id string) error {
+func (m *MockCourseService) DeleteCourse(id string, teacherId string) error {
 	return nil
 }
 
@@ -217,7 +219,7 @@ func (m *MockCourseServiceWithError) GetCourseById(id string) (*model.Course, er
 	return nil, errors.New("Error getting course by ID")
 }
 
-func (m *MockCourseServiceWithError) DeleteCourse(id string) error {
+func (m *MockCourseServiceWithError) DeleteCourse(id string, teacherId string) error {
 	return errors.New("Error deleting course")
 }
 
@@ -320,7 +322,7 @@ func TestGetCourseByIdWithError(t *testing.T) {
 
 func TestDeleteCourse(t *testing.T) {
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("DELETE", "/courses/123", nil)
+	req, _ := http.NewRequest("DELETE", "/courses/123?teacherId=teacher123", nil)
 	normalRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -328,10 +330,19 @@ func TestDeleteCourse(t *testing.T) {
 
 func TestDeleteCourseWithError(t *testing.T) {
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("DELETE", "/courses/123", nil)
+	req, _ := http.NewRequest("DELETE", "/courses/123?teacherId=teacher123", nil)
 	errorRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestDeleteCourseWithoutTeacherId(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/courses/123", nil)
+	normalRouter.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Teacher ID is required")
 }
 
 func TestGetCourseByTeacherId(t *testing.T) {
@@ -387,15 +398,8 @@ func TestGetCourseByTitle(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/courses/title/Test Course", nil)
 	normalRouter.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusOK, w.Code)
-}
-
-func TestGetCourseByTitleWithError(t *testing.T) {
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/courses/title/Test Course", nil)
-	errorRouter.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	assert.Contains(t, w.Body.String(), "Course not found")
 }
 
 func TestUpdateCourse(t *testing.T) {
@@ -476,9 +480,10 @@ func TestAddAuxTeacherToCourseWithEmptyCourseId(t *testing.T) {
 
 func TestRemoveAuxTeacherFromCourse(t *testing.T) {
 	w := httptest.NewRecorder()
-	body := `{"teacher_id": "123", "aux_teacher_id": "456"}`
+	teacherId := "123"
+	auxTeacherId := "456"
 
-	req, _ := http.NewRequest("DELETE", "/courses/123/aux-teacher/remove", strings.NewReader(body))
+	req, _ := http.NewRequest("DELETE", fmt.Sprintf("/courses/123/aux-teacher/remove?teacherId=%s&auxTeacherId=%s", teacherId, auxTeacherId), nil)
 	normalRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -486,20 +491,22 @@ func TestRemoveAuxTeacherFromCourse(t *testing.T) {
 
 func TestRemoveAuxTeacherFromCourseWithInvalidBody(t *testing.T) {
 	w := httptest.NewRecorder()
-	body := `{"invalid": "body"}`
+	teacherId := ""
+	auxTeacherId := ""
 
-	req, _ := http.NewRequest("DELETE", "/courses/123/aux-teacher/remove", strings.NewReader(body))
+	req, _ := http.NewRequest("DELETE", fmt.Sprintf("/courses/123/aux-teacher/remove?teacherId=%s&auxTeacherId=%s", teacherId, auxTeacherId), nil)
 	normalRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	assert.Contains(t, w.Body.String(), "Error:Field validation")
+	assert.Contains(t, w.Body.String(), "Teacher ID and aux teacher ID are required")
 }
 
 func TestRemoveAuxTeacherFromCourseWithError(t *testing.T) {
 	w := httptest.NewRecorder()
-	body := `{"teacher_id": "123", "aux_teacher_id": "456"}`
+	teacherId := "123"
+	auxTeacherId := "456"
 
-	req, _ := http.NewRequest("DELETE", "/courses/123/aux-teacher/remove", strings.NewReader(body))
+	req, _ := http.NewRequest("DELETE", fmt.Sprintf("/courses/123/aux-teacher/remove?teacherId=%s&auxTeacherId=%s", teacherId, auxTeacherId), nil)
 	errorRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
@@ -508,9 +515,10 @@ func TestRemoveAuxTeacherFromCourseWithError(t *testing.T) {
 
 func TestRemoveAuxTeacherFromCourseWithEmptyCourseId(t *testing.T) {
 	w := httptest.NewRecorder()
-	body := `{"teacher_id": "123", "aux_teacher_id": "456"}`
+	teacherId := "123"
+	auxTeacherId := "456"
 
-	req, _ := http.NewRequest("DELETE", "/courses//aux-teacher/remove", strings.NewReader(body))
+	req, _ := http.NewRequest("DELETE", fmt.Sprintf("/courses//aux-teacher/remove?teacherId=%s&auxTeacherId=%s", teacherId, auxTeacherId), nil)
 	normalRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -746,7 +754,7 @@ func TestGetCourseFeedback(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{}`
 
-	req, _ := http.NewRequest("GET", "/courses/course-with-feedback/feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/courses/course-with-feedback/feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalRouter.ServeHTTP(w, req)
 
@@ -763,7 +771,7 @@ func TestGetCourseFeedbackWithEmptyCourseID(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{}`
 
-	req, _ := http.NewRequest("GET", "/courses//feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/courses//feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalRouter.ServeHTTP(w, req)
 
@@ -775,7 +783,7 @@ func TestGetCourseFeedbackWithNoFeedback(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{}`
 
-	req, _ := http.NewRequest("GET", "/courses/course-no-feedback/feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/courses/course-no-feedback/feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalRouter.ServeHTTP(w, req)
 
@@ -788,7 +796,7 @@ func TestGetCourseFeedbackWithFeedbackTypeFilter(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{"feedback_type": "POSITIVO"}`
 
-	req, _ := http.NewRequest("GET", "/courses/course-with-feedback/feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/courses/course-with-feedback/feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalRouter.ServeHTTP(w, req)
 
@@ -804,7 +812,7 @@ func TestGetCourseFeedbackWithScoreRangeFilter(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{"start_score": 4, "end_score": 5}`
 
-	req, _ := http.NewRequest("GET", "/courses/course-with-feedback/feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/courses/course-with-feedback/feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalRouter.ServeHTTP(w, req)
 
@@ -820,7 +828,7 @@ func TestGetCourseFeedbackWithCombinedFilters(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{"feedback_type": "POSITIVO", "start_score": 4, "end_score": 5}`
 
-	req, _ := http.NewRequest("GET", "/courses/course-with-feedback/feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/courses/course-with-feedback/feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalRouter.ServeHTTP(w, req)
 
@@ -834,7 +842,7 @@ func TestGetCourseFeedbackWithInvalidJSON(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{"feedback_type": "POSITIVO", "start_score": invalid}`
 
-	req, _ := http.NewRequest("GET", "/courses/course-with-feedback/feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/courses/course-with-feedback/feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalRouter.ServeHTTP(w, req)
 
@@ -846,7 +854,7 @@ func TestGetCourseFeedbackWithServiceError(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{}`
 
-	req, _ := http.NewRequest("GET", "/courses/error-course/feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/courses/error-course/feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	errorRouter.ServeHTTP(w, req)
 
@@ -858,7 +866,7 @@ func TestGetCourseFeedbackWithDateRangeFilter(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := `{"start_date": "2024-01-01T00:00:00Z", "end_date": "2024-12-31T23:59:59Z"}`
 
-	req, _ := http.NewRequest("GET", "/courses/course-with-feedback/feedback", strings.NewReader(body))
+	req, _ := http.NewRequest("PUT", "/courses/course-with-feedback/feedback", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	normalRouter.ServeHTTP(w, req)
 

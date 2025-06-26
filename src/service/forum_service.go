@@ -444,3 +444,61 @@ func (s *ForumService) validateTags(tags []model.QuestionTag) error {
 func (s *ForumService) isValidStatus(status model.QuestionStatus) bool {
 	return slices.Contains(model.QuestionStatusValues, status)
 }
+
+// Forum participants operations
+
+func (s *ForumService) GetForumParticipants(courseID string) ([]string, error) {
+	if courseID == "" {
+		return nil, errors.New("course ID is required")
+	}
+
+	// Validate course exists
+	_, err := s.courseRepository.GetCourseById(courseID)
+	if err != nil {
+		return nil, errors.New("course not found")
+	}
+
+	// Get all questions for the course from repository
+	questions, err := s.forumRepository.GetQuestionsByCourseId(courseID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract unique participants using business logic
+	return s.extractParticipantsFromQuestions(questions), nil
+}
+
+func (s *ForumService) extractParticipantsFromQuestions(questions []model.ForumQuestion) []string {
+	// Use a map to track unique participants
+	participantsMap := make(map[string]bool)
+
+	for _, question := range questions {
+		// Add question author
+		participantsMap[question.AuthorID] = true
+
+		// Add answer authors
+		for _, answer := range question.Answers {
+			participantsMap[answer.AuthorID] = true
+		}
+
+		// Add voters
+		for _, vote := range question.Votes {
+			participantsMap[vote.UserID] = true
+		}
+
+		// Add answer voters
+		for _, answer := range question.Answers {
+			for _, vote := range answer.Votes {
+				participantsMap[vote.UserID] = true
+			}
+		}
+	}
+
+	// Convert map keys to slice
+	var participants []string
+	for participant := range participantsMap {
+		participants = append(participants, participant)
+	}
+
+	return participants
+}

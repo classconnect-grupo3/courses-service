@@ -208,6 +208,49 @@ func (m *MockAssignmentRepository) DeleteAssignment(id string) error {
 	return errors.New("assignment not found")
 }
 
+// Backoffice statistics methods
+func (m *MockAssignmentRepository) CountAssignments() (int64, error) {
+	return 2, nil
+}
+
+func (m *MockAssignmentRepository) CountAssignmentsByType(assignmentType string) (int64, error) {
+	if assignmentType == "exam" {
+		return 1, nil
+	}
+	if assignmentType == "homework" {
+		return 1, nil
+	}
+	return 0, nil
+}
+
+func (m *MockAssignmentRepository) CountAssignmentsByStatus(status string) (int64, error) {
+	if status == "published" {
+		return 1, nil
+	}
+	if status == "draft" {
+		return 1, nil
+	}
+	return 0, nil
+}
+
+func (m *MockAssignmentRepository) CountAssignmentsCreatedThisMonth() (int64, error) {
+	return 2, nil
+}
+
+func (m *MockAssignmentRepository) GetAssignmentDistribution() ([]schemas.AssignmentDistribution, error) {
+	return []schemas.AssignmentDistribution{
+		{Type: "exam", Status: "published", Count: 1},
+		{Type: "homework", Status: "draft", Count: 1},
+	}, nil
+}
+
+func (m *MockAssignmentRepository) GetRecentAssignments(limit int) ([]schemas.AssignmentBasicInfo, error) {
+	return []schemas.AssignmentBasicInfo{
+		{ID: "assignment1", Title: "Test Assignment 1", Type: "exam", Status: "published"},
+		{ID: "assignment2", Title: "Test Assignment 2", Type: "homework", Status: "draft"},
+	}, nil
+}
+
 type MockCourseService struct{}
 
 // GetCourseMembers implements service.CourseServiceInterface.
@@ -252,7 +295,7 @@ func (m *MockCourseService) GetCourses() ([]*model.Course, error) { return nil, 
 func (m *MockCourseService) CreateCourse(c schemas.CreateCourseRequest) (*model.Course, error) {
 	return nil, nil
 }
-func (m *MockCourseService) DeleteCourse(id string) error { return nil }
+func (m *MockCourseService) DeleteCourse(id string, teacherId string) error { return nil }
 func (m *MockCourseService) GetCourseByTeacherId(teacherId string) ([]*model.Course, error) {
 	return nil, nil
 }

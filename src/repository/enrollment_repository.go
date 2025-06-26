@@ -6,6 +6,7 @@ import (
 	"courses-service/src/schemas"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -286,4 +287,159 @@ func (r *EnrollmentRepository) GetFeedbackByStudentId(studentID string, getFeedb
 	}
 
 	return allFeedbacks, nil
+}
+
+// ApproveStudent updates an enrollment status to completed and sets completion date
+func (r *EnrollmentRepository) ApproveStudent(studentID, courseID string) error {
+	filter := bson.M{
+		"student_id": studentID,
+		"course_id":  courseID,
+		"status":     model.EnrollmentStatusActive, // Only approve active enrollments
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"status":         model.EnrollmentStatusCompleted,
+			"completed_date": time.Now(),
+			"updated_at":     time.Now(),
+		},
+	}
+
+	result, err := r.enrollmentCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return fmt.Errorf("error updating enrollment: %v", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("enrollment not found or student is not active in course %s", courseID)
+	}
+
+	return nil
+}
+
+// DisapproveStudent updates an enrollment status to dropped and sets the reason for unenrollment
+func (r *EnrollmentRepository) DisapproveStudent(studentID, courseID, reason string) error {
+	filter := bson.M{
+		"student_id": studentID,
+		"course_id":  courseID,
+		"status":     model.EnrollmentStatusActive, // Only disapprove active enrollments
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"status":                  model.EnrollmentStatusDropped,
+			"reason_for_unenrollment": reason,
+			"updated_at":              time.Now(),
+		},
+	}
+
+	result, err := r.enrollmentCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return fmt.Errorf("error updating enrollment: %v", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("enrollment not found or student is not active in course %s", courseID)
+	}
+
+	return nil
+}
+
+// ReactivateDroppedEnrollment reactivates a dropped enrollment and clears the reason
+func (r *EnrollmentRepository) ReactivateDroppedEnrollment(studentID, courseID string) error {
+	filter := bson.M{
+		"student_id": studentID,
+		"course_id":  courseID,
+		"status":     model.EnrollmentStatusDropped, // Only reactivate dropped enrollments
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"status":     model.EnrollmentStatusActive,
+			"updated_at": time.Now(),
+		},
+		"$unset": bson.M{
+			"reason_for_unenrollment": "", // Remove the field completely
+		},
+	}
+
+	result, err := r.enrollmentCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return fmt.Errorf("error reactivating enrollment: %v", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("dropped enrollment not found for student %s in course %s", studentID, courseID)
+	}
+
+	return nil
+}
+
+// CountEnrollments returns the total number of enrollments
+func (r *EnrollmentRepository) CountEnrollments() (int64, error) {
+	count, err := r.enrollmentCollection.CountDocuments(context.TODO(), bson.M{})
+	if err != nil {
+		return 0, fmt.Errorf("failed to count enrollments: %v", err)
+	}
+	return count, nil
+}
+
+// CountEnrollmentsByStatus returns the number of enrollments by status
+func (r *EnrollmentRepository) CountEnrollmentsByStatus(status model.EnrollmentStatus) (int64, error) {
+	filter := bson.M{"status": status}
+	count, err := r.enrollmentCollection.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count enrollments by status: %v", err)
+	}
+	return count, nil
+}
+
+// CountEnrollmentsThisMonth returns the number of enrollments created this month
+func (r *EnrollmentRepository) CountEnrollmentsThisMonth() (int64, error) {
+	now := time.Now()
+	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	endOfMonth := startOfMonth.AddDate(0, 1, 0)
+
+	filter := bson.M{
+		"enrolled_at": bson.M{
+			"$gte": startOfMonth,
+			"$lt":  endOfMonth,
+		},
+	}
+
+	count, err := r.enrollmentCollection.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count enrollments this month: %v", err)
+	}
+	return count, nil
+}
+
+// CountUniqueStudents returns the number of unique students
+func (r *EnrollmentRepository) CountUniqueStudents() (int64, error) {
+	pipeline := []bson.M{
+		{"$group": bson.M{"_id": "$student_id"}},
+		{"$count": "unique_students"},
+	}
+
+	cursor, err := r.enrollmentCollection.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count unique students: %v", err)
+	}
+	defer cursor.Close(context.TODO())
+
+	var result []bson.M
+	if err = cursor.All(context.TODO(), &result); err != nil {
+		return 0, fmt.Errorf("failed to decode unique students count: %v", err)
+	}
+
+	if len(result) == 0 {
+		return 0, nil
+	}
+
+	count, ok := result[0]["unique_students"].(int32)
+	if !ok {
+		return 0, fmt.Errorf("unexpected result format for unique students count")
+	}
+
+	return int64(count), nil
 }

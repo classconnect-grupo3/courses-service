@@ -3,22 +3,32 @@ package controller
 import (
 	"courses-service/src/ai"
 	"courses-service/src/model"
+	"courses-service/src/queues"
 	"courses-service/src/schemas"
 	"courses-service/src/service"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"slices"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 type EnrollmentController struct {
-	enrollmentService service.EnrollmentServiceInterface
-	aiClient          *ai.AiClient
+	enrollmentService  service.EnrollmentServiceInterface
+	aiClient           *ai.AiClient
+	activityService    service.TeacherActivityServiceInterface
+	notificationsQueue queues.NotificationsQueueInterface
 }
 
-func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface, aiClient *ai.AiClient) *EnrollmentController {
-	return &EnrollmentController{enrollmentService: enrollmentService, aiClient: aiClient}
+func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface, aiClient *ai.AiClient, activityService service.TeacherActivityServiceInterface, notificationsQueue queues.NotificationsQueueInterface) *EnrollmentController {
+	return &EnrollmentController{
+		enrollmentService:  enrollmentService,
+		aiClient:           aiClient,
+		activityService:    activityService,
+		notificationsQueue: notificationsQueue,
+	}
 }
 
 // @Summary Enroll a student in a course
@@ -54,6 +64,16 @@ func (c *EnrollmentController) EnrollStudent(ctx *gin.Context) {
 	}
 
 	slog.Debug("Student enrolled in course", "studentId", enrollmentRequest.StudentID, "courseId", courseID)
+
+	message := queues.NewEnrolledStudentToCourseMessage(courseID, enrollmentRequest.StudentID)
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	ctx.JSON(http.StatusCreated, gin.H{"message": "Student successfully enrolled in course"})
 }
 
@@ -63,7 +83,7 @@ func (c *EnrollmentController) EnrollStudent(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Course ID"
-// @Param unenrollmentRequest body schemas.UnenrollStudentRequest true "Unenrollment request"
+// @Param studentId query string true "Student ID"
 // @Success 200 {object} schemas.UnenrollStudentResponse
 // @Router /courses/{id}/unenroll [delete]
 func (c *EnrollmentController) UnenrollStudent(ctx *gin.Context) {
@@ -76,21 +96,31 @@ func (c *EnrollmentController) UnenrollStudent(ctx *gin.Context) {
 		return
 	}
 
-	var unenrollmentRequest schemas.UnenrollStudentRequest
-	if err := ctx.ShouldBindJSON(&unenrollmentRequest); err != nil {
-		slog.Error("Error binding unenrollment request", "error", err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	studentId := ctx.Query("studentId")
+	if studentId == "" {
+		slog.Error("Student ID is required")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Student ID is required"})
 		return
 	}
 
-	err := c.enrollmentService.UnenrollStudent(unenrollmentRequest.StudentID, courseID)
+	err := c.enrollmentService.UnenrollStudent(studentId, courseID)
 	if err != nil {
 		slog.Error("Error unenrolling student", "error", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	slog.Debug("Student unenrolled from course", "studentId", unenrollmentRequest.StudentID, "courseId", courseID)
+	slog.Debug("Student unenrolled from course", "studentId", studentId, "courseId", courseID)
+
+	message := queues.NewUnenrolledStudentFromCourseMessage(courseID, studentId, "")
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{"message": "Student successfully unenrolled from course"})
 }
 
@@ -159,7 +189,7 @@ func (c *EnrollmentController) SetFavouriteCourse(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Course ID"
-// @Param unsetFavouriteCourseRequest body schemas.UnsetFavouriteCourseRequest true "Unset favourite course request"
+// @Param studentId query string true "Student ID"
 // @Success 200 {object} schemas.UnsetFavouriteCourseResponse
 // @Router /courses/{id}/favourite [delete]
 func (c *EnrollmentController) UnsetFavouriteCourse(ctx *gin.Context) {
@@ -172,21 +202,20 @@ func (c *EnrollmentController) UnsetFavouriteCourse(ctx *gin.Context) {
 		return
 	}
 
-	var unsetFavouriteCourseRequest schemas.UnsetFavouriteCourseRequest
-	if err := ctx.ShouldBindJSON(&unsetFavouriteCourseRequest); err != nil {
-		slog.Error("Error binding unset favourite course request", "error", err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	studentId := ctx.Query("studentId")
+	if studentId == "" {
+		slog.Error("Student ID is required")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Student ID is required"})
 		return
 	}
-
-	err := c.enrollmentService.UnsetFavouriteCourse(unsetFavouriteCourseRequest.StudentID, courseID)
+	err := c.enrollmentService.UnsetFavouriteCourse(studentId, courseID)
 	if err != nil {
 		slog.Error("Error unsetting favourite course", "error", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	slog.Debug("Favourite course unset", "studentId", unsetFavouriteCourseRequest.StudentID, "courseId", courseID)
+	slog.Debug("Favourite course unset", "studentId", studentId, "courseId", courseID)
 	ctx.JSON(http.StatusOK, gin.H{"message": "Favourite course unset"})
 }
 
@@ -230,6 +259,15 @@ func (c *EnrollmentController) CreateFeedback(ctx *gin.Context) {
 	}
 
 	slog.Debug("Feedback created", "studentId", feedbackRequest.StudentUUID, "teacherId", feedbackRequest.TeacherUUID)
+
+	message := queues.NewFeedbackCreatedMessage(feedbackRequest.StudentUUID, courseID, "", feedbackRequest.Feedback, feedbackRequest.Score, time.Now())
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "Feedback created"})
 }
 
@@ -241,7 +279,7 @@ func (c *EnrollmentController) CreateFeedback(ctx *gin.Context) {
 // @Param id path string true "Student ID"
 // @Param getFeedbackByStudentIdRequest body schemas.GetFeedbackByStudentIdRequest true "Get feedback by student ID request"
 // @Success 200 {array} model.StudentFeedback
-// @Router /feedback/student/{id} [get]
+// @Router /feedback/student/{id} [put]
 func (c *EnrollmentController) GetFeedbackByStudentId(ctx *gin.Context) {
 	slog.Debug("Getting feedback by student ID", "studentId", ctx.Param("id"))
 	studentID := ctx.Param("id")
@@ -276,7 +314,7 @@ func (c *EnrollmentController) GetFeedbackByStudentId(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Student ID"
-// @Success 200 {string} string "Student feedback summary"
+// @Success 200 {object} schemas.AiSummaryResponse
 // @Router /feedback/student/{id}/summary [get]
 func (c *EnrollmentController) GetStudentFeedbackSummary(ctx *gin.Context) {
 	slog.Debug("Getting student feedback summary", "studentId", ctx.Param("id"))
@@ -309,5 +347,120 @@ func (c *EnrollmentController) GetStudentFeedbackSummary(ctx *gin.Context) {
 	}
 
 	slog.Debug("Student feedback summary retrieved", "summary", summary)
-	ctx.JSON(http.StatusOK, summary)
+	ctx.JSON(http.StatusOK, schemas.AiSummaryResponse{Summary: summary})
+}
+
+// @Summary Approve a student in a course
+// @Description Approve a student by changing their enrollment status to completed
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param studentId path string true "Student ID"
+// @Success 200 {object} schemas.ApproveStudentResponse
+// @Router /courses/{id}/students/{studentId}/approve [put]
+func (c *EnrollmentController) ApproveStudent(ctx *gin.Context) {
+	slog.Debug("Approving student", "courseId", ctx.Param("courseId"), "studentId", ctx.Param("studentId"))
+
+	courseID := ctx.Param("id")
+	studentID := ctx.Param("studentId")
+
+	if courseID == "" {
+		slog.Error("Invalid course ID")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+		return
+	}
+
+	if studentID == "" {
+		slog.Error("Invalid student ID")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Student ID is required"})
+		return
+	}
+
+	err := c.enrollmentService.ApproveStudent(studentID, courseID)
+	if err != nil {
+		slog.Error("Error approving student", "error", err, "studentId", studentID, "courseId", courseID)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetString("teacher_uuid")
+	if teacherUUID != "" {
+		c.activityService.LogActivityIfAuxTeacher(
+			courseID,
+			teacherUUID,
+			"APPROVE_STUDENT",
+			fmt.Sprintf("Approved student: %s", studentID),
+		)
+	}
+
+	slog.Debug("Student approved successfully", "studentId", studentID, "courseId", courseID)
+	ctx.JSON(http.StatusOK, schemas.ApproveStudentResponse{
+		Message:   "Student approved successfully",
+		StudentID: studentID,
+		CourseID:  courseID,
+	})
+}
+
+// @Summary Disapprove a student in a course
+// @Description Disapprove a student by changing their enrollment status to dropped with a reason
+// @Tags enrollments
+// @Accept json
+// @Produce json
+// @Param id path string true "Course ID"
+// @Param studentId path string true "Student ID"
+// @Param disapproveRequest body schemas.DisapproveStudentRequest true "Disapprove request"
+// @Success 200 {object} schemas.DisapproveStudentResponse
+// @Router /courses/{id}/students/{studentId}/disapprove [put]
+func (c *EnrollmentController) DisapproveStudent(ctx *gin.Context) {
+	slog.Debug("Disapproving student", "courseId", ctx.Param("id"), "studentId", ctx.Param("studentId"))
+
+	courseID := ctx.Param("id")
+	studentID := ctx.Param("studentId")
+
+	if courseID == "" {
+		slog.Error("Invalid course ID")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+		return
+	}
+
+	if studentID == "" {
+		slog.Error("Invalid student ID")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Student ID is required"})
+		return
+	}
+
+	var disapproveRequest schemas.DisapproveStudentRequest
+	if err := ctx.ShouldBindJSON(&disapproveRequest); err != nil {
+		slog.Error("Error binding disapprove request", "error", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := c.enrollmentService.DisapproveStudent(studentID, courseID, disapproveRequest.Reason)
+	if err != nil {
+		slog.Error("Error disapproving student", "error", err, "studentId", studentID, "courseId", courseID)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Log activity if teacher is auxiliary
+	teacherUUID := ctx.GetString("teacher_uuid")
+	if teacherUUID != "" {
+		c.activityService.LogActivityIfAuxTeacher(
+			courseID,
+			teacherUUID,
+			"DISAPPROVE_STUDENT",
+			fmt.Sprintf("Disapproved student: %s (reason: %s)", studentID, disapproveRequest.Reason),
+		)
+	}
+
+	slog.Debug("Student disapproved successfully", "studentId", studentID, "courseId", courseID, "reason", disapproveRequest.Reason)
+	ctx.JSON(http.StatusOK, schemas.DisapproveStudentResponse{
+		Message:   "Student disapproved successfully",
+		StudentID: studentID,
+		CourseID:  courseID,
+		Reason:    disapproveRequest.Reason,
+	})
 }

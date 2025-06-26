@@ -10,6 +10,7 @@ import (
 
 	"courses-service/src/controller"
 	"courses-service/src/model"
+	"courses-service/src/queues"
 	"courses-service/src/router"
 	"courses-service/src/schemas"
 
@@ -21,8 +22,10 @@ import (
 var (
 	mockAssignmentService      = &MockAssignmentService{}
 	mockAssignmentErrorService = &MockAssignmentServiceWithError{}
-	normalAssignmentController = controller.NewAssignmentsController(mockAssignmentService)
-	errorAssignmentController  = controller.NewAssignmentsController(mockAssignmentErrorService)
+	mockNotificationsQueue     = &MockNotificationsQueue{}
+	mockActivityService        = &MockTeacherActivityService{}
+	normalAssignmentController = controller.NewAssignmentsController(mockAssignmentService, mockNotificationsQueue, mockActivityService)
+	errorAssignmentController  = controller.NewAssignmentsController(mockAssignmentErrorService, mockNotificationsQueue, mockActivityService)
 	normalAssignmentRouter     = gin.Default()
 	errorAssignmentRouter      = gin.Default()
 )
@@ -31,6 +34,22 @@ func init() {
 	gin.SetMode(gin.TestMode)
 	router.InitializeAssignmentsRoutes(normalAssignmentRouter, normalAssignmentController)
 	router.InitializeAssignmentsRoutes(errorAssignmentRouter, errorAssignmentController)
+}
+
+type MockNotificationsQueue struct{}
+
+func (m *MockNotificationsQueue) Publish(message queues.QueueMessage) error {
+	return nil
+}
+
+type MockTeacherActivityService struct{}
+
+func (m *MockTeacherActivityService) LogActivityIfAuxTeacher(courseID, teacherUUID, activityType, description string) {
+	// Mock implementation - do nothing
+}
+
+func (m *MockTeacherActivityService) GetCourseActivityLogs(courseID string) ([]*model.TeacherActivityLog, error) {
+	return []*model.TeacherActivityLog{}, nil
 }
 
 type MockAssignmentService struct{}
@@ -475,5 +494,5 @@ func TestDeleteAssignmentWithError(t *testing.T) {
 	errorAssignmentRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-	assert.Contains(t, w.Body.String(), "error deleting assignment")
+	assert.Contains(t, w.Body.String(), "error getting assignment by id")
 }

@@ -98,9 +98,9 @@ func (r *ModuleRepository) updateModuleFields(modules []model.Module, targetModu
 			if updatedModule.Description != "" {
 				modules[i].Description = updatedModule.Description
 			}
-			// Update Data field - explicit handling for slice
-			if updatedModule.Data != nil {
-				modules[i].Data = updatedModule.Data
+			// Update Resources field - explicit handling for slice
+			if updatedModule.Resources != nil {
+				modules[i].Resources = updatedModule.Resources
 			}
 			break
 		}
@@ -172,8 +172,8 @@ func (r *ModuleRepository) UpdateModule(id string, module model.Module) (*model.
 			updateFields["modules.$.description"] = module.Description
 		}
 		// Handle Data field update
-		if module.Data != nil {
-			updateFields["modules.$.data"] = module.Data
+		if module.Resources != nil {
+			updateFields["modules.$.resources"] = module.Resources
 		}
 
 		if len(updateFields) > 0 {
@@ -207,13 +207,56 @@ func (r *ModuleRepository) DeleteModule(id string) error {
 		return fmt.Errorf("invalid module ID: %v", err)
 	}
 
+	// First, get the course and find the module to delete
 	filter := bson.M{"modules._id": moduleUUID}
-	update := bson.M{"$pull": bson.M{"modules": bson.M{"_id": moduleUUID}}}
-
 	var course model.Course
-	err = r.moduleCollection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&course)
+	err = r.moduleCollection.FindOne(context.TODO(), filter).Decode(&course)
 	if err != nil {
-		return fmt.Errorf("failed to delete module: %v", err)
+		return fmt.Errorf("failed to find module: %v", err)
+	}
+
+	// Find the module to delete and its order
+	var deletedModuleOrder int
+	moduleFound := false
+	for _, module := range course.Modules {
+		if module.ID == moduleUUID {
+			deletedModuleOrder = module.Order
+			moduleFound = true
+			break
+		}
+	}
+
+	if !moduleFound {
+		return fmt.Errorf("module not found")
+	}
+
+	// Remove the module from the array
+	filteredModules := make([]model.Module, 0)
+	for _, module := range course.Modules {
+		if module.ID != moduleUUID {
+			filteredModules = append(filteredModules, module)
+		}
+	}
+
+	// Reorder modules: any module with order > deletedModuleOrder should decrease by 1
+	for i := range filteredModules {
+		if filteredModules[i].Order > deletedModuleOrder {
+			filteredModules[i].Order = filteredModules[i].Order - 1
+		}
+	}
+
+	// Sort modules by order to maintain consistency
+	sort.Slice(filteredModules, func(i, j int) bool {
+		return filteredModules[i].Order < filteredModules[j].Order
+	})
+
+	// Update the course with the reordered modules
+	courseFilter := bson.M{"_id": course.ID}
+	update := bson.M{"$set": bson.M{"modules": filteredModules}}
+
+	_, err = r.moduleCollection.UpdateOne(context.TODO(), courseFilter, update)
+	if err != nil {
+		return fmt.Errorf("failed to update modules after deletion: %v", err)
 	}
 
 	return nil

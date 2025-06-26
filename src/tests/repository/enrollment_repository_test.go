@@ -1024,6 +1024,7 @@ func TestCreateStudentFeedback(t *testing.T) {
 	feedback := model.StudentFeedback{
 		StudentUUID:  "student-123",
 		TeacherUUID:  "teacher-456",
+		CourseID:     createdCourse.ID.Hex(),
 		FeedbackType: model.FeedbackTypePositive,
 		Score:        85,
 		Feedback:     "Excellent work on the assignment!",
@@ -1043,6 +1044,7 @@ func TestCreateStudentFeedback(t *testing.T) {
 	createdFeedback := updatedEnrollment.Feedback[0]
 	assert.Equal(t, "student-123", createdFeedback.StudentUUID)
 	assert.Equal(t, "teacher-456", createdFeedback.TeacherUUID)
+	assert.Equal(t, createdCourse.ID.Hex(), createdFeedback.CourseID)
 	assert.Equal(t, model.FeedbackTypePositive, createdFeedback.FeedbackType)
 	assert.Equal(t, 85, createdFeedback.Score)
 	assert.Equal(t, "Excellent work on the assignment!", createdFeedback.Feedback)
@@ -1061,6 +1063,7 @@ func TestCreateStudentFeedbackWithInvalidEnrollmentID(t *testing.T) {
 	feedback := model.StudentFeedback{
 		StudentUUID:  "student-123",
 		TeacherUUID:  "teacher-456",
+		CourseID:     "some-course-id",
 		FeedbackType: model.FeedbackTypeNegative,
 		Score:        60,
 		Feedback:     "Needs improvement",
@@ -1112,6 +1115,7 @@ func TestCreateMultipleStudentFeedbacks(t *testing.T) {
 		{
 			StudentUUID:  "student-123",
 			TeacherUUID:  "teacher-456",
+			CourseID:     createdCourse.ID.Hex(),
 			FeedbackType: model.FeedbackTypePositive,
 			Score:        85,
 			Feedback:     "Great job on assignment 1!",
@@ -1120,6 +1124,7 @@ func TestCreateMultipleStudentFeedbacks(t *testing.T) {
 		{
 			StudentUUID:  "student-123",
 			TeacherUUID:  "teacher-789",
+			CourseID:     createdCourse.ID.Hex(),
 			FeedbackType: model.FeedbackTypeNeutral,
 			Score:        75,
 			Feedback:     "Good effort on assignment 2",
@@ -1128,6 +1133,7 @@ func TestCreateMultipleStudentFeedbacks(t *testing.T) {
 		{
 			StudentUUID:  "student-123",
 			TeacherUUID:  "teacher-456",
+			CourseID:     createdCourse.ID.Hex(),
 			FeedbackType: model.FeedbackTypePositive,
 			Score:        90,
 			Feedback:     "Excellent work on final project!",
@@ -1200,6 +1206,7 @@ func TestGetFeedbackByStudentId(t *testing.T) {
 			{
 				StudentUUID:  "student-123",
 				TeacherUUID:  "teacher-456",
+				CourseID:     createdCourse1.ID.Hex(),
 				FeedbackType: model.FeedbackTypePositive,
 				Score:        5,
 				Feedback:     "Excellent work in Math!",
@@ -1208,6 +1215,7 @@ func TestGetFeedbackByStudentId(t *testing.T) {
 			{
 				StudentUUID:  "student-123",
 				TeacherUUID:  "teacher-789",
+				CourseID:     createdCourse1.ID.Hex(),
 				FeedbackType: model.FeedbackTypeNeutral,
 				Score:        3,
 				Feedback:     "Good effort in Math",
@@ -1226,6 +1234,7 @@ func TestGetFeedbackByStudentId(t *testing.T) {
 			{
 				StudentUUID:  "student-123",
 				TeacherUUID:  "teacher-456",
+				CourseID:     createdCourse2.ID.Hex(),
 				FeedbackType: model.FeedbackTypeNegative,
 				Score:        2,
 				Feedback:     "Needs improvement in Science",
@@ -1279,6 +1288,7 @@ func TestGetFeedbackByStudentIdWithCourseFilter(t *testing.T) {
 			{
 				StudentUUID:  "student-123",
 				TeacherUUID:  "teacher-456",
+				CourseID:     createdCourse.ID.Hex(),
 				FeedbackType: model.FeedbackTypePositive,
 				Score:        4,
 				Feedback:     "Good work!",
@@ -1329,6 +1339,7 @@ func TestGetFeedbackByStudentIdWithFeedbackTypeFilter(t *testing.T) {
 			{
 				StudentUUID:  "student-123",
 				TeacherUUID:  "teacher-456",
+				CourseID:     createdCourse.ID.Hex(),
 				FeedbackType: model.FeedbackTypePositive,
 				Score:        5,
 				Feedback:     "Excellent!",
@@ -1337,6 +1348,7 @@ func TestGetFeedbackByStudentIdWithFeedbackTypeFilter(t *testing.T) {
 			{
 				StudentUUID:  "student-123",
 				TeacherUUID:  "teacher-789",
+				CourseID:     createdCourse.ID.Hex(),
 				FeedbackType: model.FeedbackTypeNegative,
 				Score:        2,
 				Feedback:     "Needs work",
@@ -1387,6 +1399,7 @@ func TestGetFeedbackByStudentIdWithScoreFilter(t *testing.T) {
 			{
 				StudentUUID:  "student-123",
 				TeacherUUID:  "teacher-456",
+				CourseID:     createdCourse.ID.Hex(),
 				FeedbackType: model.FeedbackTypePositive,
 				Score:        5,
 				Feedback:     "Perfect score!",
@@ -1395,6 +1408,7 @@ func TestGetFeedbackByStudentIdWithScoreFilter(t *testing.T) {
 			{
 				StudentUUID:  "student-123",
 				TeacherUUID:  "teacher-789",
+				CourseID:     createdCourse.ID.Hex(),
 				FeedbackType: model.FeedbackTypeNeutral,
 				Score:        3,
 				Feedback:     "Average work",
@@ -1403,6 +1417,7 @@ func TestGetFeedbackByStudentIdWithScoreFilter(t *testing.T) {
 			{
 				StudentUUID:  "student-123",
 				TeacherUUID:  "teacher-101",
+				CourseID:     createdCourse.ID.Hex(),
 				FeedbackType: model.FeedbackTypeNegative,
 				Score:        1,
 				Feedback:     "Poor performance",
@@ -1458,6 +1473,7 @@ func TestGetFeedbackByStudentIdWithDateFilter(t *testing.T) {
 			{
 				StudentUUID:  "student-123",
 				TeacherUUID:  "teacher-456",
+				CourseID:     createdCourse.ID.Hex(),
 				FeedbackType: model.FeedbackTypePositive,
 				Score:        4,
 				Feedback:     "Recent feedback",
@@ -1466,6 +1482,7 @@ func TestGetFeedbackByStudentIdWithDateFilter(t *testing.T) {
 			{
 				StudentUUID:  "student-123",
 				TeacherUUID:  "teacher-789",
+				CourseID:     createdCourse.ID.Hex(),
 				FeedbackType: model.FeedbackTypeNeutral,
 				Score:        3,
 				Feedback:     "Old feedback",
@@ -1533,6 +1550,7 @@ func TestGetFeedbackByStudentIdWithCombinedFilters(t *testing.T) {
 			{
 				StudentUUID:  "student-123",
 				TeacherUUID:  "teacher-456",
+				CourseID:     createdCourse.ID.Hex(),
 				FeedbackType: model.FeedbackTypePositive,
 				Score:        5,
 				Feedback:     "Perfect work in this course!",
@@ -1541,6 +1559,7 @@ func TestGetFeedbackByStudentIdWithCombinedFilters(t *testing.T) {
 			{
 				StudentUUID:  "student-123",
 				TeacherUUID:  "teacher-789",
+				CourseID:     createdCourse.ID.Hex(),
 				FeedbackType: model.FeedbackTypeNegative,
 				Score:        2,
 				Feedback:     "Poor work in this course",

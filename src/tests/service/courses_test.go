@@ -125,6 +125,53 @@ func (m *MockEnrollmentRepository) DeleteEnrollment(studentID string, course *mo
 	return nil
 }
 
+// ApproveStudent implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepository) ApproveStudent(studentID, courseID string) error {
+	if studentID == "error-student" || courseID == "error-course" {
+		return errors.New("error approving student")
+	}
+	return nil
+}
+
+// DisapproveStudent implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepository) DisapproveStudent(studentID, courseID, reason string) error {
+	if studentID == "error-student" || courseID == "error-course" {
+		return errors.New("error disapproving student")
+	}
+	return nil
+}
+
+// ReactivateDroppedEnrollment implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepository) ReactivateDroppedEnrollment(studentID, courseID string) error {
+	if studentID == "error-student" || courseID == "error-course" {
+		return errors.New("error reactivating enrollment")
+	}
+	return nil
+}
+
+// Backoffice statistics methods for MockEnrollmentRepository
+func (m *MockEnrollmentRepository) CountEnrollments() (int64, error) {
+	return 4, nil
+}
+
+func (m *MockEnrollmentRepository) CountEnrollmentsByStatus(status model.EnrollmentStatus) (int64, error) {
+	if status == model.EnrollmentStatusActive {
+		return 3, nil
+	}
+	if status == model.EnrollmentStatusCompleted {
+		return 1, nil
+	}
+	return 0, nil
+}
+
+func (m *MockEnrollmentRepository) CountEnrollmentsThisMonth() (int64, error) {
+	return 4, nil
+}
+
+func (m *MockEnrollmentRepository) CountUniqueStudents() (int64, error) {
+	return 3, nil
+}
+
 type MockCourseRepository struct{}
 
 // RemoveAuxTeacherFromCourse implements repository.CourseRepositoryInterface.
@@ -432,6 +479,38 @@ func (m *MockCourseRepository) GetCourseFeedback(courseID string, request schema
 	return []*model.CourseFeedback{}, nil
 }
 
+// Backoffice statistics methods for MockCourseRepository
+func (m *MockCourseRepository) CountCourses() (int64, error) {
+	return 2, nil
+}
+
+func (m *MockCourseRepository) CountActiveCourses() (int64, error) {
+	return 1, nil
+}
+
+func (m *MockCourseRepository) CountFinishedCourses() (int64, error) {
+	return 1, nil
+}
+
+func (m *MockCourseRepository) CountCoursesCreatedThisMonth() (int64, error) {
+	return 2, nil
+}
+
+func (m *MockCourseRepository) CountUniqueTeachers() (int64, error) {
+	return 2, nil
+}
+
+func (m *MockCourseRepository) CountUniqueAuxTeachers() (int64, error) {
+	return 0, nil
+}
+
+func (m *MockCourseRepository) GetRecentCourses(limit int) ([]schemas.CourseBasicInfo, error) {
+	return []schemas.CourseBasicInfo{
+		{ID: "course1", Title: "Test Course 1", TeacherName: "Teacher One", StudentsAmount: 15, Capacity: 20},
+		{ID: "course2", Title: "Test Course 2", TeacherName: "Teacher Two", StudentsAmount: 10, Capacity: 15},
+	}, nil
+}
+
 // Helper function to create ObjectID from string
 func mustParseObjectID(id string) primitive.ObjectID {
 	// For testing purposes, we'll create consistent ObjectIDs
@@ -538,14 +617,21 @@ func TestGetCourseByTitleWithNonExistentTitle(t *testing.T) {
 
 func TestDeleteCourse(t *testing.T) {
 	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
-	err := courseService.DeleteCourse("123e4567-e89b-12d3-a456-426614174000")
+	err := courseService.DeleteCourse("123e4567-e89b-12d3-a456-426614174000", "titular-teacher")
 	assert.NoError(t, err)
 }
 
 func TestDeleteCourseWithEmptyId(t *testing.T) {
 	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
-	err := courseService.DeleteCourse("")
+	err := courseService.DeleteCourse("", "titular-teacher")
 	assert.Error(t, err)
+}
+
+func TestDeleteCourseWithNonOwnerTeacher(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	err := courseService.DeleteCourse("123e4567-e89b-12d3-a456-426614174000", "non-owner-teacher")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "the user trying to delete the course is not the owner of the course")
 }
 
 func TestUpdateCourse(t *testing.T) {
@@ -553,7 +639,7 @@ func TestUpdateCourse(t *testing.T) {
 	course, err := courseService.UpdateCourse("123e4567-e89b-12d3-a456-426614174000", schemas.UpdateCourseRequest{
 		Title:       "Test Course",
 		Description: "Test Description",
-		TeacherID:   "123e4567-e89b-12d3-a456-426614174000",
+		TeacherID:   "titular-teacher",
 		Capacity:    10,
 	})
 	assert.NoError(t, err)
@@ -565,11 +651,24 @@ func TestUpdateCourseWithEmptyId(t *testing.T) {
 	course, err := courseService.UpdateCourse("", schemas.UpdateCourseRequest{
 		Title:       "Test Course",
 		Description: "Test Description",
-		TeacherID:   "123e4567-e89b-12d3-a456-426614174000",
+		TeacherID:   "titular-teacher",
 		Capacity:    10,
 	})
 	assert.Error(t, err)
 	assert.Nil(t, course)
+}
+
+func TestUpdateCourseWithNonOwnerTeacher(t *testing.T) {
+	courseService := service.NewCourseService(&MockCourseRepository{}, &MockEnrollmentRepository{})
+	course, err := courseService.UpdateCourse("123e4567-e89b-12d3-a456-426614174000", schemas.UpdateCourseRequest{
+		Title:       "Test Course",
+		Description: "Test Description",
+		TeacherID:   "non-owner-teacher",
+		Capacity:    10,
+	})
+	assert.Error(t, err)
+	assert.Nil(t, course)
+	assert.Contains(t, err.Error(), "the user trying to update the course is not the owner of the course")
 }
 
 func TestGetCoursesByStudentId(t *testing.T) {
@@ -607,6 +706,8 @@ func TestGetCoursesByUserId(t *testing.T) {
 	assert.NotNil(t, response)
 	assert.Equal(t, 1, len(response.Student))
 	assert.Equal(t, 1, len(response.Teacher))
+	assert.Equal(t, 1, len(response.AuxTeacher))
+	assert.Equal(t, "Aux Teacher Course", response.AuxTeacher[0].Title)
 }
 
 func TestGetCoursesByUserIdWithEmptyId(t *testing.T) {
@@ -1224,7 +1325,39 @@ func (m *MockEnrollmentRepositoryWithError) GetEnrollmentsByCourseID(courseID st
 }
 
 func (m *MockEnrollmentRepositoryWithError) GetStudentFavouriteCourses(studentUUID string) ([]*model.Enrollment, error) {
-	return nil, errors.New("error getting favourite courses")
+	return nil, errors.New("Error getting student favourite courses")
+}
+
+// ApproveStudent implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepositoryWithError) ApproveStudent(studentID, courseID string) error {
+	return errors.New("Error approving student")
+}
+
+// DisapproveStudent implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepositoryWithError) DisapproveStudent(studentID, courseID, reason string) error {
+	return errors.New("Error disapproving student")
+}
+
+// ReactivateDroppedEnrollment implements repository.EnrollmentRepositoryInterface.
+func (m *MockEnrollmentRepositoryWithError) ReactivateDroppedEnrollment(studentID, courseID string) error {
+	return errors.New("Error reactivating enrollment")
+}
+
+// Backoffice statistics methods for MockEnrollmentRepositoryWithError
+func (m *MockEnrollmentRepositoryWithError) CountEnrollments() (int64, error) {
+	return 0, errors.New("error counting enrollments")
+}
+
+func (m *MockEnrollmentRepositoryWithError) CountEnrollmentsByStatus(status model.EnrollmentStatus) (int64, error) {
+	return 0, errors.New("error counting enrollments by status")
+}
+
+func (m *MockEnrollmentRepositoryWithError) CountEnrollmentsThisMonth() (int64, error) {
+	return 0, errors.New("error counting enrollments this month")
+}
+
+func (m *MockEnrollmentRepositoryWithError) CountUniqueStudents() (int64, error) {
+	return 0, errors.New("error counting unique students")
 }
 
 // Mock course repository with errors for testing error scenarios
@@ -1280,4 +1413,56 @@ func (m *MockCourseRepositoryWithError) AddAuxTeacherToCourse(course *model.Cour
 
 func (m *MockCourseRepositoryWithError) RemoveAuxTeacherFromCourse(course *model.Course, auxTeacherId string) (*model.Course, error) {
 	return nil, errors.New("error removing aux teacher")
+}
+
+func (m *MockCourseRepositoryWithError) GetCoursesByAuxTeacherId(auxTeacherId string) ([]*model.Course, error) {
+	return nil, errors.New("error getting courses by aux teacher")
+}
+
+// Backoffice statistics methods for MockCourseRepositoryWithError
+func (m *MockCourseRepositoryWithError) CountCourses() (int64, error) {
+	return 0, errors.New("error counting courses")
+}
+
+func (m *MockCourseRepositoryWithError) CountActiveCourses() (int64, error) {
+	return 0, errors.New("error counting active courses")
+}
+
+func (m *MockCourseRepositoryWithError) CountFinishedCourses() (int64, error) {
+	return 0, errors.New("error counting finished courses")
+}
+
+func (m *MockCourseRepositoryWithError) CountCoursesCreatedThisMonth() (int64, error) {
+	return 0, errors.New("error counting courses created this month")
+}
+
+func (m *MockCourseRepositoryWithError) CountUniqueTeachers() (int64, error) {
+	return 0, errors.New("error counting unique teachers")
+}
+
+func (m *MockCourseRepositoryWithError) CountUniqueAuxTeachers() (int64, error) {
+	return 0, errors.New("error counting unique aux teachers")
+}
+
+func (m *MockCourseRepositoryWithError) GetRecentCourses(limit int) ([]schemas.CourseBasicInfo, error) {
+	return nil, errors.New("error getting recent courses")
+}
+
+func (m *MockCourseRepository) GetCoursesByAuxTeacherId(auxTeacherId string) ([]*model.Course, error) {
+	if auxTeacherId == "123e4567-e89b-12d3-a456-426614174000" {
+		return []*model.Course{
+			{
+				ID:          primitive.NewObjectID(),
+				Title:       "Aux Teacher Course",
+				Description: "Course where user is aux teacher",
+				TeacherUUID: "main-teacher-123",
+				AuxTeachers: []string{auxTeacherId, "other-aux-teacher"},
+				Capacity:    25,
+			},
+		}, nil
+	}
+	if auxTeacherId == "error-getting-courses" {
+		return nil, errors.New("Error getting courses")
+	}
+	return []*model.Course{}, nil
 }

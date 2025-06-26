@@ -20,8 +20,8 @@ import (
 var (
 	mockModuleService      = &MockModuleService{}
 	mockModuleErrorService = &MockModuleServiceWithError{}
-	normalModuleController = controller.NewModuleController(mockModuleService)
-	errorModuleController  = controller.NewModuleController(mockModuleErrorService)
+	normalModuleController = controller.NewModuleController(mockModuleService, mockActivityService)
+	errorModuleController  = controller.NewModuleController(mockModuleErrorService, mockActivityService)
 	normalModuleRouter     = gin.Default()
 	errorModuleRouter      = gin.Default()
 )
