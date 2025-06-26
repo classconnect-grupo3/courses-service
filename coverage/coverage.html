@@ -59,15 +59,15 @@
 				
 				<option value="file1">courses-service/src/controller/assignments_controller.go (89.4%)</option>
 				
-				<option value="file2">courses-service/src/controller/courses_controller.go (85.8%)</option>
+				<option value="file2">courses-service/src/controller/courses_controller.go (82.6%)</option>
 				
-				<option value="file3">courses-service/src/controller/enrollment_controller.go (86.8%)</option>
+				<option value="file3">courses-service/src/controller/enrollment_controller.go (83.9%)</option>
 				
-				<option value="file4">courses-service/src/controller/forum_controller.go (94.9%)</option>
+				<option value="file4">courses-service/src/controller/forum_controller.go (87.9%)</option>
 				
 				<option value="file5">courses-service/src/controller/module_controller.go (91.4%)</option>
 				
-				<option value="file6">courses-service/src/controller/statistics_controller.go (40.4%)</option>
+				<option value="file6">courses-service/src/controller/statistics_controller.go (50.6%)</option>
 				
 				<option value="file7">courses-service/src/controller/submission_controller.go (77.0%)</option>
 				
@@ -75,17 +75,17 @@
 				
 				<option value="file9">courses-service/src/database/connection.go (71.4%)</option>
 				
-				<option value="file10">courses-service/src/repository/assignment_repository.go (57.3%)</option>
+				<option value="file10">courses-service/src/repository/assignment_repository.go (84.6%)</option>
 				
-				<option value="file11">courses-service/src/repository/course_repository.go (60.1%)</option>
+				<option value="file11">courses-service/src/repository/course_repository.go (80.7%)</option>
 				
-				<option value="file12">courses-service/src/repository/enrollment_repository.go (65.9%)</option>
+				<option value="file12">courses-service/src/repository/enrollment_repository.go (79.8%)</option>
 				
-				<option value="file13">courses-service/src/repository/forum_repository.go (77.5%)</option>
+				<option value="file13">courses-service/src/repository/forum_repository.go (85.6%)</option>
 				
 				<option value="file14">courses-service/src/repository/module_repository.go (90.0%)</option>
 				
-				<option value="file15">courses-service/src/repository/submission_repository.go (63.9%)</option>
+				<option value="file15">courses-service/src/repository/submission_repository.go (83.3%)</option>
 				
 				<option value="file16">courses-service/src/repository/teacher_activity_log_repository.go (7.1%)</option>
 				
@@ -101,7 +101,7 @@
 				
 				<option value="file22">courses-service/src/service/module_service.go (100.0%)</option>
 				
-				<option value="file23">courses-service/src/service/statistics_service.go (53.3%)</option>
+				<option value="file23">courses-service/src/service/statistics_service.go (83.7%)</option>
 				
 				<option value="file24">courses-service/src/service/submission_service.go (72.7%)</option>
 				
@@ -406,6 +406,7 @@ import (
 
         "courses-service/src/ai"
         "courses-service/src/model"
+        "courses-service/src/queues"
         "courses-service/src/schemas"
         "courses-service/src/service"
 
@@ -413,16 +414,18 @@ import (
 )
 
 type CourseController struct {
-        service         service.CourseServiceInterface
-        aiClient        *ai.AiClient
-        activityService service.TeacherActivityServiceInterface
+        service            service.CourseServiceInterface
+        aiClient           *ai.AiClient
+        activityService    service.TeacherActivityServiceInterface
+        notificationsQueue queues.NotificationsQueueInterface
 }
 
-func NewCourseController(service service.CourseServiceInterface, aiClient *ai.AiClient, activityService service.TeacherActivityServiceInterface) *CourseController <span class="cov8" title="1">{
+func NewCourseController(service service.CourseServiceInterface, aiClient *ai.AiClient, activityService service.TeacherActivityServiceInterface, notificationsQueue queues.NotificationsQueueInterface) *CourseController <span class="cov8" title="1">{
         return &amp;CourseController{
                 service:         service,
                 aiClient:        aiClient,
                 activityService: activityService,
+                notificationsQueue: notificationsQueue,
         }
 }</span>
 
@@ -681,7 +684,16 @@ func (c *CourseController) AddAuxTeacherToCourse(ctx *gin.Context) <span class="
                 return
         }</span>
         <span class="cov8" title="1">slog.Debug("Aux teacher added to course", "course", course)
-        ctx.JSON(http.StatusOK, course)</span>
+
+        message := queues.NewAddedAuxTeacherToCourseMessage(id, course.Title, auxTeacherId)
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, course)</span>
 }
 
 // @Summary Remove an aux teacher from a course
@@ -719,7 +731,16 @@ func (c *CourseController) RemoveAuxTeacherFromCourse(ctx *gin.Context) <span cl
                 return
         }</span>
         <span class="cov8" title="1">slog.Debug("Aux teacher removed from course", "course", course)
-        ctx.JSON(http.StatusOK, course)</span>
+
+        message := queues.NewRemoveAuxTeacherFromCourseMessage(id, course.Title, auxTeacherId)
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, course)</span>
 }
 
 // @Summary Get favourite courses
@@ -799,7 +820,24 @@ func (c *CourseController) CreateCourseFeedback(ctx *gin.Context) <span class="c
         }</span>
 
         <span class="cov8" title="1">slog.Debug("Course feedback created", "feedback", feedbackModel)
-        ctx.JSON(http.StatusOK, feedbackModel)</span>
+
+        // Getting the course so we have the teacher ID
+        course, err := c.service.GetCourseById(courseId)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error getting course", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">message := queues.NewFeedbackCreatedMessage(course.TeacherUUID, courseId, feedbackModel.ID.Hex(), feedbackModel.Feedback, feedbackModel.Score, feedbackModel.CreatedAt)
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, feedbackModel)</span>
 }
 
 // @Summary Get course feedback
@@ -916,27 +954,31 @@ func (c *CourseController) GetCourseMembers(ctx *gin.Context) <span class="cov8"
 import (
         "courses-service/src/ai"
         "courses-service/src/model"
+        "courses-service/src/queues"
         "courses-service/src/schemas"
         "courses-service/src/service"
         "fmt"
         "log/slog"
         "net/http"
         "slices"
+        "time"
 
         "github.com/gin-gonic/gin"
 )
 
 type EnrollmentController struct {
-        enrollmentService service.EnrollmentServiceInterface
-        aiClient          *ai.AiClient
-        activityService   service.TeacherActivityServiceInterface
+        enrollmentService  service.EnrollmentServiceInterface
+        aiClient           *ai.AiClient
+        activityService    service.TeacherActivityServiceInterface
+        notificationsQueue queues.NotificationsQueueInterface
 }
 
-func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface, aiClient *ai.AiClient, activityService service.TeacherActivityServiceInterface) *EnrollmentController <span class="cov8" title="1">{
+func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface, aiClient *ai.AiClient, activityService service.TeacherActivityServiceInterface, notificationsQueue queues.NotificationsQueueInterface) *EnrollmentController <span class="cov8" title="1">{
         return &amp;EnrollmentController{
-                enrollmentService: enrollmentService,
-                aiClient:          aiClient,
-                activityService:   activityService,
+                enrollmentService:  enrollmentService,
+                aiClient:           aiClient,
+                activityService:    activityService,
+                notificationsQueue: notificationsQueue,
         }
 }</span>
 
@@ -973,7 +1015,17 @@ func (c *EnrollmentController) EnrollStudent(ctx *gin.Context) <span class="cov8
         }</span>
 
         <span class="cov8" title="1">slog.Debug("Student enrolled in course", "studentId", enrollmentRequest.StudentID, "courseId", courseID)
-        ctx.JSON(http.StatusCreated, gin.H{"message": "Student successfully enrolled in course"})</span>
+
+        message := queues.NewEnrolledStudentToCourseMessage(courseID, enrollmentRequest.StudentID)
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">ctx.JSON(http.StatusCreated, gin.H{"message": "Student successfully enrolled in course"})</span>
 }
 
 // @Summary Unenroll a student from a course
@@ -1010,7 +1062,17 @@ func (c *EnrollmentController) UnenrollStudent(ctx *gin.Context) <span class="co
         }</span>
 
         <span class="cov8" title="1">slog.Debug("Student unenrolled from course", "studentId", studentId, "courseId", courseID)
-        ctx.JSON(http.StatusOK, gin.H{"message": "Student successfully unenrolled from course"})</span>
+
+        message := queues.NewUnenrolledStudentFromCourseMessage(courseID, studentId, "")
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, gin.H{"message": "Student successfully unenrolled from course"})</span>
 }
 
 // @Summary Get enrollments by course ID
@@ -1148,7 +1210,16 @@ func (c *EnrollmentController) CreateFeedback(ctx *gin.Context) <span class="cov
         }</span>
 
         <span class="cov8" title="1">slog.Debug("Feedback created", "studentId", feedbackRequest.StudentUUID, "teacherId", feedbackRequest.TeacherUUID)
-        ctx.JSON(http.StatusOK, gin.H{"message": "Feedback created"})</span>
+
+        message := queues.NewFeedbackCreatedMessage(feedbackRequest.StudentUUID, courseID, "", feedbackRequest.Feedback, feedbackRequest.Score, time.Now())
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, gin.H{"message": "Feedback created"})</span>
 }
 
 // @Summary Get feedback by student ID
@@ -1352,8 +1423,10 @@ import (
         "fmt"
         "log/slog"
         "net/http"
+        "time"
 
         "courses-service/src/model"
+        "courses-service/src/queues"
         "courses-service/src/schemas"
         "courses-service/src/service"
 
@@ -1361,14 +1434,16 @@ import (
 )
 
 type ForumController struct {
-        service         service.ForumServiceInterface
-        activityService service.TeacherActivityServiceInterface
+        service            service.ForumServiceInterface
+        activityService    service.TeacherActivityServiceInterface
+        notificationsQueue queues.NotificationsQueueInterface
 }
 
-func NewForumController(service service.ForumServiceInterface, activityService service.TeacherActivityServiceInterface) *ForumController <span class="cov8" title="1">{
+func NewForumController(service service.ForumServiceInterface, activityService service.TeacherActivityServiceInterface, notificationsQueue queues.NotificationsQueueInterface) *ForumController <span class="cov8" title="1">{
         return &amp;ForumController{
-                service:         service,
-                activityService: activityService,
+                service:            service,
+                activityService:    activityService,
+                notificationsQueue: notificationsQueue,
         }
 }</span>
 
@@ -1420,7 +1495,16 @@ func (c *ForumController) CreateQuestion(ctx *gin.Context) <span class="cov8" ti
 
         <span class="cov8" title="1">response := c.mapQuestionToDetailResponse(question)
         slog.Debug("Question created", "question_id", question.ID.Hex())
-        ctx.JSON(http.StatusCreated, response)</span>
+
+        message := queues.NewForumActivityMessage(request.CourseID, request.AuthorID, question.ID.Hex(), question.Title, response.CreatedAt)
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusCreated, response)</span>
 }
 
 // @Summary Get question by ID
@@ -1523,7 +1607,16 @@ func (c *ForumController) UpdateQuestion(ctx *gin.Context) <span class="cov8" ti
 
         <span class="cov8" title="1">response := c.mapQuestionToDetailResponse(question)
         slog.Debug("Question updated", "question_id", id)
-        ctx.JSON(http.StatusOK, response)</span>
+
+        message := queues.NewForumActivityMessage(question.CourseID, question.AuthorID, id, question.Title, response.UpdatedAt)
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, response)</span>
 }
 
 // @Summary Delete a question
@@ -1606,11 +1699,14 @@ func (c *ForumController) AddAnswer(ctx *gin.Context) <span class="cov8" title="
                 return
         }</span>
 
+        <span class="cov8" title="1">var question *model.ForumQuestion
+        var qErr error
+
         // Log activity if teacher is auxiliary - we need to get the question to know the course
-        <span class="cov8" title="1">teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+        teacherUUID := ctx.GetHeader("X-Teacher-UUID")
         if teacherUUID != "" &amp;&amp; teacherUUID == request.AuthorID </span><span class="cov0" title="0">{
                 // Get the question to find the course ID
-                question, qErr := c.service.GetQuestionById(questionID)
+                question, qErr = c.service.GetQuestionById(questionID)
                 if qErr == nil &amp;&amp; question != nil </span><span class="cov0" title="0">{
                         c.activityService.LogActivityIfAuxTeacher(
                                 question.CourseID,
@@ -1621,9 +1717,25 @@ func (c *ForumController) AddAnswer(ctx *gin.Context) <span class="cov8" title="
                 }</span>
         }
 
+        <span class="cov8" title="1">question, qErr = c.service.GetQuestionById(questionID)
+        if qErr != nil </span><span class="cov0" title="0">{
+                slog.Error("Error getting question", "error", qErr)
+                ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: qErr.Error()})
+                return
+        }</span>
+
         <span class="cov8" title="1">response := c.mapAnswerToResponse(answer)
         slog.Debug("Answer added", "question_id", questionID, "answer_id", answer.ID)
-        ctx.JSON(http.StatusCreated, response)</span>
+
+        message := queues.NewForumActivityMessage(question.CourseID, question.AuthorID, question.ID.Hex(), question.Title, response.CreatedAt)
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusCreated, response)</span>
 }
 
 // @Summary Update an answer
@@ -1792,9 +1904,26 @@ func (c *ForumController) VoteQuestion(ctx *gin.Context) <span class="cov8" titl
                 return
         }</span>
 
+        // get the question to find the course ID
+        <span class="cov8" title="1">question, qErr := c.service.GetQuestionById(questionID)
+        if qErr != nil </span><span class="cov0" title="0">{
+                slog.Error("Error getting question", "error", qErr)
+                ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: qErr.Error()})
+                return
+        }</span>
+
         <span class="cov8" title="1">voteTypeStr := "up"
         if request.VoteType == model.VoteTypeDown </span><span class="cov8" title="1">{
                 voteTypeStr = "down"
+        }</span>
+
+        <span class="cov8" title="1">message := queues.NewForumActivityMessage(question.CourseID, request.UserID, question.ID.Hex(), question.Title, time.Now())
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
         }</span>
 
         <span class="cov8" title="1">slog.Debug("Vote registered", "question_id", questionID, "vote_type", voteTypeStr)
@@ -1839,8 +1968,26 @@ func (c *ForumController) VoteAnswer(ctx *gin.Context) <span class="cov8" title=
                 voteTypeStr = "down"
         }</span>
 
+        // get the question to find the course ID
+        <span class="cov8" title="1">question, qErr := c.service.GetQuestionById(questionID)
+        if qErr != nil </span><span class="cov0" title="0">{
+                slog.Error("Error getting question", "error", qErr)
+                ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: qErr.Error()})
+                return
+        }</span>
         <span class="cov8" title="1">slog.Debug("Vote registered", "question_id", questionID, "answer_id", answerID, "vote_type", voteTypeStr)
-        ctx.JSON(http.StatusOK, schemas.VoteResponse{Message: "Vote registered successfully"})</span>
+
+        message := queues.NewForumActivityMessage(question.CourseID, request.UserID, question.ID.Hex(), question.Title, time.Now())
+        slog.Info("Publishing message", "message", message)
+        err = c.notificationsQueue.Publish(message)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error publishing message", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, schemas.VoteResponse{Message: "Vote registered successfully"})</span>
 }
 
 // @Summary Remove vote from question
@@ -2411,36 +2558,36 @@ func (c *StatisticsController) GetTeacherCoursesStatistics(ctx *gin.Context) <sp
 }
 
 // GetBackofficeStatistics returns general system statistics for backoffice
-func (c *StatisticsController) GetBackofficeStatistics(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *StatisticsController) GetBackofficeStatistics(ctx *gin.Context) <span class="cov8" title="1">{
         data, err := c.statisticsService.GetBackofficeStatistics(ctx)
         if err != nil </span><span class="cov0" title="0">{
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">ctx.JSON(http.StatusOK, data)</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, data)</span>
 }
 
 // GetBackofficeCoursesStats returns detailed course statistics for backoffice
-func (c *StatisticsController) GetBackofficeCoursesStats(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *StatisticsController) GetBackofficeCoursesStats(ctx *gin.Context) <span class="cov8" title="1">{
         data, err := c.statisticsService.GetBackofficeCoursesStats(ctx)
         if err != nil </span><span class="cov0" title="0">{
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">ctx.JSON(http.StatusOK, data)</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, data)</span>
 }
 
 // GetBackofficeAssignmentsStats returns detailed assignment statistics for backoffice
-func (c *StatisticsController) GetBackofficeAssignmentsStats(ctx *gin.Context) <span class="cov0" title="0">{
+func (c *StatisticsController) GetBackofficeAssignmentsStats(ctx *gin.Context) <span class="cov8" title="1">{
         data, err := c.statisticsService.GetBackofficeAssignmentsStats(ctx)
         if err != nil </span><span class="cov0" title="0">{
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
 
-        <span class="cov0" title="0">ctx.JSON(http.StatusOK, data)</span>
+        <span class="cov8" title="1">ctx.JSON(http.StatusOK, data)</span>
 }
 </pre>
 		
@@ -3118,36 +3265,36 @@ func (r *AssignmentRepository) DeleteAssignment(id string) error <span class="co
 }
 
 // CountAssignments returns the total number of assignments
-func (r *AssignmentRepository) CountAssignments() (int64, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) CountAssignments() (int64, error) <span class="cov8" title="1">{
         count, err := r.assignmentCollection.CountDocuments(context.TODO(), bson.M{})
         if err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to count assignments: %v", err)
         }</span>
-        <span class="cov0" title="0">return count, nil</span>
+        <span class="cov8" title="1">return count, nil</span>
 }
 
 // CountAssignmentsByType returns the number of assignments by type
-func (r *AssignmentRepository) CountAssignmentsByType(assignmentType string) (int64, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) CountAssignmentsByType(assignmentType string) (int64, error) <span class="cov8" title="1">{
         filter := bson.M{"type": assignmentType}
         count, err := r.assignmentCollection.CountDocuments(context.TODO(), filter)
         if err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to count assignments by type: %v", err)
         }</span>
-        <span class="cov0" title="0">return count, nil</span>
+        <span class="cov8" title="1">return count, nil</span>
 }
 
 // CountAssignmentsByStatus returns the number of assignments by status
-func (r *AssignmentRepository) CountAssignmentsByStatus(status string) (int64, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) CountAssignmentsByStatus(status string) (int64, error) <span class="cov8" title="1">{
         filter := bson.M{"status": status}
         count, err := r.assignmentCollection.CountDocuments(context.TODO(), filter)
         if err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to count assignments by status: %v", err)
         }</span>
-        <span class="cov0" title="0">return count, nil</span>
+        <span class="cov8" title="1">return count, nil</span>
 }
 
 // CountAssignmentsCreatedThisMonth returns the number of assignments created this month
-func (r *AssignmentRepository) CountAssignmentsCreatedThisMonth() (int64, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) CountAssignmentsCreatedThisMonth() (int64, error) <span class="cov8" title="1">{
         now := time.Now()
         startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
         endOfMonth := startOfMonth.AddDate(0, 1, 0)
@@ -3163,11 +3310,11 @@ func (r *AssignmentRepository) CountAssignmentsCreatedThisMonth() (int64, error)
         if err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to count assignments created this month: %v", err)
         }</span>
-        <span class="cov0" title="0">return count, nil</span>
+        <span class="cov8" title="1">return count, nil</span>
 }
 
 // GetAssignmentDistribution returns assignment distribution by type and status
-func (r *AssignmentRepository) GetAssignmentDistribution() ([]schemas.AssignmentDistribution, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) GetAssignmentDistribution() ([]schemas.AssignmentDistribution, error) <span class="cov8" title="1">{
         pipeline := []bson.M{
                 {"$group": bson.M{
                         "_id": bson.M{
@@ -3189,18 +3336,18 @@ func (r *AssignmentRepository) GetAssignmentDistribution() ([]schemas.Assignment
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to get assignment distribution: %v", err)
         }</span>
-        <span class="cov0" title="0">defer cursor.Close(context.TODO())
+        <span class="cov8" title="1">defer cursor.Close(context.TODO())
 
         var distribution []schemas.AssignmentDistribution
         if err = cursor.All(context.TODO(), &amp;distribution); err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to decode assignment distribution: %v", err)
         }</span>
 
-        <span class="cov0" title="0">return distribution, nil</span>
+        <span class="cov8" title="1">return distribution, nil</span>
 }
 
 // GetRecentAssignments returns recent assignments with basic information
-func (r *AssignmentRepository) GetRecentAssignments(limit int) ([]schemas.AssignmentBasicInfo, error) <span class="cov0" title="0">{
+func (r *AssignmentRepository) GetRecentAssignments(limit int) ([]schemas.AssignmentBasicInfo, error) <span class="cov8" title="1">{
         pipeline := []bson.M{
                 {"$sort": bson.M{"created_at": -1}},
                 {"$limit": limit},
@@ -3219,14 +3366,14 @@ func (r *AssignmentRepository) GetRecentAssignments(limit int) ([]schemas.Assign
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to get recent assignments: %v", err)
         }</span>
-        <span class="cov0" title="0">defer cursor.Close(context.TODO())
+        <span class="cov8" title="1">defer cursor.Close(context.TODO())
 
         var assignments []schemas.AssignmentBasicInfo
         if err = cursor.All(context.TODO(), &amp;assignments); err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to decode recent assignments: %v", err)
         }</span>
 
-        <span class="cov0" title="0">return assignments, nil</span>
+        <span class="cov8" title="1">return assignments, nil</span>
 }
 </pre>
 		
@@ -3618,38 +3765,38 @@ func (r *CourseRepository) GetCourseFeedback(courseID string, getCourseFeedbackR
 }
 
 // CountCourses returns the total number of courses
-func (r *CourseRepository) CountCourses() (int64, error) <span class="cov0" title="0">{
+func (r *CourseRepository) CountCourses() (int64, error) <span class="cov8" title="1">{
         count, err := r.courseCollection.CountDocuments(context.TODO(), bson.M{})
         if err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to count courses: %v", err)
         }</span>
-        <span class="cov0" title="0">return count, nil</span>
+        <span class="cov8" title="1">return count, nil</span>
 }
 
 // CountActiveCourses returns the number of active courses (courses that have not ended yet)
-func (r *CourseRepository) CountActiveCourses() (int64, error) <span class="cov0" title="0">{
+func (r *CourseRepository) CountActiveCourses() (int64, error) <span class="cov8" title="1">{
         now := time.Now()
         filter := bson.M{"end_date": bson.M{"$gt": now}}
         count, err := r.courseCollection.CountDocuments(context.TODO(), filter)
         if err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to count active courses: %v", err)
         }</span>
-        <span class="cov0" title="0">return count, nil</span>
+        <span class="cov8" title="1">return count, nil</span>
 }
 
 // CountFinishedCourses returns the number of finished courses (courses that have ended)
-func (r *CourseRepository) CountFinishedCourses() (int64, error) <span class="cov0" title="0">{
+func (r *CourseRepository) CountFinishedCourses() (int64, error) <span class="cov8" title="1">{
         now := time.Now()
         filter := bson.M{"end_date": bson.M{"$lte": now}}
         count, err := r.courseCollection.CountDocuments(context.TODO(), filter)
         if err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to count finished courses: %v", err)
         }</span>
-        <span class="cov0" title="0">return count, nil</span>
+        <span class="cov8" title="1">return count, nil</span>
 }
 
 // CountCoursesCreatedThisMonth returns the number of courses created this month
-func (r *CourseRepository) CountCoursesCreatedThisMonth() (int64, error) <span class="cov0" title="0">{
+func (r *CourseRepository) CountCoursesCreatedThisMonth() (int64, error) <span class="cov8" title="1">{
         now := time.Now()
         startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
         endOfMonth := startOfMonth.AddDate(0, 1, 0)
@@ -3665,11 +3812,11 @@ func (r *CourseRepository) CountCoursesCreatedThisMonth() (int64, error) <span c
         if err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to count courses created this month: %v", err)
         }</span>
-        <span class="cov0" title="0">return count, nil</span>
+        <span class="cov8" title="1">return count, nil</span>
 }
 
 // CountUniqueTeachers returns the number of unique teachers
-func (r *CourseRepository) CountUniqueTeachers() (int64, error) <span class="cov0" title="0">{
+func (r *CourseRepository) CountUniqueTeachers() (int64, error) <span class="cov8" title="1">{
         pipeline := []bson.M{
                 {"$group": bson.M{"_id": "$teacher_uuid"}},
                 {"$count": "unique_teachers"},
@@ -3679,27 +3826,27 @@ func (r *CourseRepository) CountUniqueTeachers() (int64, error) <span class="cov
         if err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to count unique teachers: %v", err)
         }</span>
-        <span class="cov0" title="0">defer cursor.Close(context.TODO())
+        <span class="cov8" title="1">defer cursor.Close(context.TODO())
 
         var result []bson.M
         if err = cursor.All(context.TODO(), &amp;result); err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to decode unique teachers count: %v", err)
         }</span>
 
-        <span class="cov0" title="0">if len(result) == 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if len(result) == 0 </span><span class="cov0" title="0">{
                 return 0, nil
         }</span>
 
-        <span class="cov0" title="0">count, ok := result[0]["unique_teachers"].(int32)
+        <span class="cov8" title="1">count, ok := result[0]["unique_teachers"].(int32)
         if !ok </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("unexpected result format for unique teachers count")
         }</span>
 
-        <span class="cov0" title="0">return int64(count), nil</span>
+        <span class="cov8" title="1">return int64(count), nil</span>
 }
 
 // CountUniqueAuxTeachers returns the number of unique auxiliary teachers
-func (r *CourseRepository) CountUniqueAuxTeachers() (int64, error) <span class="cov0" title="0">{
+func (r *CourseRepository) CountUniqueAuxTeachers() (int64, error) <span class="cov8" title="1">{
         pipeline := []bson.M{
                 {"$unwind": "$aux_teachers"},
                 {"$group": bson.M{"_id": "$aux_teachers"}},
@@ -3710,27 +3857,27 @@ func (r *CourseRepository) CountUniqueAuxTeachers() (int64, error) <span class="
         if err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to count unique aux teachers: %v", err)
         }</span>
-        <span class="cov0" title="0">defer cursor.Close(context.TODO())
+        <span class="cov8" title="1">defer cursor.Close(context.TODO())
 
         var result []bson.M
         if err = cursor.All(context.TODO(), &amp;result); err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to decode unique aux teachers count: %v", err)
         }</span>
 
-        <span class="cov0" title="0">if len(result) == 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if len(result) == 0 </span><span class="cov0" title="0">{
                 return 0, nil
         }</span>
 
-        <span class="cov0" title="0">count, ok := result[0]["unique_aux_teachers"].(int32)
+        <span class="cov8" title="1">count, ok := result[0]["unique_aux_teachers"].(int32)
         if !ok </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("unexpected result format for unique aux teachers count")
         }</span>
 
-        <span class="cov0" title="0">return int64(count), nil</span>
+        <span class="cov8" title="1">return int64(count), nil</span>
 }
 
 // GetRecentCourses returns recent courses with basic information
-func (r *CourseRepository) GetRecentCourses(limit int) ([]schemas.CourseBasicInfo, error) <span class="cov0" title="0">{
+func (r *CourseRepository) GetRecentCourses(limit int) ([]schemas.CourseBasicInfo, error) <span class="cov8" title="1">{
         pipeline := []bson.M{
                 {"$sort": bson.M{"created_at": -1}},
                 {"$limit": limit},
@@ -3748,14 +3895,14 @@ func (r *CourseRepository) GetRecentCourses(limit int) ([]schemas.CourseBasicInf
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to get recent courses: %v", err)
         }</span>
-        <span class="cov0" title="0">defer cursor.Close(context.TODO())
+        <span class="cov8" title="1">defer cursor.Close(context.TODO())
 
         var courses []schemas.CourseBasicInfo
         if err = cursor.All(context.TODO(), &amp;courses); err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to decode recent courses: %v", err)
         }</span>
 
-        <span class="cov0" title="0">return courses, nil</span>
+        <span class="cov8" title="1">return courses, nil</span>
 }
 </pre>
 		
@@ -4137,26 +4284,26 @@ func (r *EnrollmentRepository) ReactivateDroppedEnrollment(studentID, courseID s
 }
 
 // CountEnrollments returns the total number of enrollments
-func (r *EnrollmentRepository) CountEnrollments() (int64, error) <span class="cov0" title="0">{
+func (r *EnrollmentRepository) CountEnrollments() (int64, error) <span class="cov8" title="1">{
         count, err := r.enrollmentCollection.CountDocuments(context.TODO(), bson.M{})
         if err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to count enrollments: %v", err)
         }</span>
-        <span class="cov0" title="0">return count, nil</span>
+        <span class="cov8" title="1">return count, nil</span>
 }
 
 // CountEnrollmentsByStatus returns the number of enrollments by status
-func (r *EnrollmentRepository) CountEnrollmentsByStatus(status model.EnrollmentStatus) (int64, error) <span class="cov0" title="0">{
+func (r *EnrollmentRepository) CountEnrollmentsByStatus(status model.EnrollmentStatus) (int64, error) <span class="cov8" title="1">{
         filter := bson.M{"status": status}
         count, err := r.enrollmentCollection.CountDocuments(context.TODO(), filter)
         if err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to count enrollments by status: %v", err)
         }</span>
-        <span class="cov0" title="0">return count, nil</span>
+        <span class="cov8" title="1">return count, nil</span>
 }
 
 // CountEnrollmentsThisMonth returns the number of enrollments created this month
-func (r *EnrollmentRepository) CountEnrollmentsThisMonth() (int64, error) <span class="cov0" title="0">{
+func (r *EnrollmentRepository) CountEnrollmentsThisMonth() (int64, error) <span class="cov8" title="1">{
         now := time.Now()
         startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
         endOfMonth := startOfMonth.AddDate(0, 1, 0)
@@ -4172,11 +4319,11 @@ func (r *EnrollmentRepository) CountEnrollmentsThisMonth() (int64, error) <span 
         if err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to count enrollments this month: %v", err)
         }</span>
-        <span class="cov0" title="0">return count, nil</span>
+        <span class="cov8" title="1">return count, nil</span>
 }
 
 // CountUniqueStudents returns the number of unique students
-func (r *EnrollmentRepository) CountUniqueStudents() (int64, error) <span class="cov0" title="0">{
+func (r *EnrollmentRepository) CountUniqueStudents() (int64, error) <span class="cov8" title="1">{
         pipeline := []bson.M{
                 {"$group": bson.M{"_id": "$student_id"}},
                 {"$count": "unique_students"},
@@ -4186,23 +4333,23 @@ func (r *EnrollmentRepository) CountUniqueStudents() (int64, error) <span class=
         if err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to count unique students: %v", err)
         }</span>
-        <span class="cov0" title="0">defer cursor.Close(context.TODO())
+        <span class="cov8" title="1">defer cursor.Close(context.TODO())
 
         var result []bson.M
         if err = cursor.All(context.TODO(), &amp;result); err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to decode unique students count: %v", err)
         }</span>
 
-        <span class="cov0" title="0">if len(result) == 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if len(result) == 0 </span><span class="cov0" title="0">{
                 return 0, nil
         }</span>
 
-        <span class="cov0" title="0">count, ok := result[0]["unique_students"].(int32)
+        <span class="cov8" title="1">count, ok := result[0]["unique_students"].(int32)
         if !ok </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("unexpected result format for unique students count")
         }</span>
 
-        <span class="cov0" title="0">return int64(count), nil</span>
+        <span class="cov8" title="1">return int64(count), nil</span>
 }
 </pre>
 		
@@ -4663,26 +4810,26 @@ func (r *ForumRepository) SearchQuestions(courseID string, query string, tags []
 }
 
 // CountQuestions returns the total number of questions
-func (r *ForumRepository) CountQuestions() (int64, error) <span class="cov0" title="0">{
+func (r *ForumRepository) CountQuestions() (int64, error) <span class="cov8" title="1">{
         count, err := r.questionCollection.CountDocuments(context.TODO(), bson.M{})
         if err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to count questions: %v", err)
         }</span>
-        <span class="cov0" title="0">return count, nil</span>
+        <span class="cov8" title="1">return count, nil</span>
 }
 
 // CountQuestionsByStatus returns the number of questions by status
-func (r *ForumRepository) CountQuestionsByStatus(status model.QuestionStatus) (int64, error) <span class="cov0" title="0">{
+func (r *ForumRepository) CountQuestionsByStatus(status model.QuestionStatus) (int64, error) <span class="cov8" title="1">{
         filter := bson.M{"status": status}
         count, err := r.questionCollection.CountDocuments(context.TODO(), filter)
         if err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to count questions by status: %v", err)
         }</span>
-        <span class="cov0" title="0">return count, nil</span>
+        <span class="cov8" title="1">return count, nil</span>
 }
 
 // CountAnswers returns the total number of answers across all questions
-func (r *ForumRepository) CountAnswers() (int64, error) <span class="cov0" title="0">{
+func (r *ForumRepository) CountAnswers() (int64, error) <span class="cov8" title="1">{
         pipeline := []bson.M{
                 {"$unwind": "$answers"},
                 {"$count": "total_answers"},
@@ -4692,23 +4839,23 @@ func (r *ForumRepository) CountAnswers() (int64, error) <span class="cov0" title
         if err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to count answers: %v", err)
         }</span>
-        <span class="cov0" title="0">defer cursor.Close(context.TODO())
+        <span class="cov8" title="1">defer cursor.Close(context.TODO())
 
         var result []bson.M
         if err = cursor.All(context.TODO(), &amp;result); err != nil </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("failed to decode answers count: %v", err)
         }</span>
 
-        <span class="cov0" title="0">if len(result) == 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if len(result) == 0 </span><span class="cov0" title="0">{
                 return 0, nil
         }</span>
 
-        <span class="cov0" title="0">count, ok := result[0]["total_answers"].(int32)
+        <span class="cov8" title="1">count, ok := result[0]["total_answers"].(int32)
         if !ok </span><span class="cov0" title="0">{
                 return 0, fmt.Errorf("unexpected result format for answers count")
         }</span>
 
-        <span class="cov0" title="0">return int64(count), nil</span>
+        <span class="cov8" title="1">return int64(count), nil</span>
 }
 </pre>
 		
@@ -5198,26 +5345,26 @@ func (r *MongoSubmissionRepository) DeleteByStudentAndCourse(ctx context.Context
 }
 
 // CountSubmissions returns the total number of submissions
-func (r *MongoSubmissionRepository) CountSubmissions(ctx context.Context) (int64, error) <span class="cov0" title="0">{
+func (r *MongoSubmissionRepository) CountSubmissions(ctx context.Context) (int64, error) <span class="cov8" title="1">{
         count, err := r.collection.CountDocuments(ctx, bson.M{})
         if err != nil </span><span class="cov0" title="0">{
                 return 0, err
         }</span>
-        <span class="cov0" title="0">return count, nil</span>
+        <span class="cov8" title="1">return count, nil</span>
 }
 
 // CountSubmissionsByStatus returns the number of submissions by status
-func (r *MongoSubmissionRepository) CountSubmissionsByStatus(ctx context.Context, status model.SubmissionStatus) (int64, error) <span class="cov0" title="0">{
+func (r *MongoSubmissionRepository) CountSubmissionsByStatus(ctx context.Context, status model.SubmissionStatus) (int64, error) <span class="cov8" title="1">{
         filter := bson.M{"status": status}
         count, err := r.collection.CountDocuments(ctx, filter)
         if err != nil </span><span class="cov0" title="0">{
                 return 0, err
         }</span>
-        <span class="cov0" title="0">return count, nil</span>
+        <span class="cov8" title="1">return count, nil</span>
 }
 
 // CountSubmissionsThisMonth returns the number of submissions created this month
-func (r *MongoSubmissionRepository) CountSubmissionsThisMonth(ctx context.Context) (int64, error) <span class="cov0" title="0">{
+func (r *MongoSubmissionRepository) CountSubmissionsThisMonth(ctx context.Context) (int64, error) <span class="cov8" title="1">{
         now := time.Now()
         startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
         endOfMonth := startOfMonth.AddDate(0, 1, 0)
@@ -5233,7 +5380,7 @@ func (r *MongoSubmissionRepository) CountSubmissionsThisMonth(ctx context.Contex
         if err != nil </span><span class="cov0" title="0">{
                 return 0, err
         }</span>
-        <span class="cov0" title="0">return count, nil</span>
+        <span class="cov8" title="1">return count, nil</span>
 }
 </pre>
 		
@@ -5513,12 +5660,12 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
         statisticsService := service.NewStatisticsService(courseRepo, assignmentRepository, enrollmentRepo, submissionRepository, forumRepository)
         activityService := service.NewTeacherActivityService(activityLogRepo, courseRepo)
 
-        courseController := controller.NewCourseController(courseService, aiClient, activityService)
-        enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient, activityService)
+        courseController := controller.NewCourseController(courseService, aiClient, activityService, notificationsQueue)
+        enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient, activityService, notificationsQueue)
         assignmentsController := controller.NewAssignmentsController(assignmentService, notificationsQueue, activityService)
         submissionController := controller.NewSubmissionController(submissionService, notificationsQueue, activityService, assignmentService)
         moduleController := controller.NewModuleController(moduleService, activityService)
-        forumController := controller.NewForumController(forumService, activityService)
+        forumController := controller.NewForumController(forumService, activityService, notificationsQueue)
         statisticsController := controller.NewStatisticsController(statisticsService)
         activityController := controller.NewTeacherActivityController(activityService, courseService)
 
@@ -7420,167 +7567,167 @@ func (s *StatisticsService) filterAndSeparateAssignments(assignments []*model.As
 }
 
 // GetBackofficeStatistics returns general system statistics for backoffice
-func (s *StatisticsService) GetBackofficeStatistics(ctx context.Context) (*schemas.BackofficeStatisticsResponse, error) <span class="cov0" title="0">{
+func (s *StatisticsService) GetBackofficeStatistics(ctx context.Context) (*schemas.BackofficeStatisticsResponse, error) <span class="cov8" title="1">{
         // Get general counts
         totalCourses, err := s.courseRepo.CountCourses()
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">totalAssignments, err := s.assignmentRepo.CountAssignments()
+        <span class="cov8" title="1">totalAssignments, err := s.assignmentRepo.CountAssignments()
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">totalSubmissions, err := s.submissionRepo.CountSubmissions(ctx)
+        <span class="cov8" title="1">totalSubmissions, err := s.submissionRepo.CountSubmissions(ctx)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">totalEnrollments, err := s.enrollmentRepo.CountEnrollments()
+        <span class="cov8" title="1">totalEnrollments, err := s.enrollmentRepo.CountEnrollments()
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">totalForumQuestions, err := s.forumRepo.CountQuestions()
+        <span class="cov8" title="1">totalForumQuestions, err := s.forumRepo.CountQuestions()
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">totalForumAnswers, err := s.forumRepo.CountAnswers()
+        <span class="cov8" title="1">totalForumAnswers, err := s.forumRepo.CountAnswers()
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
         // Get course statistics by status
-        <span class="cov0" title="0">activeCourses, err := s.courseRepo.CountActiveCourses()
+        <span class="cov8" title="1">activeCourses, err := s.courseRepo.CountActiveCourses()
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">finishedCourses, err := s.courseRepo.CountFinishedCourses()
+        <span class="cov8" title="1">finishedCourses, err := s.courseRepo.CountFinishedCourses()
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
         // Get assignment statistics by type
-        <span class="cov0" title="0">totalExams, err := s.assignmentRepo.CountAssignmentsByType("exam")
+        <span class="cov8" title="1">totalExams, err := s.assignmentRepo.CountAssignmentsByType("exam")
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">totalHomeworks, err := s.assignmentRepo.CountAssignmentsByType("homework")
+        <span class="cov8" title="1">totalHomeworks, err := s.assignmentRepo.CountAssignmentsByType("homework")
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">totalQuizzes, err := s.assignmentRepo.CountAssignmentsByType("quiz")
+        <span class="cov8" title="1">totalQuizzes, err := s.assignmentRepo.CountAssignmentsByType("quiz")
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
         // Get submission statistics by status
-        <span class="cov0" title="0">draftSubmissions, err := s.submissionRepo.CountSubmissionsByStatus(ctx, model.SubmissionStatusDraft)
+        <span class="cov8" title="1">draftSubmissions, err := s.submissionRepo.CountSubmissionsByStatus(ctx, model.SubmissionStatusDraft)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">submittedSubmissions, err := s.submissionRepo.CountSubmissionsByStatus(ctx, model.SubmissionStatusSubmitted)
+        <span class="cov8" title="1">submittedSubmissions, err := s.submissionRepo.CountSubmissionsByStatus(ctx, model.SubmissionStatusSubmitted)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">lateSubmissions, err := s.submissionRepo.CountSubmissionsByStatus(ctx, model.SubmissionStatusLate)
+        <span class="cov8" title="1">lateSubmissions, err := s.submissionRepo.CountSubmissionsByStatus(ctx, model.SubmissionStatusLate)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
         // Get enrollment statistics by status
-        <span class="cov0" title="0">activeEnrollments, err := s.enrollmentRepo.CountEnrollmentsByStatus(model.EnrollmentStatusActive)
+        <span class="cov8" title="1">activeEnrollments, err := s.enrollmentRepo.CountEnrollmentsByStatus(model.EnrollmentStatusActive)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">droppedEnrollments, err := s.enrollmentRepo.CountEnrollmentsByStatus(model.EnrollmentStatusDropped)
+        <span class="cov8" title="1">droppedEnrollments, err := s.enrollmentRepo.CountEnrollmentsByStatus(model.EnrollmentStatusDropped)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">completedEnrollments, err := s.enrollmentRepo.CountEnrollmentsByStatus(model.EnrollmentStatusCompleted)
+        <span class="cov8" title="1">completedEnrollments, err := s.enrollmentRepo.CountEnrollmentsByStatus(model.EnrollmentStatusCompleted)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
         // Get forum statistics by status
-        <span class="cov0" title="0">openForumQuestions, err := s.forumRepo.CountQuestionsByStatus(model.QuestionStatusOpen)
+        <span class="cov8" title="1">openForumQuestions, err := s.forumRepo.CountQuestionsByStatus(model.QuestionStatusOpen)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">resolvedForumQuestions, err := s.forumRepo.CountQuestionsByStatus(model.QuestionStatusResolved)
+        <span class="cov8" title="1">resolvedForumQuestions, err := s.forumRepo.CountQuestionsByStatus(model.QuestionStatusResolved)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">closedForumQuestions, err := s.forumRepo.CountQuestionsByStatus(model.QuestionStatusClosed)
+        <span class="cov8" title="1">closedForumQuestions, err := s.forumRepo.CountQuestionsByStatus(model.QuestionStatusClosed)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
         // Get teacher and student statistics
-        <span class="cov0" title="0">totalUniqueTeachers, err := s.courseRepo.CountUniqueTeachers()
+        <span class="cov8" title="1">totalUniqueTeachers, err := s.courseRepo.CountUniqueTeachers()
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">totalUniqueAuxTeachers, err := s.courseRepo.CountUniqueAuxTeachers()
+        <span class="cov8" title="1">totalUniqueAuxTeachers, err := s.courseRepo.CountUniqueAuxTeachers()
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">totalUniqueStudents, err := s.enrollmentRepo.CountUniqueStudents()
+        <span class="cov8" title="1">totalUniqueStudents, err := s.enrollmentRepo.CountUniqueStudents()
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
         // Calculate averages
-        <span class="cov0" title="0">averageStudentsPerCourse := float64(0)
-        if totalCourses &gt; 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">averageStudentsPerCourse := float64(0)
+        if totalCourses &gt; 0 </span><span class="cov8" title="1">{
                 averageStudentsPerCourse = float64(totalEnrollments) / float64(totalCourses)
         }</span>
 
-        <span class="cov0" title="0">averageAssignmentsPerCourse := float64(0)
-        if totalCourses &gt; 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">averageAssignmentsPerCourse := float64(0)
+        if totalCourses &gt; 0 </span><span class="cov8" title="1">{
                 averageAssignmentsPerCourse = float64(totalAssignments) / float64(totalCourses)
         }</span>
 
-        <span class="cov0" title="0">averageSubmissionsPerAssignment := float64(0)
-        if totalAssignments &gt; 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">averageSubmissionsPerAssignment := float64(0)
+        if totalAssignments &gt; 0 </span><span class="cov8" title="1">{
                 averageSubmissionsPerAssignment = float64(totalSubmissions) / float64(totalAssignments)
         }</span>
 
         // Get monthly statistics
-        <span class="cov0" title="0">coursesCreatedThisMonth, err := s.courseRepo.CountCoursesCreatedThisMonth()
+        <span class="cov8" title="1">coursesCreatedThisMonth, err := s.courseRepo.CountCoursesCreatedThisMonth()
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">assignmentsCreatedThisMonth, err := s.assignmentRepo.CountAssignmentsCreatedThisMonth()
+        <span class="cov8" title="1">assignmentsCreatedThisMonth, err := s.assignmentRepo.CountAssignmentsCreatedThisMonth()
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">submissionsThisMonth, err := s.submissionRepo.CountSubmissionsThisMonth(ctx)
+        <span class="cov8" title="1">submissionsThisMonth, err := s.submissionRepo.CountSubmissionsThisMonth(ctx)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">enrollmentsThisMonth, err := s.enrollmentRepo.CountEnrollmentsThisMonth()
+        <span class="cov8" title="1">enrollmentsThisMonth, err := s.enrollmentRepo.CountEnrollmentsThisMonth()
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">return &amp;schemas.BackofficeStatisticsResponse{
+        <span class="cov8" title="1">return &amp;schemas.BackofficeStatisticsResponse{
                 TotalCourses:                    int(totalCourses),
                 TotalAssignments:                int(totalAssignments),
                 TotalSubmissions:                int(totalSubmissions),
@@ -7615,24 +7762,24 @@ func (s *StatisticsService) GetBackofficeStatistics(ctx context.Context) (*schem
 }
 
 // GetBackofficeCoursesStats returns detailed course statistics for backoffice
-func (s *StatisticsService) GetBackofficeCoursesStats(ctx context.Context) (*schemas.BackofficeCoursesStatsResponse, error) <span class="cov0" title="0">{
+func (s *StatisticsService) GetBackofficeCoursesStats(ctx context.Context) (*schemas.BackofficeCoursesStatsResponse, error) <span class="cov8" title="1">{
         totalCourses, err := s.courseRepo.CountCourses()
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
         // Get courses by status
-        <span class="cov0" title="0">activeCourses, err := s.courseRepo.CountActiveCourses()
+        <span class="cov8" title="1">activeCourses, err := s.courseRepo.CountActiveCourses()
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">finishedCourses, err := s.courseRepo.CountFinishedCourses()
+        <span class="cov8" title="1">finishedCourses, err := s.courseRepo.CountFinishedCourses()
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">coursesByStatus := map[string]int{
+        <span class="cov8" title="1">coursesByStatus := map[string]int{
                 "active":   int(activeCourses),
                 "finished": int(finishedCourses),
         }
@@ -7643,7 +7790,7 @@ func (s *StatisticsService) GetBackofficeCoursesStats(ctx context.Context) (*sch
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">return &amp;schemas.BackofficeCoursesStatsResponse{
+        <span class="cov8" title="1">return &amp;schemas.BackofficeCoursesStatsResponse{
                 TotalCourses:    int(totalCourses),
                 CoursesByStatus: coursesByStatus,
                 RecentCourses:   recentCourses,
@@ -7651,29 +7798,29 @@ func (s *StatisticsService) GetBackofficeCoursesStats(ctx context.Context) (*sch
 }
 
 // GetBackofficeAssignmentsStats returns detailed assignment statistics for backoffice
-func (s *StatisticsService) GetBackofficeAssignmentsStats(ctx context.Context) (*schemas.BackofficeAssignmentsStatsResponse, error) <span class="cov0" title="0">{
+func (s *StatisticsService) GetBackofficeAssignmentsStats(ctx context.Context) (*schemas.BackofficeAssignmentsStatsResponse, error) <span class="cov8" title="1">{
         totalAssignments, err := s.assignmentRepo.CountAssignments()
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
         // Get assignments by type
-        <span class="cov0" title="0">exams, err := s.assignmentRepo.CountAssignmentsByType("exam")
+        <span class="cov8" title="1">exams, err := s.assignmentRepo.CountAssignmentsByType("exam")
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">homeworks, err := s.assignmentRepo.CountAssignmentsByType("homework")
+        <span class="cov8" title="1">homeworks, err := s.assignmentRepo.CountAssignmentsByType("homework")
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">quizzes, err := s.assignmentRepo.CountAssignmentsByType("quiz")
+        <span class="cov8" title="1">quizzes, err := s.assignmentRepo.CountAssignmentsByType("quiz")
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">assignmentsByType := map[string]int{
+        <span class="cov8" title="1">assignmentsByType := map[string]int{
                 "exam":     int(exams),
                 "homework": int(homeworks),
                 "quiz":     int(quizzes),
@@ -7685,12 +7832,12 @@ func (s *StatisticsService) GetBackofficeAssignmentsStats(ctx context.Context) (
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">draft, err := s.assignmentRepo.CountAssignmentsByStatus("draft")
+        <span class="cov8" title="1">draft, err := s.assignmentRepo.CountAssignmentsByStatus("draft")
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">assignmentsByStatus := map[string]int{
+        <span class="cov8" title="1">assignmentsByStatus := map[string]int{
                 "published": int(published),
                 "draft":     int(draft),
         }
@@ -7702,12 +7849,12 @@ func (s *StatisticsService) GetBackofficeAssignmentsStats(ctx context.Context) (
         }</span>
 
         // Get recent assignments
-        <span class="cov0" title="0">recentAssignments, err := s.assignmentRepo.GetRecentAssignments(10)
+        <span class="cov8" title="1">recentAssignments, err := s.assignmentRepo.GetRecentAssignments(10)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">return &amp;schemas.BackofficeAssignmentsStatsResponse{
+        <span class="cov8" title="1">return &amp;schemas.BackofficeAssignmentsStatsResponse{
                 TotalAssignments:       int(totalAssignments),
                 AssignmentsByType:      assignmentsByType,
                 AssignmentsByStatus:    assignmentsByStatus,

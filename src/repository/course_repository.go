@@ -163,6 +163,7 @@ func (r *CourseRepository) GetCoursesByStudentId(studentId string) ([]*model.Cou
 }
 
 func (r *CourseRepository) GetCoursesByAuxTeacherId(auxTeacherId string) ([]*model.Course, error) {
+	fmt.Printf("Aux Teacher ID: %v\n", auxTeacherId)
 	// Find all courses where the auxTeacherId is in the aux_teachers array
 	// Using $in to be explicit about searching within an array
 	filter := bson.M{"aux_teachers": bson.M{"$in": []string{auxTeacherId}}}
@@ -175,6 +176,7 @@ func (r *CourseRepository) GetCoursesByAuxTeacherId(auxTeacherId string) ([]*mod
 	if err := cursor.All(context.TODO(), &courses); err != nil {
 		return nil, fmt.Errorf("failed to get courses by aux teacher id: %v", err)
 	}
+	fmt.Printf("Courses: %v\n", courses)
 
 	return courses, nil
 }

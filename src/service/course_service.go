@@ -5,6 +5,7 @@ import (
 	"courses-service/src/repository"
 	"courses-service/src/schemas"
 	"errors"
+	"fmt"
 	"slices"
 	"time"
 )
@@ -97,10 +98,14 @@ func (s *CourseService) GetCoursesByUserId(userId string) (*schemas.GetCoursesBy
 		return nil, err
 	}
 
+	fmt.Printf("ID: %v\n", userId)
 	auxTeacherCourses, err := s.courseRepository.GetCoursesByAuxTeacherId(userId)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("Aux Teacher Courses: %v\n", auxTeacherCourses)
+	fmt.Printf("Teacher Courses: %v\n", teacherCourses)
+	fmt.Printf("Student Courses: %v\n", studentCourses)
 
 	result.Student = studentCourses
 	result.Teacher = teacherCourses

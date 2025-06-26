@@ -280,7 +280,7 @@ func mustParseForumObjectID(id string) primitive.ObjectID {
 // Setup
 var (
 	mockForumService  = &MockForumService{}
-	forumController   = controller.NewForumController(mockForumService, mockActivityService)
+	forumController   = controller.NewForumController(mockForumService, mockActivityService, mockNotificationsQueue)
 	normalForumRouter = gin.Default()
 )
 
@@ -805,7 +805,7 @@ func TestSearchQuestionsWithStatus(t *testing.T) {
 func TestSearchQuestionsWithError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{})
+	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{}, &MockNotificationsQueue{})
 	router.InitializeForumRoutes(r, forumController)
 
 	w := httptest.NewRecorder()
@@ -821,7 +821,7 @@ func TestSearchQuestionsWithError(t *testing.T) {
 func TestUpdateAnswerWithoutAuthorId(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{})
+	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{}, &MockNotificationsQueue{})
 	router.InitializeForumRoutes(r, forumController)
 
 	requestBody := schemas.UpdateAnswerRequest{
@@ -843,7 +843,7 @@ func TestUpdateAnswerWithoutAuthorId(t *testing.T) {
 func TestUpdateAnswerWithInvalidJSON(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{})
+	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{}, &MockNotificationsQueue{})
 	router.InitializeForumRoutes(r, forumController)
 
 	w := httptest.NewRecorder()
@@ -857,7 +857,7 @@ func TestUpdateAnswerWithInvalidJSON(t *testing.T) {
 func TestUpdateAnswerWithServiceError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{})
+	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{}, &MockNotificationsQueue{})
 	router.InitializeForumRoutes(r, forumController)
 
 	requestBody := schemas.UpdateAnswerRequest{
@@ -877,7 +877,7 @@ func TestUpdateAnswerWithServiceError(t *testing.T) {
 func TestDeleteAnswerWithServiceError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{})
+	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{}, &MockNotificationsQueue{})
 	router.InitializeForumRoutes(r, forumController)
 
 	w := httptest.NewRecorder()
@@ -891,7 +891,7 @@ func TestDeleteAnswerWithServiceError(t *testing.T) {
 func TestAcceptAnswerWithoutAuthorId(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{})
+	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{}, &MockNotificationsQueue{})
 	router.InitializeForumRoutes(r, forumController)
 
 	w := httptest.NewRecorder()
@@ -907,7 +907,7 @@ func TestAcceptAnswerWithoutAuthorId(t *testing.T) {
 func TestAcceptAnswerWithServiceError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{})
+	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{}, &MockNotificationsQueue{})
 	router.InitializeForumRoutes(r, forumController)
 
 	w := httptest.NewRecorder()
@@ -921,7 +921,7 @@ func TestAcceptAnswerWithServiceError(t *testing.T) {
 func TestVoteQuestionWithInvalidJSON(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{})
+	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{}, &MockNotificationsQueue{})
 	router.InitializeForumRoutes(r, forumController)
 
 	w := httptest.NewRecorder()
@@ -935,7 +935,7 @@ func TestVoteQuestionWithInvalidJSON(t *testing.T) {
 func TestVoteQuestionWithServiceError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{})
+	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{}, &MockNotificationsQueue{})
 	router.InitializeForumRoutes(r, forumController)
 
 	requestBody := schemas.VoteRequest{
@@ -955,7 +955,7 @@ func TestVoteQuestionWithServiceError(t *testing.T) {
 func TestVoteQuestionWithDownVote(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{})
+	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{}, &MockNotificationsQueue{})
 	router.InitializeForumRoutes(r, forumController)
 
 	requestBody := schemas.VoteRequest{
@@ -979,7 +979,7 @@ func TestVoteQuestionWithDownVote(t *testing.T) {
 func TestVoteAnswerWithInvalidJSON(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{})
+	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{}, &MockNotificationsQueue{})
 	router.InitializeForumRoutes(r, forumController)
 
 	w := httptest.NewRecorder()
@@ -993,7 +993,7 @@ func TestVoteAnswerWithInvalidJSON(t *testing.T) {
 func TestVoteAnswerWithServiceError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{})
+	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{}, &MockNotificationsQueue{})
 	router.InitializeForumRoutes(r, forumController)
 
 	requestBody := schemas.VoteRequest{
@@ -1013,7 +1013,7 @@ func TestVoteAnswerWithServiceError(t *testing.T) {
 func TestVoteAnswerWithDownVote(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{})
+	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{}, &MockNotificationsQueue{})
 	router.InitializeForumRoutes(r, forumController)
 
 	requestBody := schemas.VoteRequest{
@@ -1037,7 +1037,7 @@ func TestVoteAnswerWithDownVote(t *testing.T) {
 func TestRemoveVoteFromQuestionWithServiceError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{})
+	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{}, &MockNotificationsQueue{})
 	router.InitializeForumRoutes(r, forumController)
 
 	w := httptest.NewRecorder()
@@ -1051,7 +1051,7 @@ func TestRemoveVoteFromQuestionWithServiceError(t *testing.T) {
 func TestRemoveVoteFromAnswerWithoutUserId(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{})
+	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{}, &MockNotificationsQueue{})
 	router.InitializeForumRoutes(r, forumController)
 
 	w := httptest.NewRecorder()
@@ -1067,7 +1067,7 @@ func TestRemoveVoteFromAnswerWithoutUserId(t *testing.T) {
 func TestRemoveVoteFromAnswerWithServiceError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{})
+	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{}, &MockNotificationsQueue{})
 	router.InitializeForumRoutes(r, forumController)
 
 	w := httptest.NewRecorder()
@@ -1081,7 +1081,7 @@ func TestRemoveVoteFromAnswerWithServiceError(t *testing.T) {
 func TestSearchQuestionsWithInvalidQuery(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{})
+	forumController := controller.NewForumController(&MockForumService{}, &MockTeacherActivityService{}, &MockNotificationsQueue{})
 	router.InitializeForumRoutes(r, forumController)
 
 	w := httptest.NewRecorder()

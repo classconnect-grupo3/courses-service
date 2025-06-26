@@ -216,12 +216,12 @@ func NewRouter(config *config.Config) *gin.Engine {
 	statisticsService := service.NewStatisticsService(courseRepo, assignmentRepository, enrollmentRepo, submissionRepository, forumRepository)
 	activityService := service.NewTeacherActivityService(activityLogRepo, courseRepo)
 
-	courseController := controller.NewCourseController(courseService, aiClient, activityService)
-	enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient, activityService)
+	courseController := controller.NewCourseController(courseService, aiClient, activityService, notificationsQueue)
+	enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient, activityService, notificationsQueue)
 	assignmentsController := controller.NewAssignmentsController(assignmentService, notificationsQueue, activityService)
 	submissionController := controller.NewSubmissionController(submissionService, notificationsQueue, activityService, assignmentService)
 	moduleController := controller.NewModuleController(moduleService, activityService)
-	forumController := controller.NewForumController(forumService, activityService)
+	forumController := controller.NewForumController(forumService, activityService, notificationsQueue)
 	statisticsController := controller.NewStatisticsController(statisticsService)
 	activityController := controller.NewTeacherActivityController(activityService, courseService)
 

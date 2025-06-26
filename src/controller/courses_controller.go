@@ -8,6 +8,7 @@ import (
 
 	"courses-service/src/ai"
 	"courses-service/src/model"
+	"courses-service/src/queues"
 	"courses-service/src/schemas"
 	"courses-service/src/service"
 
@@ -15,16 +16,18 @@ import (
 )
 
 type CourseController struct {
-	service         service.CourseServiceInterface
-	aiClient        *ai.AiClient
-	activityService service.TeacherActivityServiceInterface
+	service            service.CourseServiceInterface
+	aiClient           *ai.AiClient
+	activityService    service.TeacherActivityServiceInterface
+	notificationsQueue queues.NotificationsQueueInterface
 }
 
-func NewCourseController(service service.CourseServiceInterface, aiClient *ai.AiClient, activityService service.TeacherActivityServiceInterface) *CourseController {
+func NewCourseController(service service.CourseServiceInterface, aiClient *ai.AiClient, activityService service.TeacherActivityServiceInterface, notificationsQueue queues.NotificationsQueueInterface) *CourseController {
 	return &CourseController{
-		service:         service,
-		aiClient:        aiClient,
-		activityService: activityService,
+		service:            service,
+		aiClient:           aiClient,
+		activityService:    activityService,
+		notificationsQueue: notificationsQueue,
 	}
 }
 
@@ -283,6 +286,15 @@ func (c *CourseController) AddAuxTeacherToCourse(ctx *gin.Context) {
 		return
 	}
 	slog.Debug("Aux teacher added to course", "course", course)
+
+	message := queues.NewAddedAuxTeacherToCourseMessage(id, course.Title, auxTeacherId)
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	ctx.JSON(http.StatusOK, course)
 }
 
@@ -321,6 +333,15 @@ func (c *CourseController) RemoveAuxTeacherFromCourse(ctx *gin.Context) {
 		return
 	}
 	slog.Debug("Aux teacher removed from course", "course", course)
+
+	message := queues.NewRemoveAuxTeacherFromCourseMessage(id, course.Title, auxTeacherId)
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	ctx.JSON(http.StatusOK, course)
 }
 
@@ -401,6 +422,23 @@ func (c *CourseController) CreateCourseFeedback(ctx *gin.Context) {
 	}
 
 	slog.Debug("Course feedback created", "feedback", feedbackModel)
+
+	// Getting the course so we have the teacher ID
+	course, err := c.service.GetCourseById(courseId)
+	if err != nil {
+		slog.Error("Error getting course", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	message := queues.NewFeedbackCreatedMessage(course.TeacherUUID, courseId, feedbackModel.ID.Hex(), feedbackModel.Feedback, feedbackModel.Score, feedbackModel.CreatedAt)
+	slog.Info("Publishing message", "message", message)
+	err = c.notificationsQueue.Publish(message)
+	if err != nil {
+		slog.Error("Error publishing message", "error", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	ctx.JSON(http.StatusOK, feedbackModel)
 }
 
