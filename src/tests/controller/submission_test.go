@@ -21,14 +21,14 @@ import (
 )
 
 var (
-	mockSubmissionService             = &MockSubmissionService{}
-	mockSubmissionErrorService        = &MockSubmissionServiceWithError{}
-	submissionMockNotificationsQueue  = &MockSubmissionNotificationsQueue{}
-	submissionMockSubmissionAssignmentService   = &MockSubmissionAssignmentService{}
-	normalSubmissionController        = controller.NewSubmissionController(mockSubmissionService, submissionMockNotificationsQueue, mockActivityService, submissionMockSubmissionAssignmentService)
-	errorSubmissionController         = controller.NewSubmissionController(mockSubmissionErrorService, submissionMockNotificationsQueue, mockActivityService, submissionMockSubmissionAssignmentService)
-	normalSubmissionRouter            = gin.Default()
-	errorSubmissionRouter             = gin.Default()
+	mockSubmissionService                     = &MockSubmissionService{}
+	mockSubmissionErrorService                = &MockSubmissionServiceWithError{}
+	submissionMockNotificationsQueue          = &MockSubmissionNotificationsQueue{}
+	submissionMockSubmissionAssignmentService = &MockSubmissionAssignmentService{}
+	normalSubmissionController                = controller.NewSubmissionController(mockSubmissionService, submissionMockNotificationsQueue, mockActivityService, submissionMockSubmissionAssignmentService)
+	errorSubmissionController                 = controller.NewSubmissionController(mockSubmissionErrorService, submissionMockNotificationsQueue, mockActivityService, submissionMockSubmissionAssignmentService)
+	normalSubmissionRouter                    = gin.Default()
+	errorSubmissionRouter                     = gin.Default()
 )
 
 // InitializeSubmissionRoutesForTest initializes submission routes without authentication middleware for testing

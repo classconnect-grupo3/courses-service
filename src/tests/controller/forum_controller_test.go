@@ -266,8 +266,6 @@ func mustParseForumObjectID(id string) primitive.ObjectID {
 	return primitive.NewObjectID()
 }
 
-
-
 // Setup
 var (
 	mockForumService  = &MockForumService{}
