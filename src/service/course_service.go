@@ -103,6 +103,9 @@ func (s *CourseService) GetCoursesByUserId(userId string) (*schemas.GetCoursesBy
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("Aux Teacher Courses: %v\n", auxTeacherCourses)
+	fmt.Printf("Teacher Courses: %v\n", teacherCourses)
+	fmt.Printf("Student Courses: %v\n", studentCourses)
 
 	result.Student = studentCourses
 	result.Teacher = teacherCourses
