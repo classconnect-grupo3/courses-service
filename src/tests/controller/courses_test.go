@@ -20,13 +20,12 @@ import (
 )
 
 var (
-	mockService         = &MockCourseService{}
-	mockErrorService    = &MockCourseServiceWithError{}
-	mockActivityService = &MockTeacherActivityService{}
-	normalController    = controller.NewCourseController(mockService, nil, mockActivityService)
-	errorController     = controller.NewCourseController(mockErrorService, nil, mockActivityService)
-	normalRouter        = gin.Default()
-	errorRouter         = gin.Default()
+	mockService      = &MockCourseService{}
+	mockErrorService = &MockCourseServiceWithError{}
+	normalController = controller.NewCourseController(mockService, nil, mockActivityService)
+	errorController  = controller.NewCourseController(mockErrorService, nil, mockActivityService)
+	normalRouter     = gin.Default()
+	errorRouter      = gin.Default()
 )
 
 func init() {
@@ -248,16 +247,6 @@ func (m *MockCourseServiceWithError) GetCourseFeedback(courseId string, getCours
 
 func (m *MockCourseServiceWithError) GetCourseMembers(courseId string) (*schemas.CourseMembersResponse, error) {
 	return nil, errors.New("Error getting course members")
-}
-
-type MockTeacherActivityService struct{}
-
-func (m *MockTeacherActivityService) LogActivityIfAuxTeacher(courseID, teacherUUID, activityType, description string) {
-	// Mock implementation - do nothing
-}
-
-func (m *MockTeacherActivityService) GetCourseActivityLogs(courseID string) ([]*model.TeacherActivityLog, error) {
-	return []*model.TeacherActivityLog{}, nil
 }
 
 func TestGetCourses(t *testing.T) {

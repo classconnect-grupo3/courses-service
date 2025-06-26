@@ -266,22 +266,13 @@ func mustParseForumObjectID(id string) primitive.ObjectID {
 	return primitive.NewObjectID()
 }
 
-type MockTeacherActivityService struct{}
 
-func (m *MockTeacherActivityService) LogActivityIfAuxTeacher(courseID, teacherUUID, activityType, description string) {
-	// Mock implementation - do nothing
-}
-
-func (m *MockTeacherActivityService) GetCourseActivityLogs(courseID string) ([]*model.TeacherActivityLog, error) {
-	return []*model.TeacherActivityLog{}, nil
-}
 
 // Setup
 var (
-	mockForumService    = &MockForumService{}
-	mockActivityService = &MockTeacherActivityService{}
-	forumController     = controller.NewForumController(mockForumService, mockActivityService)
-	normalForumRouter   = gin.Default()
+	mockForumService  = &MockForumService{}
+	forumController   = controller.NewForumController(mockForumService, mockActivityService)
+	normalForumRouter = gin.Default()
 )
 
 func init() {

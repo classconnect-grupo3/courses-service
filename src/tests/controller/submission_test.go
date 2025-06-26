@@ -21,15 +21,14 @@ import (
 )
 
 var (
-	mockSubmissionService      = &MockSubmissionService{}
-	mockSubmissionErrorService = &MockSubmissionServiceWithError{}
-	mockNotificationsQueue     = &MockNotificationsQueue{}
-	mockActivityService        = &MockTeacherActivityService{}
-	mockAssignmentService      = &MockAssignmentService{}
-	normalSubmissionController = controller.NewSubmissionController(mockSubmissionService, mockNotificationsQueue, mockActivityService, mockAssignmentService)
-	errorSubmissionController  = controller.NewSubmissionController(mockSubmissionErrorService, mockNotificationsQueue, mockActivityService, mockAssignmentService)
-	normalSubmissionRouter     = gin.Default()
-	errorSubmissionRouter      = gin.Default()
+	mockSubmissionService             = &MockSubmissionService{}
+	mockSubmissionErrorService        = &MockSubmissionServiceWithError{}
+	submissionMockNotificationsQueue  = &MockSubmissionNotificationsQueue{}
+	submissionMockSubmissionAssignmentService   = &MockSubmissionAssignmentService{}
+	normalSubmissionController        = controller.NewSubmissionController(mockSubmissionService, submissionMockNotificationsQueue, mockActivityService, submissionMockSubmissionAssignmentService)
+	errorSubmissionController         = controller.NewSubmissionController(mockSubmissionErrorService, submissionMockNotificationsQueue, mockActivityService, submissionMockSubmissionAssignmentService)
+	normalSubmissionRouter            = gin.Default()
+	errorSubmissionRouter             = gin.Default()
 )
 
 // InitializeSubmissionRoutesForTest initializes submission routes without authentication middleware for testing
@@ -328,25 +327,15 @@ func mustParseSubmissionObjectID(id string) primitive.ObjectID {
 	}
 }
 
-type MockNotificationsQueue struct{}
+type MockSubmissionNotificationsQueue struct{}
 
-func (m *MockNotificationsQueue) Publish(message queues.QueueMessage) error {
+func (m *MockSubmissionNotificationsQueue) Publish(message queues.QueueMessage) error {
 	return nil
 }
 
-type MockTeacherActivityService struct{}
+type MockSubmissionAssignmentService struct{}
 
-func (m *MockTeacherActivityService) LogActivityIfAuxTeacher(courseID, teacherUUID, activityType, description string) {
-	// Mock implementation - do nothing
-}
-
-func (m *MockTeacherActivityService) GetCourseActivityLogs(courseID string) ([]*model.TeacherActivityLog, error) {
-	return []*model.TeacherActivityLog{}, nil
-}
-
-type MockAssignmentService struct{}
-
-func (m *MockAssignmentService) GetAssignmentById(id string) (*model.Assignment, error) {
+func (m *MockSubmissionAssignmentService) GetAssignmentById(id string) (*model.Assignment, error) {
 	return &model.Assignment{
 		ID:       primitive.NewObjectID(),
 		CourseID: "course123",
@@ -354,23 +343,23 @@ func (m *MockAssignmentService) GetAssignmentById(id string) (*model.Assignment,
 	}, nil
 }
 
-func (m *MockAssignmentService) CreateAssignment(c schemas.CreateAssignmentRequest) (*model.Assignment, error) {
+func (m *MockSubmissionAssignmentService) CreateAssignment(c schemas.CreateAssignmentRequest) (*model.Assignment, error) {
 	return &model.Assignment{}, nil
 }
 
-func (m *MockAssignmentService) GetAssignments() ([]*model.Assignment, error) {
+func (m *MockSubmissionAssignmentService) GetAssignments() ([]*model.Assignment, error) {
 	return []*model.Assignment{}, nil
 }
 
-func (m *MockAssignmentService) GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error) {
+func (m *MockSubmissionAssignmentService) GetAssignmentsByCourseId(courseId string) ([]*model.Assignment, error) {
 	return []*model.Assignment{}, nil
 }
 
-func (m *MockAssignmentService) UpdateAssignment(id string, updateAssignmentRequest schemas.UpdateAssignmentRequest) (*model.Assignment, error) {
+func (m *MockSubmissionAssignmentService) UpdateAssignment(id string, updateAssignmentRequest schemas.UpdateAssignmentRequest) (*model.Assignment, error) {
 	return &model.Assignment{}, nil
 }
 
-func (m *MockAssignmentService) DeleteAssignment(id string) error {
+func (m *MockSubmissionAssignmentService) DeleteAssignment(id string) error {
 	return nil
 }
 
