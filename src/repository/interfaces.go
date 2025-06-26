@@ -125,3 +125,8 @@ type ForumRepositoryInterface interface {
 	CountQuestionsByStatus(status model.QuestionStatus) (int64, error)
 	CountAnswers() (int64, error)
 }
+
+type TeacherActivityLogRepositoryInterface interface {
+	LogActivity(courseID, teacherUUID, activityType, description string) error
+	GetLogsByCourse(courseID string) ([]*model.TeacherActivityLog, error)
+}

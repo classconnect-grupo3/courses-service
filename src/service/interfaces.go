@@ -113,3 +113,8 @@ type StatisticsServiceInterface interface {
 	GetBackofficeCoursesStats(ctx context.Context) (*schemas.BackofficeCoursesStatsResponse, error)
 	GetBackofficeAssignmentsStats(ctx context.Context) (*schemas.BackofficeAssignmentsStatsResponse, error)
 }
+
+type TeacherActivityServiceInterface interface {
+	LogActivityIfAuxTeacher(courseID, teacherUUID, activityType, description string)
+	GetCourseActivityLogs(courseID string) ([]*model.TeacherActivityLog, error)
+}
