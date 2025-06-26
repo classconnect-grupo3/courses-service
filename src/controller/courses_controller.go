@@ -24,9 +24,9 @@ type CourseController struct {
 
 func NewCourseController(service service.CourseServiceInterface, aiClient *ai.AiClient, activityService service.TeacherActivityServiceInterface, notificationsQueue queues.NotificationsQueueInterface) *CourseController {
 	return &CourseController{
-		service:         service,
-		aiClient:        aiClient,
-		activityService: activityService,
+		service:            service,
+		aiClient:           aiClient,
+		activityService:    activityService,
 		notificationsQueue: notificationsQueue,
 	}
 }

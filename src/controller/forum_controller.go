@@ -567,7 +567,6 @@ func (c *ForumController) VoteAnswer(ctx *gin.Context) {
 		return
 	}
 
-
 	ctx.JSON(http.StatusOK, schemas.VoteResponse{Message: "Vote registered successfully"})
 }
 
