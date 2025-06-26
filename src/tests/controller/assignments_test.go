@@ -494,5 +494,5 @@ func TestDeleteAssignmentWithError(t *testing.T) {
 	errorAssignmentRouter.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-	assert.Contains(t, w.Body.String(), "error deleting assignment")
+	assert.Contains(t, w.Body.String(), "error getting assignment by id")
 }

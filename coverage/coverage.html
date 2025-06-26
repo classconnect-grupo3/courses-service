@@ -57,51 +57,57 @@
 				
 				<option value="file0">courses-service/src/config/config.go (100.0%)</option>
 				
-				<option value="file1">courses-service/src/controller/assignments_controller.go (95.8%)</option>
+				<option value="file1">courses-service/src/controller/assignments_controller.go (89.4%)</option>
 				
-				<option value="file2">courses-service/src/controller/courses_controller.go (88.0%)</option>
+				<option value="file2">courses-service/src/controller/courses_controller.go (85.8%)</option>
 				
-				<option value="file3">courses-service/src/controller/enrollment_controller.go (86.4%)</option>
+				<option value="file3">courses-service/src/controller/enrollment_controller.go (86.8%)</option>
 				
-				<option value="file4">courses-service/src/controller/forum_controller.go (98.6%)</option>
+				<option value="file4">courses-service/src/controller/forum_controller.go (94.9%)</option>
 				
-				<option value="file5">courses-service/src/controller/module_controller.go (100.0%)</option>
+				<option value="file5">courses-service/src/controller/module_controller.go (91.4%)</option>
 				
-				<option value="file6">courses-service/src/controller/statistics_controller.go (48.6%)</option>
+				<option value="file6">courses-service/src/controller/statistics_controller.go (40.4%)</option>
 				
-				<option value="file7">courses-service/src/controller/submission_controller.go (77.1%)</option>
+				<option value="file7">courses-service/src/controller/submission_controller.go (77.0%)</option>
 				
-				<option value="file8">courses-service/src/database/connection.go (71.4%)</option>
+				<option value="file8">courses-service/src/controller/teacher_activity_controller.go (3.6%)</option>
 				
-				<option value="file9">courses-service/src/repository/assignment_repository.go (87.0%)</option>
+				<option value="file9">courses-service/src/database/connection.go (71.4%)</option>
 				
-				<option value="file10">courses-service/src/repository/course_repository.go (82.0%)</option>
+				<option value="file10">courses-service/src/repository/assignment_repository.go (57.3%)</option>
 				
-				<option value="file11">courses-service/src/repository/enrollment_repository.go (80.3%)</option>
+				<option value="file11">courses-service/src/repository/course_repository.go (60.1%)</option>
 				
-				<option value="file12">courses-service/src/repository/forum_repository.go (87.1%)</option>
+				<option value="file12">courses-service/src/repository/enrollment_repository.go (65.9%)</option>
 				
-				<option value="file13">courses-service/src/repository/module_repository.go (90.0%)</option>
+				<option value="file13">courses-service/src/repository/forum_repository.go (77.5%)</option>
 				
-				<option value="file14">courses-service/src/repository/submission_repository.go (83.6%)</option>
+				<option value="file14">courses-service/src/repository/module_repository.go (90.0%)</option>
 				
-				<option value="file15">courses-service/src/router/router.go (96.7%)</option>
+				<option value="file15">courses-service/src/repository/submission_repository.go (63.9%)</option>
 				
-				<option value="file16">courses-service/src/service/assignment_service.go (100.0%)</option>
+				<option value="file16">courses-service/src/repository/teacher_activity_log_repository.go (7.1%)</option>
 				
-				<option value="file17">courses-service/src/service/course_service.go (93.8%)</option>
+				<option value="file17">courses-service/src/router/router.go (96.9%)</option>
 				
-				<option value="file18">courses-service/src/service/enrollment_service.go (92.1%)</option>
+				<option value="file18">courses-service/src/service/assignment_service.go (100.0%)</option>
 				
-				<option value="file19">courses-service/src/service/forum_service.go (87.4%)</option>
+				<option value="file19">courses-service/src/service/course_service.go (93.8%)</option>
 				
-				<option value="file20">courses-service/src/service/module_service.go (100.0%)</option>
+				<option value="file20">courses-service/src/service/enrollment_service.go (92.1%)</option>
 				
-				<option value="file21">courses-service/src/service/statistics_service.go (93.7%)</option>
+				<option value="file21">courses-service/src/service/forum_service.go (87.3%)</option>
 				
-				<option value="file22">courses-service/src/service/submission_service.go (72.7%)</option>
+				<option value="file22">courses-service/src/service/module_service.go (100.0%)</option>
 				
-				<option value="file23">courses-service/src/tests/testutil/db_setup.go (72.2%)</option>
+				<option value="file23">courses-service/src/service/statistics_service.go (53.3%)</option>
+				
+				<option value="file24">courses-service/src/service/submission_service.go (72.7%)</option>
+				
+				<option value="file25">courses-service/src/service/teacher_activity_service.go (35.7%)</option>
+				
+				<option value="file26">courses-service/src/tests/testutil/db_setup.go (72.2%)</option>
 				
 				</select>
 			</div>
@@ -151,6 +157,7 @@ func NewConfig() *Config <span class="cov8" title="1">{
 		<pre class="file" id="file1" style="display: none">package controller
 
 import (
+        "fmt"
         "log"
         "log/slog"
         "net/http"
@@ -165,15 +172,18 @@ import (
 type AssignmentsController struct {
         service            service.AssignmentServiceInterface
         notificationsQueue queues.NotificationsQueueInterface
+        activityService    service.TeacherActivityServiceInterface
 }
 
 func NewAssignmentsController(
         service service.AssignmentServiceInterface,
         notificationsQueue queues.NotificationsQueueInterface,
+        activityService service.TeacherActivityServiceInterface,
 ) *AssignmentsController <span class="cov8" title="1">{
         return &amp;AssignmentsController{
                 service:            service,
                 notificationsQueue: notificationsQueue,
+                activityService:    activityService,
         }
 }</span>
 
@@ -221,6 +231,17 @@ func (c *AssignmentsController) CreateAssignment(ctx *gin.Context) <span class="
                 log.Println("Error creating assignment:", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
+        }</span>
+
+        // Log activity if teacher is auxiliary
+        <span class="cov8" title="1">teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+        if teacherUUID != "" </span><span class="cov0" title="0">{
+                c.activityService.LogActivityIfAuxTeacher(
+                        createdAssignment.CourseID,
+                        teacherUUID,
+                        "CREATE_ASSIGNMENT",
+                        fmt.Sprintf("Created assignment: %s", createdAssignment.Title),
+                )
         }</span>
 
         <span class="cov8" title="1">queueMessage := queues.NewAssignmentCreatedMessage(
@@ -318,6 +339,17 @@ func (c *AssignmentsController) UpdateAssignment(ctx *gin.Context) <span class="
                 return
         }</span>
 
+        // Log activity if teacher is auxiliary
+        <span class="cov8" title="1">teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+        if teacherUUID != "" </span><span class="cov0" title="0">{
+                c.activityService.LogActivityIfAuxTeacher(
+                        updatedAssignment.CourseID,
+                        teacherUUID,
+                        "UPDATE_ASSIGNMENT",
+                        fmt.Sprintf("Updated assignment: %s", updatedAssignment.Title),
+                )
+        }</span>
+
         <span class="cov8" title="1">slog.Debug("Assignment updated", "assignment", updatedAssignment)
         ctx.JSON(http.StatusOK, updatedAssignment)</span>
 }
@@ -334,10 +366,29 @@ func (c *AssignmentsController) DeleteAssignment(ctx *gin.Context) <span class="
         slog.Debug("Deleting assignment")
         id := ctx.Param("assignmentId")
 
-        if err := c.service.DeleteAssignment(id); err != nil </span><span class="cov8" title="1">{
+        // Get assignment info before deleting for logging
+        assignment, err := c.service.GetAssignmentById(id)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error getting assignment for deletion", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">if err := c.service.DeleteAssignment(id); err != nil </span><span class="cov0" title="0">{
                 slog.Error("Error deleting assignment", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
+        }</span>
+
+        // Log activity if teacher is auxiliary
+        <span class="cov8" title="1">teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+        if teacherUUID != "" &amp;&amp; assignment != nil </span><span class="cov0" title="0">{
+                c.activityService.LogActivityIfAuxTeacher(
+                        assignment.CourseID,
+                        teacherUUID,
+                        "DELETE_ASSIGNMENT",
+                        fmt.Sprintf("Deleted assignment: %s", assignment.Title),
+                )
         }</span>
 
         <span class="cov8" title="1">slog.Debug("Assignment deleted")
@@ -348,6 +399,7 @@ func (c *AssignmentsController) DeleteAssignment(ctx *gin.Context) <span class="
 		<pre class="file" id="file2" style="display: none">package controller
 
 import (
+        "fmt"
         "log/slog"
         "net/http"
         "slices"
@@ -361,12 +413,17 @@ import (
 )
 
 type CourseController struct {
-        service  service.CourseServiceInterface
-        aiClient *ai.AiClient
+        service         service.CourseServiceInterface
+        aiClient        *ai.AiClient
+        activityService service.TeacherActivityServiceInterface
 }
 
-func NewCourseController(service service.CourseServiceInterface, aiClient *ai.AiClient) *CourseController <span class="cov8" title="1">{
-        return &amp;CourseController{service: service, aiClient: aiClient}
+func NewCourseController(service service.CourseServiceInterface, aiClient *ai.AiClient, activityService service.TeacherActivityServiceInterface) *CourseController <span class="cov8" title="1">{
+        return &amp;CourseController{
+                service:         service,
+                aiClient:        aiClient,
+                activityService: activityService,
+        }
 }</span>
 
 // @Summary Get all courses
@@ -507,12 +564,17 @@ func (c *CourseController) GetCourseByTitle(ctx *gin.Context) <span class="cov8"
         slog.Debug("Getting course by title")
         title := ctx.Param("title")
         course, err := c.service.GetCourseByTitle(title)
-        if err != nil </span><span class="cov8" title="1">{
+        if err != nil </span><span class="cov0" title="0">{
                 slog.Error("Error getting course by title", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
         }</span>
-        <span class="cov8" title="1">slog.Debug("Course retrieved", "course", course)
+        <span class="cov8" title="1">if len(course) == 0 </span><span class="cov8" title="1">{
+                slog.Error("Course not found")
+                ctx.JSON(http.StatusNotFound, gin.H{"error": "Course not found"})
+                return
+        }</span>
+        <span class="cov0" title="0">slog.Debug("Course retrieved", "course", course)
         ctx.JSON(http.StatusOK, course)</span>
 }
 
@@ -725,6 +787,17 @@ func (c *CourseController) CreateCourseFeedback(ctx *gin.Context) <span class="c
                 return
         }</span>
 
+        // Log activity if teacher is auxiliary
+        <span class="cov8" title="1">teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+        if teacherUUID != "" </span><span class="cov0" title="0">{
+                c.activityService.LogActivityIfAuxTeacher(
+                        courseId,
+                        teacherUUID,
+                        "CREATE_COURSE_FEEDBACK",
+                        fmt.Sprintf("Created course feedback of type: %s", feedback.FeedbackType),
+                )
+        }</span>
+
         <span class="cov8" title="1">slog.Debug("Course feedback created", "feedback", feedbackModel)
         ctx.JSON(http.StatusOK, feedbackModel)</span>
 }
@@ -845,6 +918,7 @@ import (
         "courses-service/src/model"
         "courses-service/src/schemas"
         "courses-service/src/service"
+        "fmt"
         "log/slog"
         "net/http"
         "slices"
@@ -855,10 +929,15 @@ import (
 type EnrollmentController struct {
         enrollmentService service.EnrollmentServiceInterface
         aiClient          *ai.AiClient
+        activityService   service.TeacherActivityServiceInterface
 }
 
-func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface, aiClient *ai.AiClient) *EnrollmentController <span class="cov8" title="1">{
-        return &amp;EnrollmentController{enrollmentService: enrollmentService, aiClient: aiClient}
+func NewEnrollmentController(enrollmentService service.EnrollmentServiceInterface, aiClient *ai.AiClient, activityService service.TeacherActivityServiceInterface) *EnrollmentController <span class="cov8" title="1">{
+        return &amp;EnrollmentController{
+                enrollmentService: enrollmentService,
+                aiClient:          aiClient,
+                activityService:   activityService,
+        }
 }</span>
 
 // @Summary Enroll a student in a course
@@ -1185,6 +1264,17 @@ func (c *EnrollmentController) ApproveStudent(ctx *gin.Context) <span class="cov
                 return
         }</span>
 
+        // Log activity if teacher is auxiliary
+        <span class="cov8" title="1">teacherUUID := ctx.GetString("teacher_uuid")
+        if teacherUUID != "" </span><span class="cov8" title="1">{
+                c.activityService.LogActivityIfAuxTeacher(
+                        courseID,
+                        teacherUUID,
+                        "APPROVE_STUDENT",
+                        fmt.Sprintf("Approved student: %s", studentID),
+                )
+        }</span>
+
         <span class="cov8" title="1">slog.Debug("Student approved successfully", "studentId", studentID, "courseId", courseID)
         ctx.JSON(http.StatusOK, schemas.ApproveStudentResponse{
                 Message:   "Student approved successfully",
@@ -1235,6 +1325,17 @@ func (c *EnrollmentController) DisapproveStudent(ctx *gin.Context) <span class="
                 return
         }</span>
 
+        // Log activity if teacher is auxiliary
+        <span class="cov8" title="1">teacherUUID := ctx.GetString("teacher_uuid")
+        if teacherUUID != "" </span><span class="cov8" title="1">{
+                c.activityService.LogActivityIfAuxTeacher(
+                        courseID,
+                        teacherUUID,
+                        "DISAPPROVE_STUDENT",
+                        fmt.Sprintf("Disapproved student: %s (reason: %s)", studentID, disapproveRequest.Reason),
+                )
+        }</span>
+
         <span class="cov8" title="1">slog.Debug("Student disapproved successfully", "studentId", studentID, "courseId", courseID, "reason", disapproveRequest.Reason)
         ctx.JSON(http.StatusOK, schemas.DisapproveStudentResponse{
                 Message:   "Student disapproved successfully",
@@ -1248,6 +1349,7 @@ func (c *EnrollmentController) DisapproveStudent(ctx *gin.Context) <span class="
 		<pre class="file" id="file4" style="display: none">package controller
 
 import (
+        "fmt"
         "log/slog"
         "net/http"
 
@@ -1259,11 +1361,15 @@ import (
 )
 
 type ForumController struct {
-        service service.ForumServiceInterface
+        service         service.ForumServiceInterface
+        activityService service.TeacherActivityServiceInterface
 }
 
-func NewForumController(service service.ForumServiceInterface) *ForumController <span class="cov8" title="1">{
-        return &amp;ForumController{service: service}
+func NewForumController(service service.ForumServiceInterface, activityService service.TeacherActivityServiceInterface) *ForumController <span class="cov8" title="1">{
+        return &amp;ForumController{
+                service:         service,
+                activityService: activityService,
+        }
 }</span>
 
 // Question endpoints
@@ -1299,6 +1405,17 @@ func (c *ForumController) CreateQuestion(ctx *gin.Context) <span class="cov8" ti
                 slog.Error("Error creating question", "error", err)
                 ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
                 return
+        }</span>
+
+        // Log activity if teacher is auxiliary
+        <span class="cov8" title="1">teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+        if teacherUUID != "" &amp;&amp; teacherUUID == request.AuthorID </span><span class="cov0" title="0">{
+                c.activityService.LogActivityIfAuxTeacher(
+                        request.CourseID,
+                        teacherUUID,
+                        "CREATE_FORUM_QUESTION",
+                        fmt.Sprintf("Created forum question: %s", request.Title),
+                )
         }</span>
 
         <span class="cov8" title="1">response := c.mapQuestionToDetailResponse(question)
@@ -1393,6 +1510,17 @@ func (c *ForumController) UpdateQuestion(ctx *gin.Context) <span class="cov8" ti
                 return
         }</span>
 
+        // Log activity if teacher is auxiliary
+        <span class="cov8" title="1">teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+        if teacherUUID != "" &amp;&amp; question != nil </span><span class="cov0" title="0">{
+                c.activityService.LogActivityIfAuxTeacher(
+                        question.CourseID,
+                        teacherUUID,
+                        "UPDATE_FORUM_QUESTION",
+                        fmt.Sprintf("Updated forum question: %s", request.Title),
+                )
+        }</span>
+
         <span class="cov8" title="1">response := c.mapQuestionToDetailResponse(question)
         slog.Debug("Question updated", "question_id", id)
         ctx.JSON(http.StatusOK, response)</span>
@@ -1421,11 +1549,25 @@ func (c *ForumController) DeleteQuestion(ctx *gin.Context) <span class="cov8" ti
                 return
         }</span>
 
-        <span class="cov8" title="1">err := c.service.DeleteQuestion(id, authorID)
+        // Get question before deleting for logging
+        <span class="cov8" title="1">question, qErr := c.service.GetQuestionById(id)
+
+        err := c.service.DeleteQuestion(id, authorID)
         if err != nil </span><span class="cov8" title="1">{
                 slog.Error("Error deleting question", "error", err)
                 ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
                 return
+        }</span>
+
+        // Log activity if teacher is auxiliary
+        <span class="cov8" title="1">teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+        if teacherUUID != "" &amp;&amp; teacherUUID == authorID &amp;&amp; qErr == nil &amp;&amp; question != nil </span><span class="cov0" title="0">{
+                c.activityService.LogActivityIfAuxTeacher(
+                        question.CourseID,
+                        teacherUUID,
+                        "DELETE_FORUM_QUESTION",
+                        fmt.Sprintf("Deleted forum question: %s", question.Title),
+                )
         }</span>
 
         <span class="cov8" title="1">slog.Debug("Question deleted", "question_id", id)
@@ -1463,6 +1605,21 @@ func (c *ForumController) AddAnswer(ctx *gin.Context) <span class="cov8" title="
                 ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
                 return
         }</span>
+
+        // Log activity if teacher is auxiliary - we need to get the question to know the course
+        <span class="cov8" title="1">teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+        if teacherUUID != "" &amp;&amp; teacherUUID == request.AuthorID </span><span class="cov0" title="0">{
+                // Get the question to find the course ID
+                question, qErr := c.service.GetQuestionById(questionID)
+                if qErr == nil &amp;&amp; question != nil </span><span class="cov0" title="0">{
+                        c.activityService.LogActivityIfAuxTeacher(
+                                question.CourseID,
+                                teacherUUID,
+                                "CREATE_FORUM_ANSWER",
+                                "Created forum answer",
+                        )
+                }</span>
+        }
 
         <span class="cov8" title="1">response := c.mapAnswerToResponse(answer)
         slog.Debug("Answer added", "question_id", questionID, "answer_id", answer.ID)
@@ -1582,6 +1739,21 @@ func (c *ForumController) AcceptAnswer(ctx *gin.Context) <span class="cov8" titl
                 ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
                 return
         }</span>
+
+        // Log activity if teacher is auxiliary
+        <span class="cov8" title="1">teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+        if teacherUUID != "" &amp;&amp; teacherUUID == authorID </span><span class="cov0" title="0">{
+                // Get the question to find the course ID
+                question, qErr := c.service.GetQuestionById(questionID)
+                if qErr == nil &amp;&amp; question != nil </span><span class="cov0" title="0">{
+                        c.activityService.LogActivityIfAuxTeacher(
+                                question.CourseID,
+                                teacherUUID,
+                                "ACCEPT_FORUM_ANSWER",
+                                "Accepted forum answer",
+                        )
+                }</span>
+        }
 
         <span class="cov8" title="1">slog.Debug("Answer accepted", "question_id", questionID, "answer_id", answerID)
         ctx.JSON(http.StatusOK, schemas.MessageResponse{Message: "Answer accepted successfully"})</span>
@@ -1787,6 +1959,40 @@ func (c *ForumController) SearchQuestions(ctx *gin.Context) <span class="cov8" t
         ctx.JSON(http.StatusOK, response)</span>
 }
 
+// @Summary Get forum participants
+// @Description Get all unique participants (authors, answerers, voters) for a specific course forum
+// @Tags forum
+// @Accept json
+// @Produce json
+// @Param courseId path string true "Course ID"
+// @Success 200 {object} schemas.ForumParticipantsResponse
+// @Failure 400 {object} schemas.ErrorResponse
+// @Failure 404 {object} schemas.ErrorResponse
+// @Failure 500 {object} schemas.ErrorResponse
+// @Router /forum/courses/{courseId}/participants [get]
+func (c *ForumController) GetForumParticipants(ctx *gin.Context) <span class="cov8" title="1">{
+        slog.Debug("Getting forum participants")
+
+        courseID := ctx.Param("courseId")
+        participants, err := c.service.GetForumParticipants(courseID)
+        if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error getting forum participants", "error", err)
+                if err.Error() == "course not found" </span><span class="cov8" title="1">{
+                        ctx.JSON(http.StatusNotFound, schemas.ErrorResponse{Error: err.Error()})
+                }</span> else<span class="cov0" title="0"> {
+                        ctx.JSON(http.StatusInternalServerError, schemas.ErrorResponse{Error: err.Error()})
+                }</span>
+                <span class="cov8" title="1">return</span>
+        }
+
+        <span class="cov8" title="1">response := schemas.ForumParticipantsResponse{
+                Participants: participants,
+        }
+
+        slog.Debug("Forum participants retrieved", "course_id", courseID, "total", len(participants))
+        ctx.JSON(http.StatusOK, response)</span>
+}
+
 // Helper methods for mapping models to responses
 
 func (c *ForumController) mapQuestionToResponse(question *model.ForumQuestion) schemas.QuestionResponse <span class="cov8" title="1">{
@@ -1865,6 +2071,7 @@ import (
         "courses-service/src/model"
         "courses-service/src/schemas"
         "courses-service/src/service"
+        "fmt"
         "log"
         "log/slog"
         "net/http"
@@ -1873,12 +2080,14 @@ import (
 )
 
 type ModuleController struct {
-        service service.ModuleServiceInterface
+        service         service.ModuleServiceInterface
+        activityService service.TeacherActivityServiceInterface
 }
 
-func NewModuleController(service service.ModuleServiceInterface) *ModuleController <span class="cov8" title="1">{
+func NewModuleController(service service.ModuleServiceInterface, activityService service.TeacherActivityServiceInterface) *ModuleController <span class="cov8" title="1">{
         return &amp;ModuleController{
-                service: service,
+                service:         service,
+                activityService: activityService,
         }
 }</span>
 
@@ -1906,6 +2115,17 @@ func (c *ModuleController) CreateModule(ctx *gin.Context) <span class="cov8" tit
                 slog.Error("Error creating module", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
+        }</span>
+
+        // Log activity if teacher is auxiliary
+        <span class="cov8" title="1">teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+        if teacherUUID != "" </span><span class="cov0" title="0">{
+                c.activityService.LogActivityIfAuxTeacher(
+                        createdModule.CourseID,
+                        teacherUUID,
+                        "CREATE_MODULE",
+                        fmt.Sprintf("Created module: %s", createdModule.Title),
+                )
         }</span>
 
         <span class="cov8" title="1">slog.Debug("Module created", "module", createdModule)
@@ -1985,6 +2205,17 @@ func (c *ModuleController) UpdateModule(ctx *gin.Context) <span class="cov8" tit
                 return
         }</span>
 
+        // Log activity if teacher is auxiliary
+        <span class="cov8" title="1">teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+        if teacherUUID != "" </span><span class="cov0" title="0">{
+                c.activityService.LogActivityIfAuxTeacher(
+                        updatedModule.CourseID,
+                        teacherUUID,
+                        "UPDATE_MODULE",
+                        fmt.Sprintf("Updated module: %s", updatedModule.Title),
+                )
+        }</span>
+
         <span class="cov8" title="1">slog.Debug("Module updated", "module", updatedModule)
         ctx.JSON(http.StatusOK, updatedModule)</span>
 }
@@ -2001,11 +2232,30 @@ func (c *ModuleController) DeleteModule(ctx *gin.Context) <span class="cov8" tit
         slog.Debug("Deleting module")
         id := ctx.Param("id")
 
-        err := c.service.DeleteModule(id)
+        // Get module info before deleting for logging
+        moduleToDelete, err := c.service.GetModuleById(id)
         if err != nil </span><span class="cov8" title="1">{
+                slog.Error("Error getting module for deletion", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov8" title="1">err = c.service.DeleteModule(id)
+        if err != nil </span><span class="cov0" title="0">{
                 slog.Error("Error deleting module", "error", err)
                 ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
                 return
+        }</span>
+
+        // Log activity if teacher is auxiliary
+        <span class="cov8" title="1">teacherUUID := ctx.GetHeader("X-Teacher-UUID")
+        if teacherUUID != "" &amp;&amp; moduleToDelete != nil </span><span class="cov0" title="0">{
+                c.activityService.LogActivityIfAuxTeacher(
+                        moduleToDelete.CourseID,
+                        teacherUUID,
+                        "DELETE_MODULE",
+                        fmt.Sprintf("Deleted module: %s", moduleToDelete.Title),
+                )
         }</span>
 
         <span class="cov8" title="1">slog.Debug("Module deleted", "id", id)
@@ -2159,6 +2409,39 @@ func (c *StatisticsController) GetTeacherCoursesStatistics(ctx *gin.Context) <sp
 
         <span class="cov8" title="1">ctx.JSON(http.StatusOK, gin.H{"csv": string(data)})</span>
 }
+
+// GetBackofficeStatistics returns general system statistics for backoffice
+func (c *StatisticsController) GetBackofficeStatistics(ctx *gin.Context) <span class="cov0" title="0">{
+        data, err := c.statisticsService.GetBackofficeStatistics(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">ctx.JSON(http.StatusOK, data)</span>
+}
+
+// GetBackofficeCoursesStats returns detailed course statistics for backoffice
+func (c *StatisticsController) GetBackofficeCoursesStats(ctx *gin.Context) <span class="cov0" title="0">{
+        data, err := c.statisticsService.GetBackofficeCoursesStats(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">ctx.JSON(http.StatusOK, data)</span>
+}
+
+// GetBackofficeAssignmentsStats returns detailed assignment statistics for backoffice
+func (c *StatisticsController) GetBackofficeAssignmentsStats(ctx *gin.Context) <span class="cov0" title="0">{
+        data, err := c.statisticsService.GetBackofficeAssignmentsStats(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">ctx.JSON(http.StatusOK, data)</span>
+}
 </pre>
 		
 		<pre class="file" id="file7" style="display: none">package controller
@@ -2179,12 +2462,16 @@ import (
 type SubmissionController struct {
         submissionService  service.SubmissionServiceInterface
         notificationsQueue queues.NotificationsQueueInterface
+        activityService    service.TeacherActivityServiceInterface
+        assignmentService  service.AssignmentServiceInterface
 }
 
-func NewSubmissionController(submissionService service.SubmissionServiceInterface, notificationsQueue queues.NotificationsQueueInterface) *SubmissionController <span class="cov8" title="1">{
+func NewSubmissionController(submissionService service.SubmissionServiceInterface, notificationsQueue queues.NotificationsQueueInterface, activityService service.TeacherActivityServiceInterface, assignmentService service.AssignmentServiceInterface) *SubmissionController <span class="cov8" title="1">{
         return &amp;SubmissionController{
                 submissionService:  submissionService,
                 notificationsQueue: notificationsQueue,
+                activityService:    activityService,
+                assignmentService:  assignmentService,
         }
 }</span>
 
@@ -2359,7 +2646,7 @@ func (c *SubmissionController) SubmitSubmission(ctx *gin.Context) <span class="c
 
 // sendCorrectionNotification sends a notification about the corrected submission
 func (c *SubmissionController) sendCorrectionNotification(submission *model.Submission, assignmentID string) <span class="cov8" title="1">{
-        if c.notificationsQueue == nil </span><span class="cov8" title="1">{
+        if c.notificationsQueue == nil </span><span class="cov0" title="0">{
                 return // Skip if notifications are not configured
         }</span>
 
@@ -2488,6 +2775,19 @@ func (c *SubmissionController) GradeSubmission(ctx *gin.Context) <span class="co
                 return
         }</span>
 
+        // Log activity if teacher is auxiliary - we need to get the assignment to find the course
+        <span class="cov8" title="1">if c.activityService != nil &amp;&amp; c.assignmentService != nil </span><span class="cov8" title="1">{
+                assignment, err := c.assignmentService.GetAssignmentById(assignmentID)
+                if err == nil &amp;&amp; assignment != nil </span><span class="cov8" title="1">{
+                        c.activityService.LogActivityIfAuxTeacher(
+                                assignment.CourseID,
+                                teacherUUID,
+                                "GRADE_SUBMISSION",
+                                fmt.Sprintf("Graded submission for student %s", gradedSubmission.StudentName),
+                        )
+                }</span>
+        }
+
         <span class="cov8" title="1">ctx.JSON(http.StatusOK, gradedSubmission)</span>
 }
 
@@ -2539,7 +2839,85 @@ func (c *SubmissionController) GenerateFeedbackSummary(ctx *gin.Context) <span c
 }
 </pre>
 		
-		<pre class="file" id="file8" style="display: none">package database
+		<pre class="file" id="file8" style="display: none">package controller
+
+import (
+        "log/slog"
+        "net/http"
+
+        "courses-service/src/service"
+
+        "github.com/gin-gonic/gin"
+)
+
+type TeacherActivityController struct {
+        activityService service.TeacherActivityServiceInterface
+        courseService   service.CourseServiceInterface
+}
+
+func NewTeacherActivityController(
+        activityService service.TeacherActivityServiceInterface,
+        courseService service.CourseServiceInterface,
+) *TeacherActivityController <span class="cov8" title="1">{
+        return &amp;TeacherActivityController{
+                activityService: activityService,
+                courseService:   courseService,
+        }
+}</span>
+
+// @Summary Get course activity logs
+// @Description Get activity logs for auxiliary teachers in a course (only for titular teacher)
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param courseId path string true "Course ID"
+// @Param teacherId query string true "Teacher ID"
+// @Success 200 {array} model.TeacherActivityLog
+// @Router /courses/{courseId}/activity-logs [get]
+func (c *TeacherActivityController) GetCourseActivityLogs(ctx *gin.Context) <span class="cov0" title="0">{
+        slog.Debug("Getting course activity logs")
+        courseID := ctx.Param("courseId")
+        teacherID := ctx.Query("teacherId")
+
+        if courseID == "" </span><span class="cov0" title="0">{
+                slog.Error("Course ID is required")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Course ID is required"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">if teacherID == "" </span><span class="cov0" title="0">{
+                slog.Error("Teacher ID is required")
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Teacher ID is required"})
+                return
+        }</span>
+
+        // Verify that the requesting teacher is the titular teacher of the course
+        <span class="cov0" title="0">course, err := c.courseService.GetCourseById(courseID)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error getting course", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">if course.TeacherUUID != teacherID </span><span class="cov0" title="0">{
+                slog.Error("Only titular teacher can access activity logs")
+                ctx.JSON(http.StatusForbidden, gin.H{"error": "Only titular teacher can access activity logs"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">logs, err := c.activityService.GetCourseActivityLogs(courseID)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Error getting activity logs", "error", err)
+                ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">slog.Debug("Activity logs retrieved", "courseID", courseID, "count", len(logs))
+        ctx.JSON(http.StatusOK, logs)</span>
+}
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package database
 
 import (
         "courses-service/src/config"
@@ -2569,11 +2947,12 @@ func NewMongoDBClient(config *config.Config) (*mongo.Client, error) <span class=
 }
 </pre>
 		
-		<pre class="file" id="file9" style="display: none">package repository
+		<pre class="file" id="file10" style="display: none">package repository
 
 import (
         "context"
         "courses-service/src/model"
+        "courses-service/src/schemas"
         "fmt"
         "time"
 
@@ -2737,9 +3116,121 @@ func (r *AssignmentRepository) DeleteAssignment(id string) error <span class="co
 
         <span class="cov8" title="1">return nil</span>
 }
+
+// CountAssignments returns the total number of assignments
+func (r *AssignmentRepository) CountAssignments() (int64, error) <span class="cov0" title="0">{
+        count, err := r.assignmentCollection.CountDocuments(context.TODO(), bson.M{})
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("failed to count assignments: %v", err)
+        }</span>
+        <span class="cov0" title="0">return count, nil</span>
+}
+
+// CountAssignmentsByType returns the number of assignments by type
+func (r *AssignmentRepository) CountAssignmentsByType(assignmentType string) (int64, error) <span class="cov0" title="0">{
+        filter := bson.M{"type": assignmentType}
+        count, err := r.assignmentCollection.CountDocuments(context.TODO(), filter)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("failed to count assignments by type: %v", err)
+        }</span>
+        <span class="cov0" title="0">return count, nil</span>
+}
+
+// CountAssignmentsByStatus returns the number of assignments by status
+func (r *AssignmentRepository) CountAssignmentsByStatus(status string) (int64, error) <span class="cov0" title="0">{
+        filter := bson.M{"status": status}
+        count, err := r.assignmentCollection.CountDocuments(context.TODO(), filter)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("failed to count assignments by status: %v", err)
+        }</span>
+        <span class="cov0" title="0">return count, nil</span>
+}
+
+// CountAssignmentsCreatedThisMonth returns the number of assignments created this month
+func (r *AssignmentRepository) CountAssignmentsCreatedThisMonth() (int64, error) <span class="cov0" title="0">{
+        now := time.Now()
+        startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+        endOfMonth := startOfMonth.AddDate(0, 1, 0)
+
+        filter := bson.M{
+                "created_at": bson.M{
+                        "$gte": startOfMonth,
+                        "$lt":  endOfMonth,
+                },
+        }
+
+        count, err := r.assignmentCollection.CountDocuments(context.TODO(), filter)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("failed to count assignments created this month: %v", err)
+        }</span>
+        <span class="cov0" title="0">return count, nil</span>
+}
+
+// GetAssignmentDistribution returns assignment distribution by type and status
+func (r *AssignmentRepository) GetAssignmentDistribution() ([]schemas.AssignmentDistribution, error) <span class="cov0" title="0">{
+        pipeline := []bson.M{
+                {"$group": bson.M{
+                        "_id": bson.M{
+                                "type":   "$type",
+                                "status": "$status",
+                        },
+                        "count": bson.M{"$sum": 1},
+                }},
+                {"$project": bson.M{
+                        "type":   "$_id.type",
+                        "status": "$_id.status",
+                        "count":  1,
+                        "_id":    0,
+                }},
+                {"$sort": bson.M{"type": 1, "status": 1}},
+        }
+
+        cursor, err := r.assignmentCollection.Aggregate(context.TODO(), pipeline)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get assignment distribution: %v", err)
+        }</span>
+        <span class="cov0" title="0">defer cursor.Close(context.TODO())
+
+        var distribution []schemas.AssignmentDistribution
+        if err = cursor.All(context.TODO(), &amp;distribution); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to decode assignment distribution: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">return distribution, nil</span>
+}
+
+// GetRecentAssignments returns recent assignments with basic information
+func (r *AssignmentRepository) GetRecentAssignments(limit int) ([]schemas.AssignmentBasicInfo, error) <span class="cov0" title="0">{
+        pipeline := []bson.M{
+                {"$sort": bson.M{"created_at": -1}},
+                {"$limit": limit},
+                {"$project": bson.M{
+                        "id":         bson.M{"$toString": "$_id"},
+                        "title":      1,
+                        "type":       1,
+                        "status":     1,
+                        "course_id":  1,
+                        "created_at": 1,
+                        "due_date":   1,
+                }},
+        }
+
+        cursor, err := r.assignmentCollection.Aggregate(context.TODO(), pipeline)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get recent assignments: %v", err)
+        }</span>
+        <span class="cov0" title="0">defer cursor.Close(context.TODO())
+
+        var assignments []schemas.AssignmentBasicInfo
+        if err = cursor.All(context.TODO(), &amp;assignments); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to decode recent assignments: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">return assignments, nil</span>
+}
 </pre>
 		
-		<pre class="file" id="file10" style="display: none">package repository
+		<pre class="file" id="file11" style="display: none">package repository
 
 import (
         "context"
@@ -3125,9 +3616,150 @@ func (r *CourseRepository) GetCourseFeedback(courseID string, getCourseFeedbackR
 
         <span class="cov8" title="1">return filteredFeedbacks, nil</span>
 }
+
+// CountCourses returns the total number of courses
+func (r *CourseRepository) CountCourses() (int64, error) <span class="cov0" title="0">{
+        count, err := r.courseCollection.CountDocuments(context.TODO(), bson.M{})
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("failed to count courses: %v", err)
+        }</span>
+        <span class="cov0" title="0">return count, nil</span>
+}
+
+// CountActiveCourses returns the number of active courses (courses that have not ended yet)
+func (r *CourseRepository) CountActiveCourses() (int64, error) <span class="cov0" title="0">{
+        now := time.Now()
+        filter := bson.M{"end_date": bson.M{"$gt": now}}
+        count, err := r.courseCollection.CountDocuments(context.TODO(), filter)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("failed to count active courses: %v", err)
+        }</span>
+        <span class="cov0" title="0">return count, nil</span>
+}
+
+// CountFinishedCourses returns the number of finished courses (courses that have ended)
+func (r *CourseRepository) CountFinishedCourses() (int64, error) <span class="cov0" title="0">{
+        now := time.Now()
+        filter := bson.M{"end_date": bson.M{"$lte": now}}
+        count, err := r.courseCollection.CountDocuments(context.TODO(), filter)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("failed to count finished courses: %v", err)
+        }</span>
+        <span class="cov0" title="0">return count, nil</span>
+}
+
+// CountCoursesCreatedThisMonth returns the number of courses created this month
+func (r *CourseRepository) CountCoursesCreatedThisMonth() (int64, error) <span class="cov0" title="0">{
+        now := time.Now()
+        startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+        endOfMonth := startOfMonth.AddDate(0, 1, 0)
+
+        filter := bson.M{
+                "created_at": bson.M{
+                        "$gte": startOfMonth,
+                        "$lt":  endOfMonth,
+                },
+        }
+
+        count, err := r.courseCollection.CountDocuments(context.TODO(), filter)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("failed to count courses created this month: %v", err)
+        }</span>
+        <span class="cov0" title="0">return count, nil</span>
+}
+
+// CountUniqueTeachers returns the number of unique teachers
+func (r *CourseRepository) CountUniqueTeachers() (int64, error) <span class="cov0" title="0">{
+        pipeline := []bson.M{
+                {"$group": bson.M{"_id": "$teacher_uuid"}},
+                {"$count": "unique_teachers"},
+        }
+
+        cursor, err := r.courseCollection.Aggregate(context.TODO(), pipeline)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("failed to count unique teachers: %v", err)
+        }</span>
+        <span class="cov0" title="0">defer cursor.Close(context.TODO())
+
+        var result []bson.M
+        if err = cursor.All(context.TODO(), &amp;result); err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("failed to decode unique teachers count: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">if len(result) == 0 </span><span class="cov0" title="0">{
+                return 0, nil
+        }</span>
+
+        <span class="cov0" title="0">count, ok := result[0]["unique_teachers"].(int32)
+        if !ok </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("unexpected result format for unique teachers count")
+        }</span>
+
+        <span class="cov0" title="0">return int64(count), nil</span>
+}
+
+// CountUniqueAuxTeachers returns the number of unique auxiliary teachers
+func (r *CourseRepository) CountUniqueAuxTeachers() (int64, error) <span class="cov0" title="0">{
+        pipeline := []bson.M{
+                {"$unwind": "$aux_teachers"},
+                {"$group": bson.M{"_id": "$aux_teachers"}},
+                {"$count": "unique_aux_teachers"},
+        }
+
+        cursor, err := r.courseCollection.Aggregate(context.TODO(), pipeline)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("failed to count unique aux teachers: %v", err)
+        }</span>
+        <span class="cov0" title="0">defer cursor.Close(context.TODO())
+
+        var result []bson.M
+        if err = cursor.All(context.TODO(), &amp;result); err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("failed to decode unique aux teachers count: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">if len(result) == 0 </span><span class="cov0" title="0">{
+                return 0, nil
+        }</span>
+
+        <span class="cov0" title="0">count, ok := result[0]["unique_aux_teachers"].(int32)
+        if !ok </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("unexpected result format for unique aux teachers count")
+        }</span>
+
+        <span class="cov0" title="0">return int64(count), nil</span>
+}
+
+// GetRecentCourses returns recent courses with basic information
+func (r *CourseRepository) GetRecentCourses(limit int) ([]schemas.CourseBasicInfo, error) <span class="cov0" title="0">{
+        pipeline := []bson.M{
+                {"$sort": bson.M{"created_at": -1}},
+                {"$limit": limit},
+                {"$project": bson.M{
+                        "id":              bson.M{"$toString": "$_id"},
+                        "title":           1,
+                        "teacher_name":    1,
+                        "students_amount": 1,
+                        "capacity":        1,
+                        "created_at":      1,
+                }},
+        }
+
+        cursor, err := r.courseCollection.Aggregate(context.TODO(), pipeline)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get recent courses: %v", err)
+        }</span>
+        <span class="cov0" title="0">defer cursor.Close(context.TODO())
+
+        var courses []schemas.CourseBasicInfo
+        if err = cursor.All(context.TODO(), &amp;courses); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to decode recent courses: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">return courses, nil</span>
+}
 </pre>
 		
-		<pre class="file" id="file11" style="display: none">package repository
+		<pre class="file" id="file12" style="display: none">package repository
 
 import (
         "context"
@@ -3503,9 +4135,78 @@ func (r *EnrollmentRepository) ReactivateDroppedEnrollment(studentID, courseID s
 
         <span class="cov8" title="1">return nil</span>
 }
+
+// CountEnrollments returns the total number of enrollments
+func (r *EnrollmentRepository) CountEnrollments() (int64, error) <span class="cov0" title="0">{
+        count, err := r.enrollmentCollection.CountDocuments(context.TODO(), bson.M{})
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("failed to count enrollments: %v", err)
+        }</span>
+        <span class="cov0" title="0">return count, nil</span>
+}
+
+// CountEnrollmentsByStatus returns the number of enrollments by status
+func (r *EnrollmentRepository) CountEnrollmentsByStatus(status model.EnrollmentStatus) (int64, error) <span class="cov0" title="0">{
+        filter := bson.M{"status": status}
+        count, err := r.enrollmentCollection.CountDocuments(context.TODO(), filter)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("failed to count enrollments by status: %v", err)
+        }</span>
+        <span class="cov0" title="0">return count, nil</span>
+}
+
+// CountEnrollmentsThisMonth returns the number of enrollments created this month
+func (r *EnrollmentRepository) CountEnrollmentsThisMonth() (int64, error) <span class="cov0" title="0">{
+        now := time.Now()
+        startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+        endOfMonth := startOfMonth.AddDate(0, 1, 0)
+
+        filter := bson.M{
+                "enrolled_at": bson.M{
+                        "$gte": startOfMonth,
+                        "$lt":  endOfMonth,
+                },
+        }
+
+        count, err := r.enrollmentCollection.CountDocuments(context.TODO(), filter)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("failed to count enrollments this month: %v", err)
+        }</span>
+        <span class="cov0" title="0">return count, nil</span>
+}
+
+// CountUniqueStudents returns the number of unique students
+func (r *EnrollmentRepository) CountUniqueStudents() (int64, error) <span class="cov0" title="0">{
+        pipeline := []bson.M{
+                {"$group": bson.M{"_id": "$student_id"}},
+                {"$count": "unique_students"},
+        }
+
+        cursor, err := r.enrollmentCollection.Aggregate(context.TODO(), pipeline)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("failed to count unique students: %v", err)
+        }</span>
+        <span class="cov0" title="0">defer cursor.Close(context.TODO())
+
+        var result []bson.M
+        if err = cursor.All(context.TODO(), &amp;result); err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("failed to decode unique students count: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">if len(result) == 0 </span><span class="cov0" title="0">{
+                return 0, nil
+        }</span>
+
+        <span class="cov0" title="0">count, ok := result[0]["unique_students"].(int32)
+        if !ok </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("unexpected result format for unique students count")
+        }</span>
+
+        <span class="cov0" title="0">return int64(count), nil</span>
+}
 </pre>
 		
-		<pre class="file" id="file12" style="display: none">package repository
+		<pre class="file" id="file13" style="display: none">package repository
 
 import (
         "context"
@@ -3960,9 +4661,58 @@ func (r *ForumRepository) SearchQuestions(courseID string, query string, tags []
 
         <span class="cov8" title="1">return questions, nil</span>
 }
+
+// CountQuestions returns the total number of questions
+func (r *ForumRepository) CountQuestions() (int64, error) <span class="cov0" title="0">{
+        count, err := r.questionCollection.CountDocuments(context.TODO(), bson.M{})
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("failed to count questions: %v", err)
+        }</span>
+        <span class="cov0" title="0">return count, nil</span>
+}
+
+// CountQuestionsByStatus returns the number of questions by status
+func (r *ForumRepository) CountQuestionsByStatus(status model.QuestionStatus) (int64, error) <span class="cov0" title="0">{
+        filter := bson.M{"status": status}
+        count, err := r.questionCollection.CountDocuments(context.TODO(), filter)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("failed to count questions by status: %v", err)
+        }</span>
+        <span class="cov0" title="0">return count, nil</span>
+}
+
+// CountAnswers returns the total number of answers across all questions
+func (r *ForumRepository) CountAnswers() (int64, error) <span class="cov0" title="0">{
+        pipeline := []bson.M{
+                {"$unwind": "$answers"},
+                {"$count": "total_answers"},
+        }
+
+        cursor, err := r.questionCollection.Aggregate(context.TODO(), pipeline)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("failed to count answers: %v", err)
+        }</span>
+        <span class="cov0" title="0">defer cursor.Close(context.TODO())
+
+        var result []bson.M
+        if err = cursor.All(context.TODO(), &amp;result); err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("failed to decode answers count: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">if len(result) == 0 </span><span class="cov0" title="0">{
+                return 0, nil
+        }</span>
+
+        <span class="cov0" title="0">count, ok := result[0]["total_answers"].(int32)
+        if !ok </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("unexpected result format for answers count")
+        }</span>
+
+        <span class="cov0" title="0">return int64(count), nil</span>
+}
 </pre>
 		
-		<pre class="file" id="file13" style="display: none">package repository
+		<pre class="file" id="file14" style="display: none">package repository
 
 import (
         "context"
@@ -4320,10 +5070,11 @@ func (r *ModuleRepository) GetModuleByOrder(courseID string, order int) (*model.
 }
 </pre>
 		
-		<pre class="file" id="file14" style="display: none">package repository
+		<pre class="file" id="file15" style="display: none">package repository
 
 import (
         "context"
+        "time"
 
         "courses-service/src/model"
 
@@ -4445,9 +5196,106 @@ func (r *MongoSubmissionRepository) DeleteByStudentAndCourse(ctx context.Context
         _, err = r.collection.DeleteMany(ctx, filter)
         return err</span>
 }
+
+// CountSubmissions returns the total number of submissions
+func (r *MongoSubmissionRepository) CountSubmissions(ctx context.Context) (int64, error) <span class="cov0" title="0">{
+        count, err := r.collection.CountDocuments(ctx, bson.M{})
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, err
+        }</span>
+        <span class="cov0" title="0">return count, nil</span>
+}
+
+// CountSubmissionsByStatus returns the number of submissions by status
+func (r *MongoSubmissionRepository) CountSubmissionsByStatus(ctx context.Context, status model.SubmissionStatus) (int64, error) <span class="cov0" title="0">{
+        filter := bson.M{"status": status}
+        count, err := r.collection.CountDocuments(ctx, filter)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, err
+        }</span>
+        <span class="cov0" title="0">return count, nil</span>
+}
+
+// CountSubmissionsThisMonth returns the number of submissions created this month
+func (r *MongoSubmissionRepository) CountSubmissionsThisMonth(ctx context.Context) (int64, error) <span class="cov0" title="0">{
+        now := time.Now()
+        startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+        endOfMonth := startOfMonth.AddDate(0, 1, 0)
+
+        filter := bson.M{
+                "created_at": bson.M{
+                        "$gte": startOfMonth,
+                        "$lt":  endOfMonth,
+                },
+        }
+
+        count, err := r.collection.CountDocuments(ctx, filter)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, err
+        }</span>
+        <span class="cov0" title="0">return count, nil</span>
+}
 </pre>
 		
-		<pre class="file" id="file15" style="display: none">package router
+		<pre class="file" id="file16" style="display: none">package repository
+
+import (
+        "context"
+        "courses-service/src/model"
+        "fmt"
+        "time"
+
+        "go.mongodb.org/mongo-driver/mongo"
+)
+
+type TeacherActivityLogRepository struct {
+        logCollection *mongo.Collection
+}
+
+// Ensure it implements the interface
+var _ TeacherActivityLogRepositoryInterface = (*TeacherActivityLogRepository)(nil)
+
+func NewTeacherActivityLogRepository(client *mongo.Client, dbName string) *TeacherActivityLogRepository <span class="cov8" title="1">{
+        return &amp;TeacherActivityLogRepository{
+                logCollection: client.Database(dbName).Collection("teacher_activity_logs"),
+        }
+}</span>
+
+func (r *TeacherActivityLogRepository) LogActivity(courseID, teacherUUID, activityType, description string) error <span class="cov0" title="0">{
+        log := model.TeacherActivityLog{
+                CourseID:     courseID,
+                TeacherUUID:  teacherUUID,
+                ActivityType: activityType,
+                Description:  description,
+                Timestamp:    time.Now(),
+        }
+
+        _, err := r.logCollection.InsertOne(context.TODO(), log)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to log teacher activity: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+func (r *TeacherActivityLogRepository) GetLogsByCourse(courseID string) ([]*model.TeacherActivityLog, error) <span class="cov0" title="0">{
+        filter := map[string]interface{}{"course_id": courseID}
+
+        cursor, err := r.logCollection.Find(context.TODO(), filter)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get logs by course: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">var logs []*model.TeacherActivityLog
+        if err := cursor.All(context.TODO(), &amp;logs); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to decode logs: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">return logs, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file17" style="display: none">package router
 
 import (
         "courses-service/src/ai"
@@ -4510,6 +5358,10 @@ func InitializeCoursesRoutes(r *gin.Engine, controller *controller.CourseControl
         r.POST("/courses/:id/feedback", controller.CreateCourseFeedback)
         r.PUT("/courses/:id/feedback", controller.GetCourseFeedback) // has to be a put because get doesnt receive a body and it was made to receive a body
         r.GET("/courses/:id/feedback/summary", controller.GetCourseFeedbackSummary)
+}</span>
+
+func InitializeTeacherActivityRoutes(r *gin.Engine, controller *controller.TeacherActivityController) <span class="cov8" title="1">{
+        r.GET("/activity-logs/course/:courseId", controller.GetCourseActivityLogs)
 }</span>
 
 func InitializeModulesRoutes(r *gin.Engine, controller *controller.ModuleController) <span class="cov8" title="1">{
@@ -4589,6 +5441,9 @@ func InitializeForumRoutes(r *gin.Engine, controller *controller.ForumController
 
         // Search endpoints
         r.GET("/forum/courses/:courseId/search", controller.SearchQuestions)
+
+        // Forum participants endpoints
+        r.GET("/forum/courses/:courseId/participants", controller.GetForumParticipants)
 }</span>
 
 // InitializeStatisticsRoutes sets up all statistics-related routes
@@ -4608,6 +5463,18 @@ func InitializeStatisticsRoutes(r *gin.Engine, controller *controller.Statistics
 
         // Teacher's courses statistics endpoint
         statisticsGroup.GET("/teachers/:teacherId/courses", controller.GetTeacherCoursesStatistics)
+
+        // Backoffice statistics endpoints
+        backofficeGroup := r.Group("/backoffice/statistics")
+
+        // General system statistics
+        backofficeGroup.GET("/general", controller.GetBackofficeStatistics)
+
+        // Detailed course statistics
+        backofficeGroup.GET("/courses", controller.GetBackofficeCoursesStats)
+
+        // Detailed assignment statistics
+        backofficeGroup.GET("/assignments", controller.GetBackofficeAssignmentsStats)
 }</span>
 
 func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
@@ -4635,6 +5502,7 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
         submissionRepository := repository.NewMongoSubmissionRepository(dbClient.Database(config.DBName))
         moduleRepository := repository.NewModuleRepository(dbClient, config.DBName)
         forumRepository := repository.NewForumRepository(dbClient, config.DBName)
+        activityLogRepo := repository.NewTeacherActivityLogRepository(dbClient, config.DBName)
 
         courseService := service.NewCourseService(courseRepo, enrollmentRepo)
         enrollmentService := service.NewEnrollmentService(enrollmentRepo, courseRepo, submissionRepository)
@@ -4643,16 +5511,18 @@ func NewRouter(config *config.Config) *gin.Engine <span class="cov8" title="1">{
         moduleService := service.NewModuleService(moduleRepository)
         forumService := service.NewForumService(forumRepository, courseRepo)
         statisticsService := service.NewStatisticsService(courseRepo, assignmentRepository, enrollmentRepo, submissionRepository, forumRepository)
+        activityService := service.NewTeacherActivityService(activityLogRepo, courseRepo)
 
-        courseController := controller.NewCourseController(courseService, aiClient)
-        enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient)
-        assignmentsController := controller.NewAssignmentsController(assignmentService, notificationsQueue)
-        submissionController := controller.NewSubmissionController(submissionService, notificationsQueue)
-        moduleController := controller.NewModuleController(moduleService)
-        forumController := controller.NewForumController(forumService)
+        courseController := controller.NewCourseController(courseService, aiClient, activityService)
+        enrollmentController := controller.NewEnrollmentController(enrollmentService, aiClient, activityService)
+        assignmentsController := controller.NewAssignmentsController(assignmentService, notificationsQueue, activityService)
+        submissionController := controller.NewSubmissionController(submissionService, notificationsQueue, activityService, assignmentService)
+        moduleController := controller.NewModuleController(moduleService, activityService)
+        forumController := controller.NewForumController(forumService, activityService)
         statisticsController := controller.NewStatisticsController(statisticsService)
+        activityController := controller.NewTeacherActivityController(activityService, courseService)
 
-        InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController, moduleController, forumController, statisticsController)
+        InitializeRoutes(r, courseController, assignmentsController, submissionController, enrollmentController, moduleController, forumController, statisticsController, activityController)
         r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler)) // endpoint to consult the swagger documentation
         return r</span>
 }
@@ -4666,6 +5536,7 @@ func InitializeRoutes(
         moduleController *controller.ModuleController,
         forumController *controller.ForumController,
         statisticsController *controller.StatisticsController,
+        activityController *controller.TeacherActivityController,
 ) <span class="cov8" title="1">{
         InitializeCoursesRoutes(r, courseController)
         InitializeSubmissionRoutes(r, submissionController)
@@ -4674,10 +5545,11 @@ func InitializeRoutes(
         InitializeModulesRoutes(r, moduleController)
         InitializeForumRoutes(r, forumController)
         InitializeStatisticsRoutes(r, statisticsController)
+        InitializeTeacherActivityRoutes(r, activityController)
 }</span>
 </pre>
 		
-		<pre class="file" id="file16" style="display: none">package service
+		<pre class="file" id="file18" style="display: none">package service
 
 import (
         "context"
@@ -4784,7 +5656,7 @@ func (s *AssignmentService) GetAssignmentsByCourseId(courseId string) ([]*model.
 }
 </pre>
 		
-		<pre class="file" id="file17" style="display: none">package service
+		<pre class="file" id="file19" style="display: none">package service
 
 import (
         "courses-service/src/model"
@@ -5079,7 +5951,7 @@ func (s *CourseService) GetCourseMembers(courseId string) (*schemas.CourseMember
 }
 </pre>
 		
-		<pre class="file" id="file18" style="display: none">package service
+		<pre class="file" id="file20" style="display: none">package service
 
 import (
         "context"
@@ -5435,7 +6307,7 @@ func (s *EnrollmentService) DisapproveStudent(studentID, courseID, reason string
 }
 </pre>
 		
-		<pre class="file" id="file19" style="display: none">package service
+		<pre class="file" id="file21" style="display: none">package service
 
 import (
         "courses-service/src/model"
@@ -5881,9 +6753,67 @@ func (s *ForumService) validateTags(tags []model.QuestionTag) error <span class=
 func (s *ForumService) isValidStatus(status model.QuestionStatus) bool <span class="cov8" title="1">{
         return slices.Contains(model.QuestionStatusValues, status)
 }</span>
+
+// Forum participants operations
+
+func (s *ForumService) GetForumParticipants(courseID string) ([]string, error) <span class="cov8" title="1">{
+        if courseID == "" </span><span class="cov0" title="0">{
+                return nil, errors.New("course ID is required")
+        }</span>
+
+        // Validate course exists
+        <span class="cov8" title="1">_, err := s.courseRepository.GetCourseById(courseID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.New("course not found")
+        }</span>
+
+        // Get all questions for the course from repository
+        <span class="cov8" title="1">questions, err := s.forumRepository.GetQuestionsByCourseId(courseID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Extract unique participants using business logic
+        <span class="cov8" title="1">return s.extractParticipantsFromQuestions(questions), nil</span>
+}
+
+func (s *ForumService) extractParticipantsFromQuestions(questions []model.ForumQuestion) []string <span class="cov8" title="1">{
+        // Use a map to track unique participants
+        participantsMap := make(map[string]bool)
+
+        for _, question := range questions </span><span class="cov8" title="1">{
+                // Add question author
+                participantsMap[question.AuthorID] = true
+
+                // Add answer authors
+                for _, answer := range question.Answers </span><span class="cov8" title="1">{
+                        participantsMap[answer.AuthorID] = true
+                }</span>
+
+                // Add voters
+                <span class="cov8" title="1">for _, vote := range question.Votes </span><span class="cov8" title="1">{
+                        participantsMap[vote.UserID] = true
+                }</span>
+
+                // Add answer voters
+                <span class="cov8" title="1">for _, answer := range question.Answers </span><span class="cov8" title="1">{
+                        for _, vote := range answer.Votes </span><span class="cov0" title="0">{
+                                participantsMap[vote.UserID] = true
+                        }</span>
+                }
+        }
+
+        // Convert map keys to slice
+        <span class="cov8" title="1">var participants []string
+        for participant := range participantsMap </span><span class="cov8" title="1">{
+                participants = append(participants, participant)
+        }</span>
+
+        <span class="cov8" title="1">return participants</span>
+}
 </pre>
 		
-		<pre class="file" id="file20" style="display: none">package service
+		<pre class="file" id="file22" style="display: none">package service
 
 import (
         "courses-service/src/model"
@@ -5991,7 +6921,7 @@ func (s *ModuleService) DeleteModule(id string) error <span class="cov8" title="
 }
 </pre>
 		
-		<pre class="file" id="file21" style="display: none">package service
+		<pre class="file" id="file23" style="display: none">package service
 
 import (
         "bytes"
@@ -6488,9 +7418,306 @@ func (s *StatisticsService) filterAndSeparateAssignments(assignments []*model.As
         }
         <span class="cov8" title="1">return filteredAssignments, examAssignments, homeworkAssignments</span>
 }
+
+// GetBackofficeStatistics returns general system statistics for backoffice
+func (s *StatisticsService) GetBackofficeStatistics(ctx context.Context) (*schemas.BackofficeStatisticsResponse, error) <span class="cov0" title="0">{
+        // Get general counts
+        totalCourses, err := s.courseRepo.CountCourses()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">totalAssignments, err := s.assignmentRepo.CountAssignments()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">totalSubmissions, err := s.submissionRepo.CountSubmissions(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">totalEnrollments, err := s.enrollmentRepo.CountEnrollments()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">totalForumQuestions, err := s.forumRepo.CountQuestions()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">totalForumAnswers, err := s.forumRepo.CountAnswers()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Get course statistics by status
+        <span class="cov0" title="0">activeCourses, err := s.courseRepo.CountActiveCourses()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">finishedCourses, err := s.courseRepo.CountFinishedCourses()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Get assignment statistics by type
+        <span class="cov0" title="0">totalExams, err := s.assignmentRepo.CountAssignmentsByType("exam")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">totalHomeworks, err := s.assignmentRepo.CountAssignmentsByType("homework")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">totalQuizzes, err := s.assignmentRepo.CountAssignmentsByType("quiz")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Get submission statistics by status
+        <span class="cov0" title="0">draftSubmissions, err := s.submissionRepo.CountSubmissionsByStatus(ctx, model.SubmissionStatusDraft)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">submittedSubmissions, err := s.submissionRepo.CountSubmissionsByStatus(ctx, model.SubmissionStatusSubmitted)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">lateSubmissions, err := s.submissionRepo.CountSubmissionsByStatus(ctx, model.SubmissionStatusLate)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Get enrollment statistics by status
+        <span class="cov0" title="0">activeEnrollments, err := s.enrollmentRepo.CountEnrollmentsByStatus(model.EnrollmentStatusActive)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">droppedEnrollments, err := s.enrollmentRepo.CountEnrollmentsByStatus(model.EnrollmentStatusDropped)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">completedEnrollments, err := s.enrollmentRepo.CountEnrollmentsByStatus(model.EnrollmentStatusCompleted)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Get forum statistics by status
+        <span class="cov0" title="0">openForumQuestions, err := s.forumRepo.CountQuestionsByStatus(model.QuestionStatusOpen)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">resolvedForumQuestions, err := s.forumRepo.CountQuestionsByStatus(model.QuestionStatusResolved)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">closedForumQuestions, err := s.forumRepo.CountQuestionsByStatus(model.QuestionStatusClosed)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Get teacher and student statistics
+        <span class="cov0" title="0">totalUniqueTeachers, err := s.courseRepo.CountUniqueTeachers()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">totalUniqueAuxTeachers, err := s.courseRepo.CountUniqueAuxTeachers()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">totalUniqueStudents, err := s.enrollmentRepo.CountUniqueStudents()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Calculate averages
+        <span class="cov0" title="0">averageStudentsPerCourse := float64(0)
+        if totalCourses &gt; 0 </span><span class="cov0" title="0">{
+                averageStudentsPerCourse = float64(totalEnrollments) / float64(totalCourses)
+        }</span>
+
+        <span class="cov0" title="0">averageAssignmentsPerCourse := float64(0)
+        if totalCourses &gt; 0 </span><span class="cov0" title="0">{
+                averageAssignmentsPerCourse = float64(totalAssignments) / float64(totalCourses)
+        }</span>
+
+        <span class="cov0" title="0">averageSubmissionsPerAssignment := float64(0)
+        if totalAssignments &gt; 0 </span><span class="cov0" title="0">{
+                averageSubmissionsPerAssignment = float64(totalSubmissions) / float64(totalAssignments)
+        }</span>
+
+        // Get monthly statistics
+        <span class="cov0" title="0">coursesCreatedThisMonth, err := s.courseRepo.CountCoursesCreatedThisMonth()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">assignmentsCreatedThisMonth, err := s.assignmentRepo.CountAssignmentsCreatedThisMonth()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">submissionsThisMonth, err := s.submissionRepo.CountSubmissionsThisMonth(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">enrollmentsThisMonth, err := s.enrollmentRepo.CountEnrollmentsThisMonth()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return &amp;schemas.BackofficeStatisticsResponse{
+                TotalCourses:                    int(totalCourses),
+                TotalAssignments:                int(totalAssignments),
+                TotalSubmissions:                int(totalSubmissions),
+                TotalEnrollments:                int(totalEnrollments),
+                TotalForumQuestions:             int(totalForumQuestions),
+                TotalForumAnswers:               int(totalForumAnswers),
+                ActiveCourses:                   int(activeCourses),
+                FinishedCourses:                 int(finishedCourses),
+                TotalExams:                      int(totalExams),
+                TotalHomeworks:                  int(totalHomeworks),
+                TotalQuizzes:                    int(totalQuizzes),
+                DraftSubmissions:                int(draftSubmissions),
+                SubmittedSubmissions:            int(submittedSubmissions),
+                LateSubmissions:                 int(lateSubmissions),
+                ActiveEnrollments:               int(activeEnrollments),
+                DroppedEnrollments:              int(droppedEnrollments),
+                CompletedEnrollments:            int(completedEnrollments),
+                OpenForumQuestions:              int(openForumQuestions),
+                ResolvedForumQuestions:          int(resolvedForumQuestions),
+                ClosedForumQuestions:            int(closedForumQuestions),
+                TotalUniqueTeachers:             int(totalUniqueTeachers),
+                TotalUniqueAuxTeachers:          int(totalUniqueAuxTeachers),
+                TotalUniqueStudents:             int(totalUniqueStudents),
+                AverageStudentsPerCourse:        averageStudentsPerCourse,
+                AverageAssignmentsPerCourse:     averageAssignmentsPerCourse,
+                AverageSubmissionsPerAssignment: averageSubmissionsPerAssignment,
+                CoursesCreatedThisMonth:         int(coursesCreatedThisMonth),
+                AssignmentsCreatedThisMonth:     int(assignmentsCreatedThisMonth),
+                SubmissionsThisMonth:            int(submissionsThisMonth),
+                EnrollmentsThisMonth:            int(enrollmentsThisMonth),
+        }, nil</span>
+}
+
+// GetBackofficeCoursesStats returns detailed course statistics for backoffice
+func (s *StatisticsService) GetBackofficeCoursesStats(ctx context.Context) (*schemas.BackofficeCoursesStatsResponse, error) <span class="cov0" title="0">{
+        totalCourses, err := s.courseRepo.CountCourses()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Get courses by status
+        <span class="cov0" title="0">activeCourses, err := s.courseRepo.CountActiveCourses()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">finishedCourses, err := s.courseRepo.CountFinishedCourses()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">coursesByStatus := map[string]int{
+                "active":   int(activeCourses),
+                "finished": int(finishedCourses),
+        }
+
+        // Get recent courses
+        recentCourses, err := s.courseRepo.GetRecentCourses(10)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return &amp;schemas.BackofficeCoursesStatsResponse{
+                TotalCourses:    int(totalCourses),
+                CoursesByStatus: coursesByStatus,
+                RecentCourses:   recentCourses,
+        }, nil</span>
+}
+
+// GetBackofficeAssignmentsStats returns detailed assignment statistics for backoffice
+func (s *StatisticsService) GetBackofficeAssignmentsStats(ctx context.Context) (*schemas.BackofficeAssignmentsStatsResponse, error) <span class="cov0" title="0">{
+        totalAssignments, err := s.assignmentRepo.CountAssignments()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Get assignments by type
+        <span class="cov0" title="0">exams, err := s.assignmentRepo.CountAssignmentsByType("exam")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">homeworks, err := s.assignmentRepo.CountAssignmentsByType("homework")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">quizzes, err := s.assignmentRepo.CountAssignmentsByType("quiz")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">assignmentsByType := map[string]int{
+                "exam":     int(exams),
+                "homework": int(homeworks),
+                "quiz":     int(quizzes),
+        }
+
+        // Get assignments by status
+        published, err := s.assignmentRepo.CountAssignmentsByStatus("published")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">draft, err := s.assignmentRepo.CountAssignmentsByStatus("draft")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">assignmentsByStatus := map[string]int{
+                "published": int(published),
+                "draft":     int(draft),
+        }
+
+        // Get assignment distribution
+        assignmentDistribution, err := s.assignmentRepo.GetAssignmentDistribution()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Get recent assignments
+        <span class="cov0" title="0">recentAssignments, err := s.assignmentRepo.GetRecentAssignments(10)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return &amp;schemas.BackofficeAssignmentsStatsResponse{
+                TotalAssignments:       int(totalAssignments),
+                AssignmentsByType:      assignmentsByType,
+                AssignmentsByStatus:    assignmentsByStatus,
+                AssignmentDistribution: assignmentDistribution,
+                RecentAssignments:      recentAssignments,
+        }, nil</span>
+}
 </pre>
 		
-		<pre class="file" id="file22" style="display: none">package service
+		<pre class="file" id="file24" style="display: none">package service
 
 import (
         "context"
@@ -6811,7 +8038,66 @@ func (s *SubmissionService) AutoCorrectSubmission(ctx context.Context, submissio
 }
 </pre>
 		
-		<pre class="file" id="file23" style="display: none">package testutil
+		<pre class="file" id="file25" style="display: none">package service
+
+import (
+        "courses-service/src/model"
+        "courses-service/src/repository"
+        "log/slog"
+        "slices"
+)
+
+type TeacherActivityService struct {
+        activityLogRepo repository.TeacherActivityLogRepositoryInterface
+        courseRepo      repository.CourseRepositoryInterface
+}
+
+func NewTeacherActivityService(
+        activityLogRepo repository.TeacherActivityLogRepositoryInterface,
+        courseRepo repository.CourseRepositoryInterface,
+) *TeacherActivityService <span class="cov8" title="1">{
+        return &amp;TeacherActivityService{
+                activityLogRepo: activityLogRepo,
+                courseRepo:      courseRepo,
+        }
+}</span>
+
+// LogActivityIfAuxTeacher logs an activity only if the teacher is an auxiliary teacher for the course
+func (s *TeacherActivityService) LogActivityIfAuxTeacher(courseID, teacherUUID, activityType, description string) <span class="cov8" title="1">{
+        // Get the course to check if teacher is auxiliary
+        course, err := s.courseRepo.GetCourseById(courseID)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Failed to get course for activity logging", "error", err, "courseID", courseID)
+                return
+        }</span>
+
+        // Check if teacher is auxiliary (not the main teacher)
+        <span class="cov8" title="1">if course.TeacherUUID == teacherUUID </span><span class="cov8" title="1">{
+                // This is the main teacher, don't log
+                return
+        }</span>
+
+        <span class="cov0" title="0">if !slices.Contains(course.AuxTeachers, teacherUUID) </span><span class="cov0" title="0">{
+                // This teacher is not an auxiliary teacher for this course
+                return
+        }</span>
+
+        // Log the activity
+        <span class="cov0" title="0">err = s.activityLogRepo.LogActivity(courseID, teacherUUID, activityType, description)
+        if err != nil </span><span class="cov0" title="0">{
+                slog.Error("Failed to log teacher activity", "error", err, "courseID", courseID, "teacherUUID", teacherUUID)
+        }</span> else<span class="cov0" title="0"> {
+                slog.Debug("Auxiliary teacher activity logged", "courseID", courseID, "teacherUUID", teacherUUID, "activityType", activityType)
+        }</span>
+}
+
+// GetCourseActivityLogs returns all activity logs for a course
+func (s *TeacherActivityService) GetCourseActivityLogs(courseID string) ([]*model.TeacherActivityLog, error) <span class="cov0" title="0">{
+        return s.activityLogRepo.GetLogsByCourse(courseID)
+}</span>
+</pre>
+		
+		<pre class="file" id="file26" style="display: none">package testutil
 
 import (
         "context"
