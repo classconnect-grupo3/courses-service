@@ -73,4 +73,4 @@ func (c *TeacherActivityController) GetCourseActivityLogs(ctx *gin.Context) {
 
 	slog.Debug("Activity logs retrieved", "courseID", courseID, "count", len(logs))
 	ctx.JSON(http.StatusOK, logs)
-} 
+}

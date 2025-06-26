@@ -13,4 +13,4 @@ type TeacherActivityLog struct {
 	ActivityType string             `json:"activity_type" bson:"activity_type"`
 	Description  string             `json:"description" bson:"description"`
 	Timestamp    time.Time          `json:"timestamp" bson:"timestamp"`
-} 
+}

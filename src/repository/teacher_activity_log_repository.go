@@ -41,16 +41,16 @@ func (r *TeacherActivityLogRepository) LogActivity(courseID, teacherUUID, activi
 
 func (r *TeacherActivityLogRepository) GetLogsByCourse(courseID string) ([]*model.TeacherActivityLog, error) {
 	filter := map[string]interface{}{"course_id": courseID}
-	
+
 	cursor, err := r.logCollection.Find(context.TODO(), filter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get logs by course: %v", err)
 	}
-	
+
 	var logs []*model.TeacherActivityLog
 	if err := cursor.All(context.TODO(), &logs); err != nil {
 		return nil, fmt.Errorf("failed to decode logs: %v", err)
 	}
-	
+
 	return logs, nil
-} 
+}

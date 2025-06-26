@@ -203,7 +203,7 @@ func (c *ForumController) DeleteQuestion(ctx *gin.Context) {
 
 	// Get question before deleting for logging
 	question, qErr := c.service.GetQuestionById(id)
-	
+
 	err := c.service.DeleteQuestion(id, authorID)
 	if err != nil {
 		slog.Error("Error deleting question", "error", err)

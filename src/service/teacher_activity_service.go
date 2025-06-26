@@ -54,4 +54,4 @@ func (s *TeacherActivityService) LogActivityIfAuxTeacher(courseID, teacherUUID, 
 // GetCourseActivityLogs returns all activity logs for a course
 func (s *TeacherActivityService) GetCourseActivityLogs(courseID string) ([]*model.TeacherActivityLog, error) {
 	return s.activityLogRepo.GetLogsByCourse(courseID)
-} 
+}
